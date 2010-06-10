@@ -1,0 +1,431 @@
+<?php
+
+// $Id$
+
+
+/**
+ * @file idx.install
+ */
+
+
+
+/**
+ * Implementation of hook_install().
+ */
+function idx_install() {
+  if (module_exists('imagecache')) {
+    idx_imagecache_presets_install();
+  }
+  // install cck fields for enhanced listings
+  idx_enhance_listings_install();
+}
+
+/**
+ *  Install cck fields for Property Enhancements.
+ */
+function idx_enhance_listings_install() {
+
+  module_load_include('inc', 'content', 'includes/content.crud');
+
+  //create a group for the new cck fields
+  if (module_exists('fieldgroup')) {
+    fieldgroup_save_group("drealty_property", array('group_type' => 'standard', 'group_name' => "enhancement_group", 'label' => t("Property Enhancements"), 'settings' => array(), 'weight' => -2));
+  }
+  $enh_remarks = array(
+    'field_name' => "idx_enhanced_remarks",
+    'type_name' => "drealty_property",
+    'label' => t('Enhanced Remarks'),
+    'type' => 'text',
+    'widget_type' => 'text_textarea',
+    'group' => "enhancement_group",
+  );
+  content_field_instance_create($enh_remarks, FALSE);
+
+  $allowed_values = array('0' => '0|Display MLS data only.', '1' => '1|Display Enhanced data only.', '2' => '2|Display Enhanced and MLS data merged.'); 
+  $enh_remarks_display = array(
+    'field_name' => "idx_enhanced_remarks_display",
+    'type_name' => "drealty_property",
+    'label' => t('Display Remarks'),
+    'type' => 'number_integer',
+    'widget_type' => 'optionwidgets_select',
+    'multipule' => 0,
+    'required' => 1,
+    'allowed_values' => implode('\n', $allowed_values),
+    'group' => "enhancement_group",
+  );
+  content_field_instance_create($enh_remarks_display, FALSE);
+
+  $enh_img = array(
+    'field_name' => 'idx_enhanced_images',
+    'type_name' => "drealty_property",
+    'label' => t('Enhanced Images'),
+    'type' => 'filefield',
+    'widget_type' => 'imagefield_widget',
+    'file_extensions' => 'gif jpg jpeg png',
+    'description_field' => TRUE,
+    'custom_alt' => TRUE,
+    'custom_title' => TRUE,
+    'title_type' => 'textfield',
+    'group' => "enhancement_group",
+    'file_path' => 'drealty_enhanced_img',
+    'multiple' => TRUE,
+  );
+  content_field_instance_create($enh_img, FALSE);
+
+  $enh_images_display = array(
+    'field_name' => "idx_enhanced_images_display",
+    'type_name' => "drealty_property",
+    'label' => t('Display Images'),
+    'type' => 'number_integer',
+    'widget_type' => 'optionwidgets_select',
+    'multipule' => 0,
+    'required' => 1,
+    'allowed_values' => implode('\n', $allowed_values),
+    'group' => "enhancement_group",
+  );
+  content_field_instance_create($enh_images_display, FALSE);
+
+  $enh_tagline = array(
+    'field_name' => "idx_tagline",
+    'type_name' => "drealty_property",
+    'label' => t('Property Tagline'),
+    'type' => 'text',
+    'widget_type' => 'text_textarea',
+    'group' => "enhancement_group",
+  );
+  content_field_instance_create($enh_tagline, FALSE);
+
+  $idx_bathrooms = array(
+    'field_name' => 'idx_bathrooms',
+    'type_name' => 'drealty_property',
+    'label' => t('Bathrooms'),
+    'type' => 'number_integer',
+    'widget_type' => 'number',
+    'group' => 'enhancement_group',
+  );
+  content_field_instance_create($idx_bathrooms, FALSE);
+
+  $idx_bedrooms = array(
+    'field_name' => 'idx_bedrooms',
+    'type_name' => 'drealty_property',
+    'label' => t('Bedrooms'),
+    'type' => 'number_integer',
+    'widget_type' => 'number',
+    'group' => 'enhancement_group',
+  );
+  content_field_instance_create($idx_bedrooms, FALSE);
+
+  //update the field groups.
+  fieldgroup_update_fields($enh_remarks);
+  fieldgroup_update_fields($enh_remarks_display);
+  fieldgroup_update_fields($enh_img);
+  fieldgroup_update_fields($enh_images_display);
+  fieldgroup_update_fields($enh_tagline);
+  fieldgroup_update_fields($idx_bathrooms);
+  fieldgroup_update_fields($idx_bedrooms);
+
+
+  if (module_exists('content_permissions') && module_exists('permissions_api')) {
+    $fields = array('idx_enhanced_remarks', 'idx_enhanced_remarks_display',
+      'idx_enhanced_images', 'idx_enhanced_images_display',
+      'idx_tagline', 'idx_bathrooms', 'idx_bedrooms');
+    $permissions_view = array();
+    $permissions_edit = array();
+    foreach ($fields as $field) {
+      $permissions_view[] = "view $field";
+      $permissions_edit[] = "edit $field";
+    }
+
+    $roles = user_roles();
+    foreach ($roles as $role) {
+      permissions_grant_permissions($role, $permissions_view);
+      permissions_revoke_permissions($role, $permissions_edit);
+    }
+  }
+
+  content_clear_type_cache(TRUE);
+  menu_rebuild();
+}
+
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function idx_uninstall() {
+
+  //clean up the imagecache presets that were created.
+  $presets = idx_imgaecache_presets();
+  foreach ($presets as $preset_name => $preset) {
+    imagecache_preset_delete(imagecache_preset_by_name($preset_name));
+  }
+
+  //clean up the cck fields that were created.
+  content_field_instance_delete("idx_enhanced_remarks", "drealty_property", FALSE);
+  content_field_instance_delete("idx_enhanced_remarks_display", "drealty_property", FALSE);
+  content_field_instance_delete("idx_enhanced_images", "drealty_property", FALSE);
+  content_field_instance_delete("idx_enhanced_images_display", "drealty_property", FALSE);
+  content_field_instance_delete("idx_tagline", "drealty_property", FALSE);
+  content_field_instance_delete("idx_bathrooms", "drealty_property", FALSE);
+  content_field_instance_delete("idx_bedrooms", "drealty_property", FALSE);
+
+  //clean up the cck group that was created.
+  fieldgroup_delete("drealty_property", "enhancement_group");
+
+  // dump the cck cache
+  content_clear_type_cache(TRUE);
+  menu_rebuild();
+
+}
+
+/**
+ * Install imagecache presets.
+ */
+function idx_imagecache_presets_install() {
+  $presets = idx_imgaecache_presets();
+
+  foreach ($presets as $preset_name => $preset) {
+    $icache_preset = imagecache_preset_save(array('presetname' => $preset_name));
+    foreach ($preset['actions'] as $action) {
+      $action['presetid'] = $icache_preset['presetid'];
+      drupal_write_record('imagecache_action', $action);
+    }
+  }
+}
+
+/**
+ * Function to return imagecache presets.
+ * paste the $presets array from the imagecache exports here.
+ *
+ * @return array
+ */
+function idx_imgaecache_presets() {
+  if (module_exists('imagecache')) {
+    $presets['idx_prop_thumb'] = array(
+      'presetname' => 'idx_prop_thumb',
+      'actions' =>
+      array(
+        0 =>
+        array(
+          'weight' => '0',
+          'module' => 'drealty',
+          'action' => 'drealty_fetch',
+          'data' =>
+          array(
+          ),
+        ),
+        1 =>
+        array(
+          'weight' => '0',
+          'module' => 'imagecache',
+          'action' => 'imagecache_scale_and_crop',
+          'data' =>
+          array(
+            'width' => '140',
+            'height' => '105',
+          ),
+        ),
+      ),
+    );
+    $presets['idx_prop_search_gallery'] = array(
+      'presetname' => 'idx_prop_search_gallery',
+      'actions' =>
+      array(
+        0 =>
+        array(
+          'weight' => '0',
+          'module' => 'drealty',
+          'action' => 'drealty_fetch',
+          'data' =>
+          array(
+          ),
+        ),
+        1 =>
+        array(
+          'weight' => '0',
+          'module' => 'imagecache',
+          'action' => 'imagecache_scale_and_crop',
+          'data' =>
+          array(
+            'width' => '315',
+            'height' => '236',
+          ),
+        ),
+      ),
+    );
+    $presets['idx_property_front_slide'] = array(
+      'presetname' => 'idx_property_front_slide',
+      'actions' =>
+      array(
+        0 =>
+        array(
+          'weight' => '0',
+          'module' => 'drealty',
+          'action' => 'drealty_fetch',
+          'data' =>
+          array(
+          ),
+        ),
+        1 =>
+        array(
+          'weight' => '0',
+          'module' => 'imagecache_coloractions',
+          'action' => 'imagecache_convert',
+          'data' =>
+          array(
+            'format' => 'image/png',
+          ),
+        ),
+        2 =>
+        array(
+          'weight' => '0',
+          'module' => 'imagecache',
+          'action' => 'imagecache_scale_and_crop',
+          'data' =>
+          array(
+            'width' => '373',
+            'height' => '280',
+          ),
+        ),
+        3 =>
+        array(
+          'weight' => '0',
+          'module' => 'imagecache_canvasactions',
+          'action' => 'canvasactions_definecanvas',
+          'data' =>
+          array(
+            'RGB' =>
+            array(
+              'HEX' => '',
+            ),
+            'under' => 1,
+            'exact' =>
+            array(
+              'width' => '',
+              'height' => '',
+              'xpos' => 'center',
+              'ypos' => 'center',
+            ),
+            'relative' =>
+            array(
+              'leftdiff' => '15',
+              'rightdiff' => '16',
+              'topdiff' => '15',
+              'bottomdiff' => '15',
+            ),
+          ),
+        ),
+        4 =>
+        array(
+          'weight' => '0',
+          'module' => 'imagecache_canvasactions',
+          'action' => 'canvasactions_canvas2file',
+          'data' =>
+          array(
+            'xpos' => 0,
+            'ypos' => 0,
+            'alpha' => '100',
+            'path' => 'front_img_shadow.png',
+            'dimensions' => 'original',
+          ),
+        ),
+      ),
+    );
+    $presets['idx_prop_detail_gallery'] = array(
+      'presetname' => 'idx_prop_detail_gallery',
+      'actions' =>
+      array(
+        0 =>
+        array(
+          'weight' => '0',
+          'module' => 'drealty',
+          'action' => 'drealty_fetch',
+          'data' =>
+          array(
+          ),
+        ),
+        1 =>
+        array(
+          'weight' => '0',
+          'module' => 'imagecache',
+          'action' => 'imagecache_scale',
+          'data' =>
+          array(
+            'width' => '',
+            'height' => '360',
+            'upscale' => 1,
+          ),
+        ),
+      ),
+    );
+    return $presets;
+  }
+}
+
+
+function idx_update_6101(&$sandbox) {
+  $ret = array();
+
+  if (!isset($sandbox['progress'])) {
+    $sandbox['progress'] = 0;
+    $sandbox['current_nid'] = 0;
+    $sandbox['max'] = db_result(db_query("SELECT COUNT(DISTINCT nid) FROM {node} WHERE type = 'drealty_property'"));
+
+    module_load_include('inc', 'content', 'includes/content.crud');
+    $idx_bathrooms = array(
+      'field_name' => 'idx_bathrooms',
+      'type_name' => 'drealty_property',
+      'label' => t('Bathrooms'),
+      'type' => 'number_integer',
+      'widget_type' => 'number',
+      'group' => 'enhancement_group',
+    );
+    content_field_instance_create($idx_bathrooms, FALSE);
+
+    $idx_bedrooms = array(
+      'field_name' => 'idx_bedrooms',
+      'type_name' => 'drealty_property',
+      'label' => t('Bedrooms'),
+      'type' => 'number_integer',
+      'widget_type' => 'number',
+      'group' => 'enhancement_group',
+    );
+    content_field_instance_create($idx_bedrooms, FALSE);
+
+    fieldgroup_update_fields($idx_bathrooms);
+    fieldgroup_update_fields($idx_bedrooms);
+
+    if (module_exists('content_permissions') && module_exists('permissions_api')) {
+      $fields = array('idx_enhanced_remarks', 'idx_enhanced_remarks_display',
+        'idx_enhanced_images', 'idx_enhanced_images_display',
+        'idx_tagline', 'idx_bathrooms', 'idx_bedrooms');
+      $permissions_view = array();
+      $permissions_edit = array();
+      foreach ($fields as $field) {
+        $permissions_view[] = "view $field";
+        $permissions_edit[] = "edit $field";
+      }
+
+      $roles = user_roles();
+      foreach ($roles as $role) {
+        permissions_grant_permissions($role, $permissions_view);
+        permissions_revoke_permissions($role, $permissions_edit);
+      }
+    }
+
+    content_clear_type_cache(TRUE);
+    menu_rebuild();
+  }
+
+  $nodes = db_query_range("SELECT nid FROM {node} WHERE type = 'drealty_property' AND nid > %d ORDER BY nid ASC", $sandbox['current_nid'], 0, 10);
+  while ($item = db_fetch_object($nodes)) {
+    $node = node_load($item->nid, NULL, TRUE);
+    node_save($node);
+
+    $sandbox['progress']++;
+    $sandbox['current_nid'] = $item->nid;
+  }
+
+  $ret['#finished'] = empty($sandbox['max']) ? 1 : ($sandbox['progress'] / $sandbox['max']);
+
+  return $ret;
+}

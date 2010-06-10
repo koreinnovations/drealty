@@ -554,7 +554,7 @@ function drealty_import_batch_finished($success, $results, $operations) {
     }
   }
   else {
-    drupal_set_message(t('It appears that class updating failed. If this was due to a PHP memory error, try increasing PHP&rsquo;s memory allocation (<em>memory_limit</em> value). If that is not an option, try decreasing the <em>Record chunk size</em> value in the <em>Advanced settings</em> section of the <a href="!slimits">Search limits</a> configuration page. If this was due to a PHP timeout error, try increasing PHP&rsquo;s execution time (<em>max_execution_time</em> value). Update the class again to continue fetching listings for it.', array('!slimits' => url('admin/settings/pirets/fields/limits'))));
+    drupal_set_message(t('It appears that class updating failed.'));
   }
 }
 
@@ -641,31 +641,13 @@ function drealty_flush_batch($nids, $class, &$context) {
  */
 function drealty_flush_batch_finished($success, $results, $operations) {
   // Set the last_update times for the relative classes back to 'never'
-  $classes = variable_get('pirets_classes', array());
-  if ($results['class'] === NULL) {
-    foreach ($classes as &$class) {
-      $class['last_update'] = 0;
-    }
-  }
-  else {
-    $classes[$results['class']]['last_update'] = 0;
-  }
-  variable_set('pirets_classes', $classes);
+  $conid = $results['conid'];
+
   drupal_set_message('The property listings have been deleted.');
   //drupal_goto('admin/drealty/connections');
 }
 function drealty_process_images_batch_finished($success, $results, $operations) {
-  // Set the last_update times for the relative classes back to 'never'
-  $classes = variable_get('pirets_classes', array());
-  if ($results['class'] === NULL) {
-    foreach ($classes as &$class) {
-      $class['last_update'] = 0;
-    }
-  }
-  else {
-    $classes[$results['class']]['last_update'] = 0;
-  }
-  variable_set('pirets_classes', $classes);
+
   drupal_set_message('The Image data has been processed.');
   //drupal_goto('admin/drealty/connections');
 }

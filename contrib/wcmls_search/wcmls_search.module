@@ -1,0 +1,704 @@
+<?php
+
+/**
+ * Implementation of hook_apachesolr_facets().
+ */
+function wcmls_search_apachesolr_facets() {
+  $key_sq_ft = 'fs_wcmls_dr_l_total_sqft';
+  $facets[$key_sq_ft] = array(
+    'info' => t('Drealty IDX: Filter by Sq Ft [Range]'),
+    'title' => t('Square Feet'),
+    'facet_field' => $key_sq_ft,
+    'facet_ranged' => TRUE,
+    'ranged_query' => array(
+      '600+' => 'fs_wcmls_dr_l_total_sqft:[600 TO *]',
+      '800+' => 'fs_wcmls_dr_l_total_sqft:[800 TO *]',
+      '1000+' => 'fs_wcmls_dr_l_total_sqft:[1000 TO *]',
+      '1200+' => 'fs_wcmls_dr_l_total_sqft:[1200 TO *]',
+      '1400+' => 'fs_wcmls_dr_l_total_sqft:[1400 TO *]',
+      '1600+' => 'fs_wcmls_dr_l_total_sqft:[1600 TO *]',
+      '1800+' => 'fs_wcmls_dr_l_total_sqft:[1800 TO *]',
+      '2000+' => 'fs_wcmls_dr_l_total_sqft:[2000 TO *]',
+      '2250+' => 'fs_wcmls_dr_l_total_sqft:[2250 TO *]',
+      '2500+' => 'fs_wcmls_dr_l_total_sqft:[2500 TO *]',
+      '2750+' => 'fs_wcmls_dr_l_total_sqft:[2750 TO *]',
+      '3000+' => 'fs_wcmls_dr_l_total_sqft:[3000 TO *]',
+      '3500+' => 'fs_wcmls_dr_l_total_sqft:[3500 TO *]',
+      '4000+' => 'fs_wcmls_dr_l_total_sqft:[4000 TO *]',
+    ),
+  );
+
+  $key_bedrooms = 'fs_wcmls_idx_bedrooms';
+  $facets[$key_bedrooms] = array(
+    'info' => t('IDX: Filter by Bedroom [Range]'),
+    'title' => t('Bedrooms'),
+    'facet_field' => $key_bedrooms,
+    'facet_ranged' => TRUE,
+    'ranged_query' => array(
+      '1+' => 'fs_wcmls_idx_bedrooms:[1 TO *]',
+      '2+' => 'fs_wcmls_idx_bedrooms:[2 TO *]',
+      '3+' => 'fs_wcmls_idx_bedrooms:[3 TO *]',
+      '4+' => 'fs_wcmls_idx_bedrooms:[4 TO *]',
+      '5+' => 'fs_wcmls_idx_bedrooms:[5 TO *]',
+      '6+' => 'fs_wcmls_idx_bedrooms:[6 TO *]',
+    ),
+  );
+  $key_bathrooms = 'fs_wcmls_idx_bathrooms';
+  $facets[$key_bathrooms] = array(
+    'info' => t('IDX: Filter by Bathroom [Range]'),
+    'title' => t('Bathrooms'),
+    'facet_field' => $key_bathrooms,
+    'facet_ranged' => TRUE,
+    'ranged_query' => array(
+      '1+' => 'fs_wcmls_idx_bathrooms:[1 TO *]',
+      '2+' => 'fs_wcmls_idx_bathrooms:[2 TO *]',
+      '3+' => 'fs_wcmls_idx_bathrooms:[3 TO *]',
+      '4+' => 'fs_wcmls_idx_bathrooms:[4 TO *]',
+    ),
+  );
+
+  return $facets;
+}
+
+
+/**
+ * Implementation of hook_block().
+ */
+function wcmls_search_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      $enabled_facets = apachesolr_get_enabled_facets('wcmls_search');
+      $facets = wcmls_search_apachesolr_facets();
+      // Add the blocks
+      $blocks = array();
+      foreach ($enabled_facets as $delta => $facet_field) {
+        if (isset($facets[$delta])) {
+          $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE,);
+        }
+      }
+      $blocks['wcmls_search_price_block'] = array(
+        'info' => 'WCMLS Price Search',
+        'cache' => BLOCK_NO_CACHE,
+      );
+      $blocks['wcmls_search_keyword_block'] = array(
+        'info' => 'WCMLS Keyword Search',
+        'cache' => BLOCK_NO_CACHE,
+      );
+      $blocks['wcmls_front_page_search_block'] = array(
+        'info' => 'WCMLS Front Page Search',
+        'cache' => BLOCK_NO_CACHE,
+      );
+      return $blocks;
+
+    case 'view':
+      if (apachesolr_has_searched()) {
+        $facets = wcmls_search_apachesolr_facets();
+        $facet = $facets[$delta];
+
+        $response = apachesolr_static_response_cache();
+        if (empty($response)) {
+          return;
+        }
+        $query = apachesolr_current_query();
+
+        switch ($delta) {
+          case 'fs_wcmls_dr_l_total_sqft':
+          case 'fs_wcmls_idx_bedrooms':
+          case 'fs_wcmls_idx_bathrooms':
+            return wcmls_search_ranged_facet_block($response, $query, 'wcmls_search', $delta, $facet['ranged_query'], $facet['title']);
+          case 'wcmls_search_price_block':
+            return array('subject' => 'Price', 'content' => drupal_get_form('wcmls_search_price_search_form', $query));
+          case 'wcmls_search_keyword_block':
+            return array('subject' => 'Search', 'content' => drupal_get_form('wcmls_search_keyword_form', $query));
+
+        }
+
+      }
+      else {
+        switch ($delta) {
+          case 'wcmls_front_page_search_block':
+            return array('subject' => '', 'content' => drupal_get_form('wcmls_search_front_search_form'));
+        }
+      }
+      break;
+
+    case 'configure':
+      return apachesolr_facetcount_form('wcmls_search', $delta);
+    case 'save':
+      apachesolr_facetcount_save($edit);
+      break;
+  }
+}
+/**
+ *
+ * Helper function that returns the options used in the price select form.
+ *
+ * @return array
+ */
+function wcmls_search_get_price_options() {
+  $opts_low = array(
+    '*' => 'Any',
+    '1000' => '$1,000',
+    '20000' => '$20,000',
+    '45000' => '$45,000',
+    '65000' => '$65,000',
+    '80000' => '$80,000',
+    '95000' => '$95,000',
+    '110000' => '$110,000',
+    '125000' => '$125,000',
+    '140000' => '$140,000',
+    '165000' => '$165,000',
+    '190000' => '$190,000',
+    '210000' => '$210,000',
+    '230000' => '$230,000',
+    '300000' => '$300,000',
+    '400000' => '$400,000',
+    '700000' => '$700,000',
+  );
+
+  $opts_high = array(
+    '30000' => '$30,000',
+    '50000' => '$50,000',
+    '65000' => '$65,000',
+    '85000' => '$85,000',
+    '100000' => '$100,000',
+    '120000' => '$120,000',
+    '135000' => '$135,000',
+    '155000' => '$155,000',
+    '175000' => '$175,000',
+    '195000' => '$195,000',
+    '210000' => '$210,000',
+    '240000' => '$240,000',
+    '270000' => '$270,000',
+    '300000' => '$300,000',
+    '335000' => '$335,000',
+    '370000' => '$370,000',
+    '410000' => '$410,000',
+    '450000' => '$450,000',
+    '500000' => '$500,000',
+    '550000' => '$550,000',
+    '600000' => '$600,000',
+    '650000' => '$650,000',
+    '700000' => '$700,000',
+    '*' => '$1,000,000+',
+  );
+
+  return array('low' => $opts_low, 'high' => $opts_high);
+
+}
+
+
+/**
+ * Helper function for displaying a facet block.
+ */
+function wcmls_search_ranged_facet_block($response, $query, $module, $delta, $facet_ranges, $filter_by, $facet_callback = FALSE) {
+  if (!empty($response->facet_counts->facet_queries)) {
+    $facet_query_sorts = variable_get('apachesolr_facet_query_sorts', array());
+    $contains_active = FALSE;
+    $items = array();
+
+    $filtered_ranges = array();
+    foreach ($facet_ranges as $range_key => $facet) {
+      $query_parts = explode(':', $facet);
+      if($query->has_filter($query_parts[0], $query_parts[1])) {
+        $filtered_ranges[$range_key] = $facet;
+      }
+    }
+
+    $ranges = array();
+    if (count($filtered_ranges) > 0) {
+      $ranges = $filtered_ranges;
+    }
+    else {
+      $ranges = $facet_ranges;
+    }
+
+
+    foreach ($ranges as $range_key => $facet) {
+      $query_parts = explode(':', $facet);
+      //foreach ($response->facet_counts->facet_fields->$facet_field as $facet => $count) {
+      $count = $response->facet_counts->facet_queries->$facet;
+      $sortpre = 1000000 - $count;
+      $options = array('delta' => $delta);
+      $exclude = FALSE;
+
+      // Solr sends this back if it's empty.
+      if ($facet == '_empty_') {
+        $exclude = TRUE;
+        $facet = '[* TO *]';
+        $facet_text = theme('placeholder', t('Missing this field'));
+        $options['html'] = TRUE;
+        // Put this just below any active facets.
+        // '-' sorts before all numbers, but after '*'.
+        $sortpre = '-';
+      }
+      else {
+        $facet_text = $range_key;
+      }
+
+      if ($facet_callback && function_exists($facet_callback)) {
+        $facet_text = $facet_callback($facet, $options);
+      }
+      // If this block is to be alphabetically sorted, change $sortpre.
+      if (isset($facet_query_sorts[$module][$delta]) && ($facet_query_sorts[$module][$delta] != 'count')) {
+        $sortpre = $facet_text;
+      }
+      $unclick_link = '';
+      $active = FALSE;
+      $new_query = clone $query;
+      if ($query->has_filter($query_parts[0], $query_parts[1])) {
+        $contains_active = $active = TRUE;
+        // '*' sorts before all numbers.
+        $sortpre = '*';
+        $new_query->remove_filter($query_parts[0], $query_parts[1]);
+        $options['query'] = $new_query->get_url_queryvalues();
+        $link = theme('apachesolr_unclick_link', $facet_text, $new_query->get_path(), $options);
+      }
+      else {
+        $new_query->add_filter($query_parts[0], $query_parts[1], $exclude);
+        $options['query'] = $new_query->get_url_queryvalues();
+        $link = theme('apachesolr_facet_link', $facet_text, $new_query->get_path(), $options, $count, FALSE, $response->response->numFound);
+      }
+      if ($count || $active) {
+        $items[$sortpre . '*' . $facet_text] = $link;
+      }
+    }
+    // Unless a facet is active only display 2 or more.
+    if ($items && ($response->response->numFound > 1 || $contains_active)) {
+      if (!isset($facet_query_sorts[$module][$delta]) || ($facet_query_sorts[$module][$delta] == 'index asc')) {
+        ksort($items, SORT_STRING);
+      }
+      else if ($facet_query_sorts[$module][$delta] == 'index desc') {
+        krsort($items, SORT_STRING);
+      }
+      // Get information needed by the rest of the blocks about limits.
+      $initial_limits = variable_get('apachesolr_facet_query_initial_limits', array());
+      $limit = isset($initial_limits[$module][$delta]) ? $initial_limits[$module][$delta] : variable_get('apachesolr_facet_query_initial_limit_default', 10);
+      $output = theme('apachesolr_facet_list', $items, $limit, $delta);
+      return array('subject' => $filter_by, 'content' => $output);
+    }
+  }
+  return NULL;
+}
+
+
+
+function wcmls_search_front_search_form() {
+
+  $opts = wcmls_search_get_price_options();
+
+  $form['price_field'] = array('#type' => 'value', '#value' => 'fs_cck_dr_prop_price');
+  $form['bathroom_field'] = array('#type' => 'value', '#value' => 'fs_wcmls_idx_bathrooms');
+  $form['bedroom_field'] = array('#type' => 'value', '#value' => 'fs_wcmls_idx_bedrooms');
+
+  $form['keywords'] = array(
+    '#type' => 'textfield',
+    '#description' => t('Start Your Search!'),
+    '#title' => '',
+    '#size' => 45,
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Search'),
+  );
+  $form['markup_pre'] = array(
+    '#value' => "<div class='holder'>",
+  );
+  $form['opts_low'] = array(
+    '#type' => 'select',
+    '#title' => t('Price'),
+    '#options' => $opts['low'],
+    '#default_value' => '*',
+  );
+  $form['to'] = array(
+    '#type' => 'item',
+    '#title' => ' ',
+    '#value' => t('To'),
+  );
+  $form['opts_high'] = array(
+    '#type' => 'select',
+    '#title' => ' ',
+    '#options' => $opts['high'],
+    '#default_value' => '*',
+  );
+  $form['bedrooms'] = array(
+    '#type' => 'select',
+    '#title' => t('Beds'),
+    '#options' => array( '[1 TO *]' => '1+', '[2 TO *]' => '2+', '[3 TO *]' => '3+', '[4 TO *]' => '4+', '[5 TO *]' => '5+', '[6 TO *]' => '6+',),
+  );
+  $form['bathrooms'] = array(
+    '#type' => 'select',
+    '#title' => t('Baths'),
+    '#options' => array( '[1 TO *]' => '1+', '[2 TO *]' => '2+', '[3 TO *]' => '3+', '[4 TO *]' => '4+',),
+  );
+  $form['markup_prost'] = array(
+    '#value' => "</div>",
+  );
+
+  return $form;
+}
+
+function wcmls_search_front_search_form_submit($form, &$form_state) {
+
+  $opt_low = $form_state['values']['opts_low'];
+  $opt_high = $form_state['values']['opts_high'];
+  $keywords = $form_state['values']['keywords'];
+  $bathrooms = $form_state['values']['bathrooms'];
+  $bedrooms = $form_state['values']['bedrooms'];
+
+  $price_field = $form_state['values']['price_field'];
+  $bed_field = $form_state['values']['bedroom_field'];
+  $bath_field = $form_state['values']['bathroom_field'];
+
+  $price_range = "[$opt_low TO $opt_high]";
+
+  $base_path = "property/search";
+  if (!empty($keywords)) {
+    $base_path .= "/$keywords";
+  }
+  $bath_filter = '';
+  $bed_filter = '';
+  $price_filter = '';
+
+  if ($bathrooms != '[1 TO *]') {
+    $bath_filter = "$bath_field:$bathrooms";
+  }
+
+  if ($bedrooms != '[1 TO *]') {
+    $bed_filter = " $bed_field:$bedrooms";
+  }
+
+  if ($opt_low != '*' && $opt_high != '*') {
+    $price_filter = " $price_field:$price_range";
+  }
+  $filters = array($bath_filter, $bed_filter, $price_filter);
+  $filter_string = "filters=";
+  foreach ($filters as $filter) {
+    $filter_string .= $filter;
+  }
+
+
+  drupal_goto($base_path, $filter_string);
+
+
+}
+
+function wcmls_search_keyword_form(&$form_state, $query = NULL) {
+  $keywords = '';
+  if (apachesolr_has_searched()) {
+    $query = apachesolr_current_query();
+    $keywords = $query->get_keys();
+  }
+
+  $form['keywords'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Search'),
+    '#size' => 30,
+    '#default_value' => $keywords,
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Search',
+  );
+  return $form;
+}
+
+function wcmls_search_keyword_form_submit($form, &$form_state) {
+
+  $keywords = '';
+  $keywords = $form_state['values']['keywords'];
+
+  if (apachesolr_has_searched()) {
+
+    $query = apachesolr_current_query();
+    // set the keywords
+    $query->set_keys($keywords);
+
+    $filter = $query->get_url_queryvalues();
+    $base_path = $query->get_path();
+
+    $filter_string = '';
+    foreach ($filter as $key => $value) {
+      $filter_string .= "$key=$value";
+    }
+
+    drupal_goto($base_path, $filter_string);
+  }
+}
+
+function wcmls_search_price_search_form(&$form_state, $query = NULL) {
+
+  $opts = wcmls_search_get_price_options();
+
+  if (apachesolr_has_searched()) {
+    $response = apachesolr_static_response_cache();
+    if (empty($response)) {
+      return;
+    }
+    $query = apachesolr_current_query();
+
+    $filters = $query->get_filters('fs_cck_dr_prop_price');
+    $low = $filters[0]['#start'];
+    $high = $filters[0]['#end'];
+
+
+  }
+
+  $form['solr_search_field'] = array('#type' => 'value', '#value' => 'fs_cck_dr_prop_price');
+  $form['price']['opts_low'] = array(
+    '#type' => 'select',
+    '#title' => 'From',
+    '#options' => $opts['low'],
+    '#default_value' => isset($low)?$low:'*',
+  );
+
+  $form['price']['opts_high'] = array(
+    '#type' => 'select',
+    '#title' => 'To',
+    '#options' => $opts['high'],
+    '#default_value' => isset($high)?$high:'*',
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Search'),
+  );
+
+  return $form;
+}
+
+function wcmls_search_price_search_form_submit($form, &$form_state) {
+
+  $opt_low = $form_state['values']['opts_low'];
+  $opt_high = $form_state['values']['opts_high'];
+  $search_field = $form_state['values']['solr_search_field'];
+
+  $filter_range = "[$opt_low TO $opt_high]";
+
+  if (apachesolr_has_searched()) {
+
+    $query = apachesolr_current_query();
+    // remove any existing price filters
+    $query->remove_filter($search_field);
+    // add the new filter
+    $query->add_filter($search_field, $filter_range);
+    $filter = $query->get_url_queryvalues();
+    $base_path = $query->get_path();
+
+    $filter_string = '';
+    foreach ($filter as $key => $value) {
+      $filter_string .= "$key=$value";
+    }
+
+    drupal_goto($base_path, $filter_string);
+  }
+
+
+}
+
+function wcmls_search_apachesolr_modify_query(&$query, &$params, $caller) {
+  if ($caller == 'drealty' || $caller == 'drealty_map') {
+
+    $facets = wcmls_search_apachesolr_facets();
+
+    foreach ($facets as $facet_name => $facet) {
+      if ($facet['facet_ranged']) {
+        foreach ($facet['ranged_query'] as $key => $range) {
+          $params['facet.query'][] = $range;
+        }
+      }
+    }
+
+    $params['fl'] .= ",fs_wcmls_dr_l_total_sqft,fs_wcmls_idx_bedrooms,fs_wcmls_idx_bathrooms";
+  }
+}
+
+/**
+ *
+ * @param <type> $document
+ * @param <type> $node
+ */
+function wcmls_search_apachesolr_update_index(&$document, $node) {
+
+  if($node->type == 'drealty_property') {
+    $document->fs_wcmls_dr_l_total_sqft = isset($node->dr_l_total_fnsh_sqft[0]['value'])?$node->dr_l_total_fnsh_sqft[0]['value']:0;
+    $document->fs_wcmls_idx_bedrooms = isset($node->idx_bedrooms[0]['value'])?$node->idx_bedrooms[0]['value']:0;
+    $document->fs_wcmls_idx_bathrooms = isset($node->idx_bathrooms[0]['value'])?$node->idx_bathrooms[0]['value']:0;
+    $document->ss_wcmls_idx_keyword = $node->dr_prop_address[0]['value'] . ' ' . $node->dr_prop_city[0]['value'] . ', ' . $node->dr_prop_state[0]['value'] . ' ' . $node->dr_prop_zip[0]['value'] . ' ' . $node->dr_prop_mls_id_value[0]['value'];
+
+  }
+
+}
+
+/**
+ * Return the contents of the "Current search" block.
+ *
+ * @param $response
+ *   The Solr response object.
+ * @param $query
+ *   The Solr query object.
+ */
+function wcmls_search_currentsearch_block($response, $query) {
+  $fields = $query->get_filters();
+  $links = array();
+
+  // If current search has keys, offer current search without them
+  if ($keys = $query->get_query_basic()) {
+    // theme_apachesolr_unclick_link($facet_text, $path, $options = array())
+    $links[] = theme('apachesolr_unclick_link', $keys, $query->get_path(''), array('query' => $query->get_url_queryvalues()));
+  }
+  // Find all taxonomy terms to be treated in a hierarchy.
+  if (module_exists('taxonomy')) {
+    $reflect_hierarchy = apachesolr_search_get_hierarchical_vocabularies();
+    foreach($fields as $index => $field) {
+      if ($field['#name'] && 'tid' == $field['#name']) {
+        $term = taxonomy_get_term($field['#value']);
+        if ($reflect_hierarchy[$term->vid]) {
+          $fields[$index] += array('#parent' => 0, '#children' => array());
+          // Just save the index for later lookup.
+          $facets[$term->tid] = $index;
+        }
+      }
+    }
+    if ($facets) {
+      // Get all term hierarchy information.
+      $all_terms = apacehsolr_get_parent_terms(array_keys($facets));
+      foreach ($all_terms as $tid => $term) {
+        if (!isset($facets[$tid])) {
+          // This is a parent that is missing from the query.  E.g. we started
+          // on a taxonomy/term/$tid page.
+          $query->add_filter('tid', $tid);
+          // Ordering is wonky, but oh well...
+          $fields[] = array('#name' => 'tid', '#value' => $tid, '#exclude' => FALSE, '#parent' => 0, '#children' => array());
+          // Get the index of the newly added facet.
+          end($fields);
+          $facets[$tid] = key($fields);
+        }
+      }
+      foreach ($all_terms as $tid => $term) {
+        $index = $facets[$term->tid];
+        if (isset($facets[$term->parent])) {
+          // Use a reference so we see the updated data.
+          $fields[$facets[$term->parent]]['#children'][] = &$fields[$index];
+          $fields[$index]['#parent'] = $term->parent;
+        }
+      }
+    }
+  }
+  // We don't directly render any items with a parent.
+  foreach($fields as $index => $field) {
+    $fields[$index]['#active'] = TRUE;
+    if (!empty($fields[$index]['#parent']) || !$field['#name']) {
+      // We will render it via its parent.
+      unset($fields[$index]);
+    }
+  }
+
+  $links = array_merge($links, apachesolr_search_nested_facet_items($query, $fields, $response->response->numFound, FALSE));
+  if ($links) {
+    $content = theme('apachesolr_currentsearch', $response->response->numFound, $links);
+    return array('subject' => t('Current search'), 'content' => $content);
+  }
+}
+
+
+/**
+ * Alters the function used to theme breadcrumbs
+ * @param string $fieldname
+ *
+ */
+function wcmls_search_apachesolr_theme_breadcrumb_alter(&$fieldname) {
+  if ($fieldname == 'apachesolr_breadcrumb_fs_cck_dr_prop_price') {
+    $fieldname = 'apachesolr_breadcrumb_fs_dr_prop_price';
+  }
+}
+
+/**
+ * Implementation of hook_theme().
+ *
+ * The breadcrumb function assumes that apachesolr_og_gid_key() returns im_og_gid
+ * If that changes, modify the theme name appropriately
+ */
+function wcmls_search_theme() {
+  return array(
+    'apachesolr_breadcrumb_fs_wcmls_dr_l_total_sqft' => array('arguments' => array('query' => NULL)),
+    'apachesolr_breadcrumb_fs_wcmls_idx_bedrooms' => array('arguments' => array('query' => NULL)),
+    'apachesolr_breadcrumb_fs_wcmls_idx_bathrooms' => array('arguments' => array('query' => NULL)),
+    'apachesolr_breadcrumb_fs_dr_prop_price' => array('arguments' => array('query' => NULL)),
+    'apachesolr_breadcrumb_fs_cck_dr_prop_price' => array('arguments' => array('query' => NULL)),
+  );
+}
+
+/**
+ * Theme the breadcrumb - Square Feet.
+ */
+function theme_apachesolr_breadcrumb_fs_wcmls_dr_l_total_sqft($field) {
+
+  $query = $field['#value'];
+
+  $facets = wcmls_search_apachesolr_facets();
+  $facet = $facets['fs_wcmls_dr_l_total_sqft'];
+
+  $ranges = array();
+  //re-key the ranges array
+  foreach ($facet['ranged_query'] as $key => $value) {
+    $parts = explode(':', $value);
+    $ranges[$parts[1]] =$key;
+  }
+
+  return $ranges[$query] . ' Finished Sq Ft';
+}
+/**
+ * Theme the breadcrumb - Bedrooms.
+ */
+function theme_apachesolr_breadcrumb_fs_wcmls_idx_bedrooms($field) {
+
+  $query = $field['#value'];
+
+  $facets = wcmls_search_apachesolr_facets();
+  $facet = $facets['fs_wcmls_idx_bedrooms'];
+
+  $ranges = array();
+  //re-key the ranges array
+  foreach ($facet['ranged_query'] as $key => $value) {
+    $parts = explode(':', $value);
+    $ranges[$parts[1]] =$key;
+  }
+
+  return $ranges[$query] . ' Bedrooms';
+}
+/**
+ * Theme the breadcrumb - Bathrooms.
+ */
+function theme_apachesolr_breadcrumb_fs_wcmls_idx_bathrooms($field) {
+
+  $query = $field['#value'];
+
+  $facets = wcmls_search_apachesolr_facets();
+  $facet = $facets['fs_wcmls_idx_bathrooms'];
+
+  $ranges = array();
+  //re-key the ranges array
+  foreach ($facet['ranged_query'] as $key => $value) {
+    $parts = explode(':', $value);
+    $ranges[$parts[1]] =$key;
+  }
+
+  return $ranges[$query] . ' Bathrooms';
+}
+
+function theme_apachesolr_breadcrumb_fs_dr_prop_price($query) {
+  $query_value = $query['#value'];
+  $start_price = number_format($query['#start'], 0);
+  $end_price = number_format($query['#end'], 0);
+  $breadcrumb = "\${$start_price} to \${$end_price}";
+  return $breadcrumb;
+}
+
+function theme_apachesolr_breadcrumb_fs_cck_dr_prop_price($query) {
+  $query_value = $query['#value'];
+  $start_price = number_format($query['#start'], 0);
+  $end_price = number_format($query['#end'], 0);
+  $breadcrumb = "\${$start_price} to \${$end_price}";
+  return $breadcrumb;
+}

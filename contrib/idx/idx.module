@@ -1,0 +1,226 @@
+<?php
+
+
+/**
+ * Implementation of hook_block().
+ */
+function idx_block($op = 'list', $delta = 0, $edit = array()) {
+
+  switch ($op) {
+    case 'list':
+      $blocks = array();
+      if (module_exists('gmap')) {
+        $blocks['listing_block_map'] = array(
+          'info' => 'Listing Map Block',
+          'cache' => BLOCK_NO_CACHE, );
+      }
+      $blocks['listing_action_block'] = array(
+        'info' => 'Listing Action Buttons',
+        'cache' => BLOCK_CACHE_PER_PAGE, );
+      return $blocks;
+    case 'view':
+      $block = array();
+      if (arg(0) == 'node' && is_numeric(arg(1)) && !arg(2)) {
+        $nid = arg(1);
+        if (!isset($built_nodes[$nid])) {
+          // Build the node in the cck_blocks mode. This is based on node_build_content().
+          $node = node_load($nid);
+
+          // Remove the delimiter (if any) that separates the teaser from the body.
+          $node->body = isset($node->body) ? str_replace('<!--break-->', '', $node->body) : '';
+
+          // The 'view' hook can be implemented to overwrite the default function
+          // to display nodes.
+          if (node_hook($node, 'view')) {
+            $node = node_invoke($node, 'view', $teaser, $page);
+          }
+          else {
+            $node = node_prepare($node, $teaser);
+          }
+
+          // Allow modules to make their own additions to the node.
+          node_invoke_nodeapi($node, 'view', $teaser, $page);
+          $built_nodes[$nid] = $node;
+        }
+
+        if (isset($built_nodes[$nid]) && $built_nodes[$nid]->type == 'drealty_property') {
+          // evaluate tokens, if token module is installed
+
+          //make sure the bing map js is loaded
+          switch ($delta) {
+            case 'listing_block_map':
+              $block['content'] = theme('idx_listing_map_block', $built_nodes[$nid]);
+              return $block;
+            case 'listing_action_block':
+              $block['content'] = theme('idx_listing_block', $built_nodes[$nid]);
+              return $block;
+
+          }
+        }
+        else {
+        }
+      }
+      else {
+        // non-node blocks
+        
+      }
+
+  }
+}
+
+function idx_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
+  switch($op) {
+    case 'presave':
+      idx_populate_bathrooms(&$node);
+      idx_populate_bedrooms(&$node);
+      break;
+  }
+}
+
+
+function idx_populate_bathrooms(&$node) {
+  if (isset($node->dr_l_bathrooms)) {
+    $bathrooms = isset($node->dr_l_bathrooms[0]['value'])?$node->dr_l_bathrooms[0]['value']:$node->dr_l_bathrooms;
+    switch($bathrooms) {
+      case 'One':
+        $node->idx_bathrooms[0]['value'] = 1;
+        break;
+      case 'Two':
+        $node->idx_bathrooms[0]['value'] = 2;
+        break;
+      case 'Three':
+        $node->idx_bathrooms[0]['value'] = 3;
+        break;
+      case 'Four or More':
+        $node->idx_bathrooms[0]['value'] = 4;
+        break;
+    }
+  }
+}
+
+function idx_populate_bedrooms(&$node) {
+  if (isset($node->dr_l_bedrooms)) {
+    $bedrooms = isset($node->dr_l_bedrooms[0]['value'])?$node->dr_l_bedrooms[0]['value']:$node->dr_l_bedrooms;
+    switch($bedrooms) {
+      case 'One':
+        $node->idx_bedrooms[0]['value'] = 1;
+        break;
+      case 'Two':
+        $node->idx_bedrooms[0]['value'] = 2;
+        break;
+      case 'Three':
+        $node->idx_bedrooms[0]['value'] = 3;
+        break;
+      case 'Four':
+        $node->idx_bedrooms[0]['value'] = 4;
+        break;
+      case 'Five':
+        $node->idx_bedrooms[0]['value'] = 5;
+        break;
+      case 'Six or More':
+        $node->idx_bedrooms[0]['value'] = 6;
+        break;
+    }
+  }
+}
+
+/*
+ * Implementation of hook_theme().
+*/
+
+function idx_theme() {
+  $themes = array();
+
+  $themes['idx_listing_map_block'] = array(
+    'template' => 'idx_listing_map_block',
+    'arguments' => array('node' => NULL),
+  );
+  $themes['idx_listing_block'] = array(
+    'template' => 'idx_listing_block',
+    'arguments' => array('node' => NULL),
+  );
+  return $themes;
+}
+
+/**
+ * Modify/hide a message from user.
+ *  This is used to supress various messages produced by modules that the user shouldn't see.
+ *  The main purpose is to hide imagecache's messages about creating folders.
+ *
+ * @param string $message
+ */
+function idx_modify_message(&$message) {
+//Add here whatever you need to recognize and modify this message:
+
+  global $user;
+
+  // Hide these messages:
+  $message = preg_replace('/No posts in this group\./', '', $message);
+  $message = preg_replace('/Fetching data from GeoNames failed.*/', '', $message);
+  if(preg_match('/The directory\.*/', $message)) {
+    $message = '';
+  }
+  //If the administrator has removed _himself_, the message should instead of
+  //"Username_ABC is no longer a group administrator." say:
+  //"You are no longer an administrator for this group. To regain administrator privileges, please contact an administrator for this group."
+  $current_name = $user->name;
+  preg_match('/(.*) is no longer a\.*/', $message, $matches_A);
+  //check if the current user is the same as the user in the message:
+  if ($matches_A[1]) preg_match("/$current_name/", $matches_A[1], $matches_B);
+  if ($matches_B[0]) $message = "You are no longer an administrator for this group. To regain administrator privileges, please contact an administrator for this group.";
+}
+
+/*
+ * Implementation of hook_flag_default_flags().
+ *  Add some flags: Save Property etc.
+*/
+function idx_flag_default_flags() {
+  $flags = array();
+  $flags[] = array (
+    'content_type' => 'node',
+    'name' => 'save_property',
+    'title' => 'Save Property',
+    'global' => false,
+    'types' =>
+    array (
+      0 => 'drealty_property',
+    ),
+    'flag_short' => 'Save',
+    'flag_long' => 'Save this property to your favorites.',
+    'flag_message' => 'Added to your favorites.',
+    'unflag_short' => 'Remove',
+    'unflag_long' => 'Remove this property from your favorites.',
+    'unflag_message' => 'Removed this property from your favorites.',
+    'unflag_denied_text' => '',
+    'link_type' => 'toggle',
+    'roles' =>
+    array (
+      'flag' =>
+      array (
+        0 => '2',
+      ),
+      'unflag' =>
+      array (
+        0 => '2',
+      ),
+    ),
+    'show_on_page' => true,
+    'show_on_teaser' => false,
+    'show_on_form' => false,
+    'access_author' => '',
+    'i18n' => 0,
+    'status' => false,
+    'locked' =>
+    array (
+      'name' => 'name',
+      'types' => 'types',
+      'roles' => 'roles',
+      'global' => 'global',
+      'unflag_denied_text' => 'unflag_denied_text',
+      'access_author' => 'access_author',
+    ),
+    'module' => 'idx',
+    'api_version' => 2,
+  );
+  return $flags;
+}

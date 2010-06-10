@@ -1,0 +1,14 @@
+name = dRealty IDX
+description = "MLS Listing Data Import and Support"
+package = dRealty IDX
+dependencies[] = content
+dependencies[] = fieldgroup
+dependencies[] = text
+dependencies[] = number
+dependencies[] = optionwidgets
+dependencies[] = date
+dependencies[] = imagecache
+dependencies[] = imagefield
+core = 6.x
+version = 6.x-1.0-beta7
+php = 5.2

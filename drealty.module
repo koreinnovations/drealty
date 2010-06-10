@@ -1,0 +1,1298 @@
+<?php
+// $Id$
+
+/**
+ * @file drealty.module
+ */
+
+
+/*
+ * Implements hook_node_info().
+*/
+function drealty_node_info() {
+  return array(
+    'drealty_property' => array(
+      'name' => t('REP Property'),
+      'module' => 'drealty',
+      'description' => t('A node type for imported MLS Properties, managed by the dRealty IDX module.'),
+      'locked' => TRUE,
+    ),
+    'drealty_agent' => array(
+      'name' => t('REP Agent'),
+      'module' => 'drealty',
+      'description' => t('A node type for imported MLS Agents, managed by the dRealty IDX module.'),
+      'locked' => TRUE
+    ),
+    'drealty_open_house' => array(
+      'name' => t('REP Open House'),
+      'module' => 'drealty',
+      'description' => t('A node type for imported MLS Open Houses, managed by the dRealty IDX module.'),
+      'locked' => TRUE,
+    ),
+    'drealty_office' => array(
+      'name' => ('REP Office'),
+      'module' => 'drealty',
+      'description' => t('A node type for imported MLS Offices, managed by the dRealty IDX Module.'),
+      'locked' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_access().
+ *
+ */
+function drealty_access($op, $node, $account) {
+  if ($op == 'update') {
+    if (in_array('agent', $account->roles)) {
+
+      $property_agent_field_name = variable_get('drealty_property_agent_fieldname', FALSE);
+      if (!$property_agent_field_name) {
+        $mappings = drealty_resource_mappings($node->drealty_property_conid);
+        $resource = $mappings['drealty_property']['resource'];
+        $property_agent_field_name = db_result(db_query("SELECT cck_field_name FROM {drealty_fields} WHERE resource = '%s' AND correlation = 'agent_id'", $resource));
+        variable_set('drealty_property_agent_fieldname', $property_agent_field_name);
+      }
+      $field_name = "dr_{$property_agent_field_name}";
+      $agentid = drealty_get_agentid_from_uid($node->drealty_property_conid, $account->uid);
+      if ($agentid == $node->{$field_name}[0]['value']) {
+        return TRUE;
+      }
+      else {
+        return NULL;
+      }
+    }
+  }
+}
+/**
+ *
+ * Retrieves an Agent ID associated with a UID
+ * @param int $conid
+ * @param int $uid
+ * @return int
+ */
+function drealty_get_agentid_from_uid($conid, $uid) {
+  $active_agent_fieldname = variable_get('drealty_active_agent_fieldname', FALSE);
+  if (!$active_agent_fieldname) {
+    $mappings = drealty_resource_mappings($conid);
+    $resource = $mappings['drealty_agent']['resource'];
+    $active_agent_fieldname = db_result(db_query("SELECT cck_field_name FROM {drealty_fields} WHERE resource = '%s' AND correlation = 'agent_id'", $resource));
+    variable_set('drealty_active_agent_fieldname', $active_agent_fieldname);
+  }
+  return db_result(db_query("SELECT b.dr_{$active_agent_fieldname}_value FROM {content_type_agent} as a, {content_type_drealty_agent} as b WHERE a.field_agent_mls_id_nid = b.nid AND a.field_agent_user_uid = %d", $uid));
+}
+
+/**
+ * Implements hook_form().
+ */
+function drealty_form(&$node) {
+  $type = node_get_types('type', $node);
+
+  $form = array();
+
+  if ($type->has_title) {
+    $form['title'] = array(
+      '#type' => 'textfield',
+      '#title' => check_plain($type->title_label),
+      '#required' => TRUE,
+      '#default_value' => $node->title,
+      '#weight' => -5
+    );
+  }
+
+  if ($type->has_body) {
+    $form['body_field'] = node_body_field($node, $type->body_label, $type->min_word_count);
+  }
+  return $form;
+}
+
+/*
+ * Implements hook_help().
+*/
+function drealty_help($path='', $arg=NULL) {
+  $output = '';
+  switch ($path) {
+    case 'admin/help#drealty':
+    case 'admin/settings/drealty':
+      $output = '<p>' . t('Administration and settings for MLS Listings') . '</p>';
+      break;
+  }
+  return $output;
+}
+
+/**
+ * Implements hook_perm().
+ */
+function drealty_perm() {
+  return array(
+    'acess drealty content',
+    'admin drealty configuration',
+    'enhance drealty listings',
+    'import drealty configuration',
+  );
+}
+/*
+ * Implements hook_menu().
+*/
+function drealty_menu() {
+  $items = array();
+  $items['admin/drealty'] = array(
+    'title' => 'dRrealty',
+    'description' => t('Configuration for drealty'),
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drealty_base_admin_menu',
+    'file' => 'drealty.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['admin/drealty/%/%/%/%/batch'] = array(
+    'title' => 'Update Data',
+    'page callback' => 'drealty_import_batch',
+    'page arguments' => array(2, 3, 4, 5),
+    'access arguments' => array('admin drealty configuration'),
+    'file' => 'drealty.batch.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/drealty/%/%/%/%/flush'] = array(
+    'title' => 'Update Data',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_flush', 2, 3, 4, 5),
+    'access arguments' => array('admin drealty configuration'),
+    'file' => 'drealty.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/drealty/%/flush/all'] = array(
+    'title' => 'Update Data',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_flush_all', 2),
+    'access arguments' => array('admin drealty configuration'),
+    'file' => 'drealty.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/drealy/%/images/process'] = array(
+    'title' => 'Update Data',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_process_images', 2),
+    'access arguments' => array('admin drealty configuration'),
+    'file' => 'drealty.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/drealty/connection/%/process_images'] = array(
+    'title' => 'dRealty IDX Manual Update',
+    'description' => 'Manually Flush and Update MLS Data from this administration section.',
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_process_images', 3),
+    'file' => 'drealty.admin.inc',
+    'weight' => 1,
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/drealty/connection/manual_update/%'] = array(
+    'title' => 'dRealty IDX Manual Update',
+    'description' => 'Manually Flush and Update MLS Data from this administration section.',
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_manual_update_form', 4),
+    'file' => 'drealty.admin.inc',
+    'weight' => 1,
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/drealty/connection'] = array(
+    'title' => 'dRealty IDX Connections',
+    'description' => 'Setup for RETS Server Connection Information',
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drealty_connection_list_form',
+    //'page arguments' => array('drealty_connection_list_form'),
+    'file' => 'drealty.admin.inc',
+    'weight' => 0,
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['admin/drealty/connection/edit'] = array(
+    'title' => 'Edit Connection',
+    'description' => t('Edit a RETS Server Connection.'),
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_connection_setup_form'),
+    'file' => 'drealty.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/drealty/connection/add'] = array(
+    'title' => 'Add Connection',
+    'description' => 'Add a RETS Server Connection.',
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_connection_setup_form'),
+    'file' => 'drealty.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/drealty/connection/delete'] = array(
+    'title' => 'Edit Connection',
+    'description' => 'Delete a RETS Server Connection.',
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_connection_delete_confirm'),
+    'file' => 'drealty.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/drealty/connection/activate'] = array(
+    'title' => 'Activate Connection',
+    'description' => 'Delete a RETS Server Connection.',
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_activate_connection'),
+    'file' => 'drealty.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/drealty/connection/deactivate/%'] = array(
+    'title' => 'Deactivate Connection',
+    'description' => 'Delete a RETS Server Connection.',
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drealty_deactivate_connection',
+    'page arguments' => array(4),
+    'file' => 'drealty.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/drealty/connection/export'] = array(
+    'title' => 'Export Connection',
+    'description' => 'Export a RETS Server Connection.',
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_export_connection_form'),
+    'file' => 'drealty.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/drealty/connection/import'] = array(
+    'title' => 'Import Connection',
+    'description' => 'Import a RETS Server Connection.',
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_import_connection_form'),
+    'file' => 'drealty.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/drealty/connection/resource/%/%'] = array(
+    'title arguments' => array(5, 4),
+    'title callback' => 'drealty_resource_title_callback',
+    'description' => "Configure a RETS Server Connection's Resources.",
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_configure_property', 4, 5),
+    'file' => 'drealty.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/drealty/connection/resource/%/%/configure'] = array(
+    'title arguments' => array(5, 4),
+    'title callback' => 'drealty_resource_title_callback',
+    'description' => "Configure a RETS Server Connection's Resources.",
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_configure_property', 4, 5),
+    'file' => 'drealty.admin.inc',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  $items['admin/drealty/connection/resource/%/%/fields'] = array(
+    'title' => 'Field Selection',
+    'description' => "Configure a RETS Server Connection's Resources.",
+    'weight' => 0,
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_configure_property_fields', 4, 5),
+    'file' => 'drealty.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/drealty/connection/resource/%/%/correlation'] = array(
+    'title' => 'Field Correlation',
+    'description' => "Configure a RETS Server Connection's Resources.",
+    'weight' => 1,
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_configure_property_correlate', 4, 5),
+    'file' => 'drealty.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['admin/drealty/connection/resource/%/%/limits'] = array(
+    'title' => 'Resource Limits',
+    'description' => "Configure a RETS Server Connection's Resources.",
+    'weight' => 1,
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_configure_property_limits', 4, 5),
+    'file' => 'drealty.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['admin/drealty/system'] = array(
+    'title' => 'IDX Setup',
+    'description' => 'Setup Various IDX System Settings.',
+    'access arguments' => array('admin drealty configuration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_configure_system'),
+    'file' => 'drealty.system.inc',
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => 2,
+  );
+  if (module_exists('apachesolr_search')) {
+    $items['property/search'] = array(
+      'title' => 'Search Properties',
+      'description' => 'Search Some Listings',
+      'access arguments' => array('access content'),
+      'page callback' => 'drealty_perform_search',
+      'type' => MENU_NORMAL_ITEM,
+    );
+
+  }
+  // set these to show as a tab in the Admin Module.
+  $items['admin/drealty']['options']['admin'] = TRUE;
+
+  return $items;
+}
+
+
+
+/**
+ * Implements hook_title_callback().
+ *
+ * @param string $resource_type
+ * @param int $conid
+ * @return none
+ */
+function drealty_resource_title_callback($resource_type, $conid) {
+  $connections = drealty_connections_fetch();
+  $connection_name = $connections[$conid]['name'];
+  return t('@connection - Configure @resource Resources', array('@connection' => $connection_name, '@resource' => ucwords(str_replace("_", " ", $resource_type))));
+}
+
+function drealty_connections_fetch() {
+  $cached = cache_get('drealty_connections', 'cache');
+  if ($cached === 0) {
+    $result = db_query('SELECT * FROM {drealty_connections}');
+    $connections = array();
+    while ($conn = db_fetch_array($result)) {
+      $connections[$conn['conid']] = $conn;
+    }
+    cache_set('drealty_connections', $connections);
+  }
+  else {
+    $connections = $cached->data;
+  }
+
+  return $connections;
+}
+/**
+ * Connect to RETS Server with phRETS
+ *
+ * @param phRETS $phRets
+ * @param int $conid
+ * @return TRUE if connection is succesful, FALSE otherwise.
+ */
+function drealty_rets_connect(&$phRets, $conid = NULL) {
+
+  $connections = drealty_connections_fetch();
+  $default_connection = NULL;
+  foreach ($connections as $connection) {
+    if ($connection['default']) {
+      $default_connection = $connection;
+    }
+  }
+
+  $active_connection = isset($conid)?$connections[$conid]:$default_connection;
+
+  if (!isset($active_connection)) {
+    drupal_set_message('There are no active connections setup.', 'error');
+    return FALSE;
+  }
+
+  // check to see if the connection has been setup
+  $login_url = $active_connection['login_url'];
+  $username = $active_connection['username'];
+  $password = $active_connection['password'];
+
+  $foceBasicAuth =  $active_connection['force_basic_auth'];
+
+
+  if (isset($active_connection)) {
+
+    $error = FALSE;
+    // force basic authentication
+    if ($active_connection['force_basic_auth']) {
+      $phRets->SetParam('force_basic_authentication', TRUE);
+    }
+    // enable compression
+    if ($active_connection['use_compression']) {
+      $phRets->SetParam('compression_enabled', TRUE);
+    }
+
+    // add some headers
+    $phRets->AddHeader("User-Agent", $active_connection['ua_string']);
+    $phRets->AddHeader("RETS-Version", "RETS/". $active_connection['version']);
+
+
+    if (!$phRets->Connect($login_url, $username, $password)) {
+      if ($phRets->Error()) {
+        $error_info = $phRets->Error();
+        $error = TRUE;
+        $error_text = $error_info['type'] . ' '. $error_info['code'] . ' '. $error_info['text'];
+      }
+      watchdog('drealty', 'Connection Failure! (connection name: @con_name) (error: @error)', array('@con_name' => $active_connection['name'], '@error' => $error_text), WATCHDOG_ERROR);
+      drupal_set_message('There was a problem connecting to the RETS server. <strong>[ Error: ' . $error_info['type'] . ' '. $error_info['code'] . ' '. $error_info['text'] . '] .</strong> Please check the' . l('Connection Settings', 'admin/drealty/connection') . ' and try again. If the error persists, please contact an Administrator.', 'error');
+      return FALSE;
+    }
+
+    return TRUE;
+  }
+  else {
+    drupal_set_message('There are no active connections setup.', 'error');
+    return FALSE;
+  }
+
+}
+
+
+/**
+ * Disconnect from RETS Server
+ *
+ * @param phRETS $phRets
+ */
+function drealty_disconnect(&$phRets) {
+  $phRets->Disconnect();
+}
+
+/**
+ * Retrieve resource mappings for a given connnection
+ *
+ * @param int $conid
+ *  The connection you want to retrieve mappings for
+ * @return array
+ */
+function drealty_resource_mappings($conid) {
+  $cached = cache_get("drealty_mappings_$conid", 'cache');
+  if ($cached === 0) {
+    $result = db_query("SELECT * FROM {drealty_resource_mappings} WHERE conid = %d", $conid);
+    $mappings = array();
+    while ($mapping = db_fetch_array($result)) {
+      $mappings[$mapping['node_type']] = $mapping;
+    }
+    if (count($mappings)) {
+      cache_set("drealty_mappings_$conid", $mappings, 'cache');
+    }
+  }
+  else {
+    $mappings = $cached->data;
+  }
+  return $mappings;
+}
+
+/**
+ * Retreives all Look Up values for the given Resource and stores them in the lookup table.
+ *
+ * @param int $conid
+ *  The Connection ID.
+ * @param string $resource
+ *  The RETS Resource SystemName
+ */
+function drealty_populate_all_lookups($conid, $resource) {
+  // delete all the existing lookups
+  db_query("DELETE FROM {drealty_lookups} WHERE conid = %d AND resourceName = '%s'", $conid, $resource);
+
+  //grab the new ones
+  include_once "phRets/phRets.php";
+  $phRets = new phRets();
+
+  if (drealty_rets_connect($phRets, $conid)) {
+
+    $lookups = $phRets->GetAllLookupValues($resource);
+    if (!empty($lookups) && is_array($lookups)) {
+      foreach ($lookups as $lookup) {
+        foreach ($lookup['Values'] as $value) {
+          $item = array(
+            'conid' => $conid,
+            'resourceName' => $resource,
+            'lookupName' => $lookup['Lookup'],
+            'value' => $value['Value'],
+            'shortValue' => $value['ShortValue'],
+            'longValue' => $value['LongValue'],
+          );
+
+          drupal_write_record('drealty_lookups', $item, array());
+        }
+        watchdog('drealty', t('Inserted @name Lookup values.'), array('@name' => $lookup['Lookup']), WATCHDOG_INFO);
+      }
+    }
+
+
+  }
+}
+
+
+/**
+ * Retrieve an array() of lookup values for the given parameters.
+ *
+ * @param int $conid
+ * The Connection ID.
+ * @param string $resource
+ * The RETS Resource SystemName.
+ * @param string $lookup_name
+ * The LookUp data set to retrieve
+ * @param bool $update
+ * TRUE to flush the systems snapshot of the lookup values and retrieve them from the RETS Server
+ * @return array()
+ *
+ */
+function drealty_lookups_fetch($conid, $resource, $lookup_name, $class = NULL, $update = FALSE) {
+  $cached = cache_get("drealty_lookup_{$resource}_{$class}_{$lookup_name}_{$conid}", 'cache');
+  if ($cached === 0) {
+    $result = db_query("SELECT * FROM {drealty_lookups} WHERE conid = %d AND resourceName = '%s' AND lookupName = '%s'", $conid, $resource, $lookup_name);
+    $lookups = array();
+    while ($lookup = db_fetch_array($result)) {
+      $lookups[$lookup['value']] = $lookup;
+    }
+    if (count($lookups) && !$update) {
+      cache_set("drealty_lookup_{$resource}_{$lookup_name}_{$conid}", $lookups, 'cache');
+    }
+  }
+  else {
+    $lookups = $cached->data;
+  }
+
+  include_once "phRets/phRets.php";
+  $phRets = new phRets();
+
+  if ((!count($lookups) || $update) && drealty_rets_connect($phRets, $conid)) {
+    $results = $phRets->GetLookupValues($resource, $lookup_name);
+    $lookups = array();
+    foreach ($results as $lookup) {
+      $lookups[$lookup['Value']] = array(
+        'conid' => $conid,
+        'resourceName' => $resource,
+        'lookupName' => $lookup_name,
+        'value' => $lookup['Value'],
+        'shortValue' => $lookup['ShortValue'],
+        'longValue' => $lookup['LongValue'],
+      );
+    }
+    drealty_disconnect($phRets);
+    //db_query("DELETE FROM {drealty_lookups}");
+
+    foreach ($lookups as &$lookup) {
+      drupal_write_record('drealty_lookups', $lookup, array());
+    }
+    //$lookups = $ret_lookups;
+    cache_set("drealty_lookup_{$resource}_{$class}_{$lookup_name}_{$conid}", $lookups, 'cache');
+
+  }
+  return $lookups;
+}
+/**
+ * Returns active RETS fields.
+ *
+ * @return
+ *   The active field data, keyed by system name.
+ */
+function drealty_fields_active_fetch($conid, $resource) {
+  $cached = cache_get("drealty_fields_active_{$resource}_{$conid}");
+  if ($cached === 0) {
+    $result = db_query("SELECT * FROM {drealty_fields} WHERE conid = %d AND resource = '%s' AND display = 1", $conid, $resource);
+    $fields = array();
+    while ($field = db_fetch_array($result)) {
+      $fields[$field['systemName']] = $field;
+    }
+    cache_set("drealty_fields_active_{$resource}_{$conid}", $fields);
+    return $fields;
+  }
+  else {
+    return $cached->data;
+  }
+}
+/**
+ * Returns active RETS fields that should be indexed by Apache Solr.
+ *
+ * @return
+ *   The cck fields that solr should index, keyed by cck field name.
+ */
+function drealty_fields_solr_index_fetch() {
+  $cached = cache_get("drealty_fields_solr_index");
+  if ($cached === 0) {
+    $result = db_query("SELECT * FROM {drealty_fields} WHERE search_indexed = 1 AND display = 1");
+    $fields = array();
+    while ($field = db_fetch_array($result)) {
+      $fields[$field['cck_field_name']] = $field;
+    }
+    cache_set("drealty_fields_solr_index", $fields);
+    return $fields;
+  }
+  else {
+    return $cached->data;
+  }
+}
+
+/**
+ * Returns active RETS fields that should be returned by an Apache Solr result.
+ *
+ * @return
+ *   The cck fields that solr should return in a result set, keyed by cck field name.
+ */
+function drealty_fields_solr_result_fetch() {
+  $cached = cache_get("drealty_fields_solr_result");
+  if ($cached === 0) {
+    $result = db_query("SELECT * FROM {drealty_fields} WHERE search_returned = 1 AND display = 1");
+    $fields = array();
+    while ($field = db_fetch_array($result)) {
+      $fields[$field['cck_field_name']] = $field;
+    }
+    cache_set("drealty_fields_solr_result", $fields);
+    return $fields;
+  }
+  else {
+    return $cached->data;
+  }
+}
+/**
+ * Retrive all MLS Fields for the given connection and resource
+ *
+ * @param int $conid
+ * @param string $resource
+ * @param bool $update
+ * @param bool $flush
+ * @return array
+ */
+function drealty_fields_fetch($conid, $resource, $update = FALSE, $flush = FALSE) {
+  $cached = cache_get("drealty_fields_{$resource}_{$conid}", 'cache');
+  if ($cached === 0) {
+    $result = db_query("SELECT * FROM {drealty_fields} WHERE conid = %d AND resource = '%s'", $conid, $resource);
+    $fields = array();
+    while ($field = db_fetch_array($result)) {
+      $fields[$field['systemName']] = $field;
+    }
+    if (count($fields) && !$update) {
+      cache_set("drealty_fields_{$resource}_{$conid}", $fields, 'cache');
+    }
+  }
+  else {
+    $fields = $cached->data;
+  }
+
+  include_once "phRets/phRets.php";
+  $phRets = new phRets();
+
+  if ((!count($fields) || $update) && drealty_rets_connect($phRets, $conid)) {
+    $classes = drealty_classes_fetch($conid, $resource);
+    $rets_fields = array();
+
+    include_once "phRets/phRets.php";
+    $phRets = new phRets();
+    $rets_classes = array();
+    drealty_rets_connect($phRets, $conid);
+
+    foreach ($classes as $class) {
+
+
+      $results = $phRets->GetMetadata($resource, $class['systemName']);
+      foreach ($results as $field) {
+        if (!isset($rets_fields[$field['SystemName']])) {
+          $rets_fields[$field['SystemName']] = array(
+            'conid' => $conid,
+            'resource' => $resource,
+            'systemName' => $field['SystemName'],
+            'standardName' => $field['StandardName'],
+            'longName' => $field['LongName'],
+            'dataType' => $field['DataType'],
+            'max_length' => $field['MaximumLength'],
+            'field_precision' => $field['Precision'] === '' ? 0 : $field['Precision'],
+            'interpretation' => $field['Interpretation'],
+            'classes' => array($class['systemName']),
+            'lastupdate' => strtotime($field['LastUpdate']),
+          );
+          if (!empty($field['LookupName'])) {
+            $rets_fields[$field['SystemName']]['lookupName'] = array($class['systemName'] => $field['LookupName']);
+          }
+        }
+        else {
+          $rets_fields[$field['SystemName']]['classes'][] = $class['systemName'];
+          // check to see if the lookup table is different
+          if (!empty($field['LookupName']) && !isset($rets_fields[$field['SystemName']]['lookupName'][$class['systemName']])) {
+            $rets_fields[$field['SystemName']]['lookupName'][$class['systemName']] = $field['LookupName'];
+          }
+        }
+      }
+    }
+    drealty_disconnect($phRets);
+    if ($flush) {
+      db_query("DELETE FROM {drealty_fields} WHERE conid = %d AND resource = '%s'", $conid, $resource);
+    }
+
+    foreach ($rets_fields as &$field) {
+      $field['classes'] = implode(',', $field['classes']);
+      if (!empty($field['lookupName'])) {
+        $field['lookupName'] = serialize($field['lookupName']);
+      }
+      if ($update) {
+        if (isset($fields[$field['systemName']]['fid'])) {
+          $field['fid'] = $fields[$field['systemName']]['fid'];
+          drupal_write_record('drealty_fields', $field, array('fid'));
+        }
+        else {
+          drupal_write_record('drealty_fields', $field, array());
+        }
+      }
+      else {
+        drupal_write_record('drealty_fields', $field, array());
+      }
+    }
+    $fields = $rets_fields;
+    cache_set("drealty_fields_{$resource}_{$conid}", $fields, 'cache');
+  }
+  return $fields;
+}
+
+/**
+ * Retrive all MLS Class Definitions for the connection and resource.
+ * @param int $conid
+ * @param string $resource
+ * @param bool $update
+ *  Setting to TRUE will flush all classes and force an update from the RETS server
+ * @return array
+ */
+function drealty_classes_fetch($conid, $resource, $update = FALSE) {
+  $cached = cache_get("drealty_classes_{$resource}_{$conid}", 'cache');
+  $resources = drealty_resources_fetch($conid);
+
+  if ($cached === 0) {
+    $result = db_query("SELECT * FROM {drealty_classes} WHERE conid = %d AND rid = %d", $conid, $resources[$resource]['rid']);
+    $classes = array();
+    while ($class = db_fetch_array($result)) {
+      $classes[$class['systemName']] = $class;
+    }
+    if (count($classes) && !$update) {
+      cache_set("drealty_classes_{$resource}_{$conid}", $classes, 'cache');
+    }
+  }
+  else {
+    $classes = $cached->data;
+  }
+
+  include_once "phRets/phRets.php";
+  $phRets = new phRets();
+
+  if ((!count($classes) || $update) && drealty_rets_connect($phRets, $conid)) {
+
+    $rets_classes = array();
+
+    if (function_exists('date_default_timezone_set')) {
+      date_default_timezone_set('UTC');
+    }
+
+    $results = $phRets->GetMetadataClasses($resource);
+    foreach ($results as $class) {
+      $rets_classes[$class['ClassName']] = array(
+        'cid' => isset($classes[$class['ClassName']]['cid'])?$classes[$class['ClassName']]['cid']:NULL,
+        'systemName' => $class['ClassName'],
+        'conid' => $conid,
+        'standardName' => $class['StandardName'],
+        'visibleName' => $class['VisibleName'],
+        'description' => $class['Description'],
+        'rid' => $resources[$resource]['rid'],
+        'lastupdate' => NULL,
+        'lifetime' => isset($classes[$class['systemName']]['lifetime'])?$classes[$class['ClassName']]['lifetime']:28800,
+        'enabled' => isset($classes[$class['systemName']]['enabled'])?$classes[$class['ClassName']]['enabled']:TRUE,
+      );
+    }
+    drealty_disconnect($phRets);
+
+
+    foreach ($rets_classes as &$class) {
+      if (!empty($class['cid'])) {
+        drupal_write_record('drealty_classes', $class, array('cid'));
+      }
+      else {
+        unset($class['cid']);
+        drupal_write_record('drealty_classes', $class, array());
+      }
+    }
+    $classes = $rets_classes;
+    cache_set("drealty_classes_{$resource}_{$conid}", $classes, 'cache');
+  }
+  return $classes;
+}
+/**
+ * Retrieve the current resources for a given connection.
+ *
+ * This will retrieve the cached resource list for a given connection. If
+ * no resources are found in the cache it will attempt to load them from the db,
+ * finding none there it will retrieve them from the RETS Server.
+ *
+ * @param int $conid
+ *  Connection ID. The connection to retrieve the resources for.
+ * @param bool $update
+ *  Passing TRUE will cause the resources to be refreshed from the RETS server.
+ * @return array()
+ *  Returns and array() of resources.
+ *
+ */
+function drealty_resources_fetch($conid, $update = FALSE) {
+  $cached = cache_get("drealty_resources_$conid", 'cache');
+  if ($cached === 0) {
+    $result = db_query("SELECT * FROM {drealty_resources} WHERE conid = %d", $conid);
+    $resources = array();
+    while ($resource = db_fetch_array($result)) {
+      $resources[$resource['systemName']] = $resource;
+    }
+    if (count($resources) && !update) {
+      cache_set("drealty_resources_$conid", $resources, 'cache');
+    }
+  }
+  else {
+    $resources = $cached->data;
+  }
+
+
+  include_once "phRets/phRets.php";
+  $phRets = new phRets();
+  if ((!count($resources) || $update) && drealty_rets_connect($phRets, $conid)) {
+    $rets_resources = array();
+    drealty_rets_connect($phRets, $conid);
+    $results = $phRets->GetMetadataResources();
+    if (function_exists('date_default_timezone_set')) {
+      date_default_timezone_set('UTC');
+    }
+    foreach ($results as $resource) {
+      $rets_resources[$resource['ResourceID']] = array(
+        'rid' => isset($resources[$resource['SystemName']]['rid'])?$resources[$resource['SystemName']]['rid']:NULL,
+        'conid' => $conid,
+        'systemName' => $resource['ResourceID'],
+        'description' => $resource['Description'],
+        'lastupdate' => strtotime($resource['ClassDate']),
+        'keyfield' => $resource['KeyField'],
+      );
+    }
+    drealty_disconnect($phRets);
+    foreach ($rets_resources as &$resource) {
+      if (!empty($resource['rid'])) {
+        drupal_write_record('drealty_resources', $resource, array('rid'));
+      }
+      else {
+        unset($resource['rid']);
+        drupal_write_record('drealty_resources', $resource, array());
+      }
+    }
+    $resources = $rets_resources;
+    cache_set("drealty_resources_$conid", $resources, 'cache');
+  }
+  return $resources;
+}
+
+
+/**
+ * Implements hook_apachesolr_modify_query().
+ *
+ */
+function drealty_apachesolr_modify_query(&$query, &$params, $caller) {
+
+  if ($caller == 'drealty' || $caller == 'drealty_map') {
+    module_load_include('inc', 'content', 'includes/content.crud');
+
+    $supported = drealty_supported_types();
+    $callbacks = drealty_supported_types(TRUE);
+
+    $fields = drealty_fields_solr_result_fetch();
+    foreach ($fields as $field_name => &$data) {
+
+      $cck_field = content_field_instance_read(array('field_name' => "dr_{$field_name}"));
+      $callback = $supported[$cck_field[0]['type']][$cck_field[0]['widget']['type']];
+
+      /*
+       * apachesolr_index_key() needs an array in the following format:
+       * array('index_type' => 'integer', 'multiple' => TRUE, 'name' => 'fieldname', )
+       *
+      */
+
+      $field = array(
+        'index_type' => $callbacks[$callback],
+        'multiple' => $cck_field[0]['multipule'],
+        'name' => "cck_" . $cck_field[0]['field_name'],
+      );
+
+      $solr_key_name = apachesolr_index_key($field);
+      $params['fl'] .= ",$solr_key_name";
+      if ($caller == 'drealty_map') {
+        $params['rows'] = 1000;
+      }
+    }
+
+    //add in the image file path and the location lat/lon
+    $params['fl'] .= ",ss_cck_field_image,ss_cck_loc_lat,ss_cck_loc_lon";
+  }
+}
+/**
+ * Implements hook_apachesolr_process_results().
+ */
+function drealty_apachesolr_process_results(&$results) {
+  $blah = $results;
+
+}
+/**
+ * Implements hook_apachesolr_update_index().
+ */
+function drealty_apachesolr_update_index(&$document, $node) {
+
+  if ($node->type == 'drealty_property') {
+    // go ahead and stick the filepath to the first image in the solr index if we're dealing with a property.
+    $document->ss_cck_field_image = $node->dr_images[0]['filepath'];
+    // index the lat and lon
+    $document->ss_cck_loc_lat = $node->drealty_property_loc[0]['latitude'];
+    $document->ss_cck_loc_lon = $node->drealty_property_loc[0]['longitude'];
+  }
+}
+
+/**
+ *  Implements hook_apachesolr_cck_fields_alter().
+ */
+function drealty_apachesolr_cck_fields_alter(&$mappings) {
+
+  module_load_include('inc', 'content', 'includes/content.crud');
+
+  $supported = drealty_supported_types();
+  $callbacks = drealty_supported_types(TRUE);
+
+  $fields = drealty_fields_solr_index_fetch();
+
+  foreach ($fields as $field_name => &$data) {
+    $cck_field = content_field_instance_read(array('field_name' => "dr_{$field_name}"));
+    $callback = $supported[$cck_field[0]['type']][$cck_field[0]['widget']['type']];
+    if ($callback) {
+      $mappings['per-field']["dr_{$field_name}"] = array(
+        'callback' => $callback,
+        'index_type' => $callbacks[$callback],
+        'label' => $data['cck_label'],
+      );
+    }
+  }
+}
+
+/**
+ * Helper function to map cck fields to the Apache Solr index.
+ *
+ * @staticvar array $supported
+ * @staticvar array $callback_types
+ * @param array $callbacks
+ * @return array
+ */
+function drealty_supported_types($callbacks = FALSE) {
+  static $supported = array(
+  // Indexes on number values for number_* fields
+  'number_integer' => array(
+    'optionwidgets_select' => 'drealty_index_number_callback',
+    'optionwidgets_buttons' => 'drealty_index_number_callback',
+    'optionwidgets_onoff' => 'drealty_index_number_callback',
+    'number' => 'drealty_index_number_callback',
+  ),
+  'number_decimal' => array(
+    'optionwidgets_select' => 'drealty_index_number_callback',
+    'optionwidgets_buttons' => 'drealty_index_number_callback',
+    'optionwidgets_onoff' => 'drealty_index_number_callback',
+    'number' => 'drealty_index_number_callback',
+  ),
+  'number_float' => array(
+    'optionwidgets_select' => 'drealty_index_number_callback',
+    'optionwidgets_buttons' => 'drealty_index_number_callback',
+    'optionwidgets_onoff' => 'drealty_index_number_callback',
+    'number' => 'drealty_index_number_callback',
+  ),
+  // Indexes for text fields
+  'text' => array(
+    'optionwidgets_select' => 'drealty_index_text_callback',
+    'optionwidgets_buttons' => 'drealty_index_text_callback',
+    'optionwidgets_onoff' => 'drealty_index_text_callback',
+    'text_textfield' => 'drealty_index_text_callback',
+    'text_textarea' => 'drealty_index_text_area_callback',
+  ),
+  // Filter by filetype for filefield fields
+  'filefield' => array(
+    'filefield_widget' => 'drealty_index_filemime_callback',
+    'imagefield_widget' => 'drealty_index_filemime_callback',
+  ),
+  );
+  static $callback_types = array(
+  'drealty_index_filemime_callback' => 'string',
+  'drealty_index_number_callback' => 'float',
+  'drealty_index_text_callback' => 'string',
+  'drealty_index_text_area_callback' => 'text',
+  );
+  if ($callbacks) {
+    return $callback_types;
+  }
+  else {
+    return $supported;
+  }
+}
+
+/**
+ * A function that gets called during indexing.
+ *
+ * @param object $node
+ *   The current node being indexed
+ * @param string $field_name
+ *   The current field being indexed
+ *
+ * @return array
+ *   An array of arrays. Each inner array is a value, and must be keyed
+ *   'safe' => $value
+ */
+function drealty_index_number_callback($node, $field_name) {
+  $fields = array();
+  foreach ($node->$field_name as &$value) {
+    $fields[] = array('value' => (float)$value['value']);
+  }
+  return $fields;
+}
+
+/**
+ * @see apachesolr_cck_index_number_callback()
+ */
+
+function drealty_index_text_callback($node, $field_name) {
+  $fields = array();
+  foreach ($node->$field_name as &$value) {
+    $fields[] = array('value' => content_format($field_name, $value, 'default', $node));
+  }
+  return $fields;
+}
+/**
+ * @see apachesolr_cck_index_number_callback()
+ */
+
+function drealty_index_text_area_callback($node, $field_name) {
+  $fields = array();
+  foreach ($node->$field_name as &$value) {
+    $fields[] = array('value' => content_format($field_name, $value, 'default', $node));
+  }
+  return $fields;
+}
+/**
+ * @see apachesolr_cck_index_number_callback()
+ */
+function drealty_index_filemime_callback($node, $field_name) {
+  $fields = array();
+  foreach ($node->$field_name as &$value) {
+    $fields[] = array('value' => $value[0]['filepath']);
+  }
+  return $fields;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function drealty_theme() {
+  $themes = array();
+
+  $themes['drealty_classes_form'] = array(
+    'arguments' => array('form' => NULL),
+    'file' => 'drealty.admin.inc',
+  );
+  $themes['drealty_fields_form'] = array(
+    'arguments' => array('form' => NULL),
+    'file' => 'drealty.admin.inc',
+  );
+  $themes['drealty_fmanage_form'] = array(
+    'arguments' => array('form' => NULL),
+    'file' => 'drealty.admin.inc',
+  );
+  $themes['drealty_fields_alt_form'] = array(
+    'arguments' => array('form' => NULL),
+    'file' => 'drealty.admin.inc',
+  );
+  $themes['drealty_formatter_lookup'] = array(
+    'arguments' => array('element' => NULL),
+  );
+
+  return $themes;
+}
+
+
+/**
+ * Implements hook_cron().
+ */
+function drealty_cron() {
+  // check to see if we should use the batch api, by default we're going to use the Drush import method
+  if(variable_get("drealty_use_batch_api", "")) {
+    module_load_include('inc', 'drealty', 'drealty.batch');
+    $connections = drealty_connections_fetch();
+    foreach ($connections as $connection) {
+      $mappings = drealty_resource_mappings($connection['conid']);
+      foreach ($mappings as $mapping) {
+        $classes = drealty_classes_fetch($connection['conid'], $mapping['resource']);
+        foreach ($classes as $class) {
+          if ($class['enabled'] && $class['lifetime'] <= time() - $class['lastupdate'] + 120) {
+            drealty_import_batch($connection['conid'], $mapping['resource'], $class['systemName'], $mapping['node_type'], FALSE);
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_imagecache_actions() (an ImageCache hook).
+ */
+function drealty_imagecache_actions() {
+  return array(
+    'drealty_fetch' => array(
+      'name' => 'drealty fetch',
+      'description' => 'Fetch an image from the RETS server if it does not already exist locally. REQUIRED to display images in drealty listings.',
+      'file' => 'drealty.imagecache.inc',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function drealty_field_formatter_info() {
+  return array(
+    'lookup' => array(
+      'label' => t('drealty Lookup'),
+      'field types' => array('text'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+  );
+}
+
+/**
+ * Theme function for the dRealty ckk formatter
+ */
+function theme_drealty_formatter_lookup($element) {
+
+  $node = node_load($element['#node']->nid);
+  $conn_field = "{$node->type}_conid";
+  $conid = $node->{$conn_field}[0]['value'];
+  $mappings = drealty_resource_mappings($conid);
+  $resource = $mappings[$node->type]['resource'];
+
+  $cached = cache_get("drealty_lookup_formatter_mapping_{$conid}_{$node->type}", 'cache');
+  if ($cached === 0) {
+
+
+    $active_fields = drealty_fields_active_fetch($conid, $resource);
+
+    $drealty_lookup_mappings = array();
+    foreach ($active_fields as $field) {
+      $drealty_lookup_mappings["dr_{$field['cck_field_name']}"] = $field;
+    }
+    cache_set("drealty_lookup_formatter_mapping_{$conid}_{$node->type}", $drealty_lookup_mappings, 'cache');
+  }
+  else {
+    $drealty_lookup_mappings = $cached->data;
+  }
+
+  $class_field = "{$node->type}_class";
+  $class = $node->{$class_field}[0]['value'];
+  $lookup_map = unserialize($drealty_lookup_mappings[$element['#field_name']]['lookupName']);
+  $lookup_name = $lookup_map[$class];
+  $lookups = drealty_lookups_fetch($conid, $resource, $lookup_name, $class);
+
+  return $lookups[$element['#item']['value']]['longValue'];
+}
+
+/**
+ * Helper function to reset content field permissions depends on content permissions
+ * and permissions_api.
+ */
+function drealty_reset_field_permissions() {
+  $perms_edit = array();
+  $perms_view = array();
+  foreach (content_fields() as $field) {
+    $perms_edit[] = 'edit '. $field['field_name'];
+    $perms_view[] = 'view '. $field['field_name'];
+  }
+  $content_types = array('drealty_property', 'drealty_open_house', 'drealty_agent', 'drealty_office');
+
+  $perms = array();
+  foreach ($content_types as $type) {
+    $perms[] = "edit {$type}_crc32";
+    $perms[] = "view {$type}_crc32";
+    $perms[] = "edit {$type}_class";
+    $perms[] = "view {$type}_class";
+    $perms[] = "edit {$type}_conid";
+    $perms[] = "view {$type}_conid";
+  }
+
+  $roles = user_roles();
+  foreach ($roles as $role) {
+    permissions_grant_permissions($role, $perms_view);
+    permissions_revoke_permissions($role, $perms_edit);
+    permissions_revoke_permissions($role, $perms);
+  }
+}
+
+
+/**
+ * Helper function to perform solr searches
+ */
+function drealty_perform_search() {
+
+  $filters = isset($_GET['filters']) ? $_GET['filters'] : '';
+  $solrsort = isset($_GET['solrsort']) ? $_GET['solrsort'] : '';
+  $page = isset($_GET['page']) ? $_GET['page'] : 0;
+  $keys = arg(2);
+
+  $result = apachesolr_search_execute($keys, $filters, $solrsort, 'property/search', $page, 'drealty');
+  if (!$keys && !$filters) {
+    $breadcrumb = menu_get_active_breadcrumb();
+    drupal_set_breadcrumb($breadcrumb);
+  }
+
+  return theme('search_results', $result, 'listings');
+
+}
+/**
+ * Helper function to perform solr searches
+ */
+function drealty_perform_search_gallery() {
+
+  $filters = isset($_GET['filters']) ? $_GET['filters'] : '';
+  $solrsort = isset($_GET['solrsort']) ? $_GET['solrsort'] : '';
+  $page = isset($_GET['page']) ? $_GET['page'] : 0;
+  $keys = arg(3);
+
+  $result = apachesolr_search_execute($keys, $filters, $solrsort, 'property/search/gallery', $page, 'drealty');
+  if (!$keys && !$filters) {
+    $breadcrumb = menu_get_active_breadcrumb();
+    drupal_set_breadcrumb($breadcrumb);
+  }
+  return theme('search_results', $result, 'gallery');
+}
+/**
+ * Helper function to perform solr searches
+ */
+function drealty_perform_search_map() {
+
+  $filters = isset($_GET['filters']) ? $_GET['filters'] : '';
+  $solrsort = isset($_GET['solrsort']) ? $_GET['solrsort'] : '';
+  $page = isset($_GET['page']) ? $_GET['page'] : 0;
+  $keys = arg(3);
+
+  $result = apachesolr_search_execute($keys, $filters, $solrsort, 'property/search/map', $page, 'drealty_map');
+  if (!$keys && !$filters) {
+    $breadcrumb = menu_get_active_breadcrumb();
+    drupal_set_breadcrumb($breadcrumb);
+  }
+  return theme('search_results', $result, 'map');
+
+}
+
+function drealty_daemoncli_run() {
+  module_load_include('php', 'drealty', 'daemon/drealty_daemon');
+  $daemon = new drealty_daemon();
+  $daemon->run();
+  return;
+}
+
+function drealty_bootstrap_daemon() {
+  static $loaded = FALSE;
+  if (! $loaded) {
+
+    $loaded = TRUE;
+  }
+}

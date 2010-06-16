@@ -169,7 +169,7 @@ function drealty_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  $items['admin/drealy/%/images/process'] = array(
+  $items['admin/drealty/%/images/process'] = array(
     'title' => 'Update Data',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('drealty_process_images', 2),

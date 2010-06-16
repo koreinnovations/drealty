@@ -889,6 +889,33 @@ function drealty_configure_property_correlate(&$form_state, $conid = NULL, $reso
       '#type' => 'checkbox',
       '#title' => t('Add a CCK ImageField to property nodes to store property images'),
     );
+
+
+    $connections = drealty_connections_fetch();
+
+    if (count($connections) > 1) {
+
+    } else if (count($connections) == 1) {
+      $connection = array_shift($connections);
+      $fields = drealty_fields_active_fetch($connection['conid'],'Property');
+      $options = array();
+      foreach ($fields as $field) {
+        $options[$field['systemName']] = $field['systemName'];
+      }
+    }
+    $form['use_img_field_mapping'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use Image Field Mapping'),
+      '#description' => t('Select this checkbox only if you know for a fact that your RETS provider uses something other than the MLS ID for correlation of the Images to a listing ID.'),
+      '#default_value' => variable_get("drealty_use_img_field_mapping_{$res}_{$conid}", 0),
+    );
+    $form['img_field_mapping'] = array(
+      '#type' => 'select',
+      '#title' => t("Image Field Mapping"),
+      '#description' => t("Typically this is the MLS ID field. For Interrealty it is the sysid field, if in doubt of what to select here, ensure that the 'Use Image Field Mapping' checkbox is deselected."),
+      '#options' => $options,
+      '#default_value' => variable_get("drealty_img_field_mapping_{$res}_{$conid}", ""),
+    );
     // Can we use an ImageField to store property images?
     if (module_exists('imagefield')) {
       $form['use_img']['#default_value'] = variable_get("drealty_use_img_{$res}_{$conid}", FALSE);
@@ -896,6 +923,8 @@ function drealty_configure_property_correlate(&$form_state, $conid = NULL, $reso
     }
     else {
       $form['use_img']['#disabled'] = TRUE;
+      $form['img_field_mapping']['#disabled'] = TRUE;
+      $form['use_img_field_mapping']['#disabled'] = TRUE;
       $form['use_img']['#description'] = t('You must install the <em>ImageField</em> module to use this feature.');
     }
   }
@@ -1080,12 +1109,16 @@ function drealty_configure_property_correlate_submit($form, &$form_state) {
       }
     }
     variable_set("drealty_use_img_{$res}_{$conid}", TRUE);
+    variable_set("drealty_use_img_field_mapping_{$res}_{$conid}", TRUE);
+    variable_set("drealty_img_field_mapping_{$res}_{$conid}", $form_state['values']['img_field_mapping']);
   }
   elseif (!$form_state['values']['use_img'] && $use_img) {
 
     drupal_set_message(t('Removing <em>Images</em> field.'));
     content_field_instance_delete('dr_images', "drealty_$resource", FALSE);
     variable_set("drealty_use_img_{$res}_{$conid}", FALSE);
+    variable_set("drealty_use_img_field_mapping_{$res}_{$conid}", FALSE);
+    variable_del("drealty_img_field_mapping_{$res}_{$conid}");
   }
 
   $use_loc = variable_get("drealty_use_loc_{$res}_{$conid}", FALSE);
@@ -1576,7 +1609,7 @@ function drealty_import_connection_form_submit($form, &$form_state) {
     // Convert the import formatted text back into a $connection array.
     // Return if errors generated or not an array.
     // Use '@' to suppress errors about undefined constants in the macro.
-    drupal_eval($form_values['macro']);
+    $condata = drupal_eval($form_values['macro']);
 
 
     // Preliminary error trapping, must have valid arrays to work with.

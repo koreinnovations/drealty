@@ -1,5 +1,5 @@
 <?php
-/* 
+/*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
 */
@@ -219,31 +219,8 @@ class drealty_daemon {
 
     $in_rets = array();
     $img_dir = file_directory_path() . '/drealty_img';
-    if (variable_get("drealty_use_img_{$resource}_{$conid}", FALSE)) {
-      $img_placeholder = array(
-        // Most of these fields are probably unnecessary…?
-        'title' => t('drealty property image placeholder'),
-        'filesize' => 34,
-        'mimetype' => 'image/jpeg',
-        'description' => '',
-        'list' => TRUE,
-        'data' => array(
-          'alt' => t('drealty property image placeholder'),
-          'title' => t('drealty property image placeholder'),
-        ),
-      );
+    $process_images = variable_get("drealty_use_img_{$resource}_{$conid}", FALSE);
 
-      $file = new stdClass();
-      $file->filemime = 'image/jpeg';
-      $file->filesize = 0 ;
-      $file->uid = 0;
-      $file->status = FILE_STATUS_PERMANENT;
-      $file->timestamp = time();
-      $file->filepath = drupal_get_path('module', 'drealty') . '/img/placeholder.jpeg';
-    }
-    else {
-      $file = FALSE;
-    }
     // grab all the active fields so we can loop through them later
     $active_fields = drealty_fields_active_fetch($conid, $resource);
     $use_loc = variable_get("drealty_use_loc_{$resource}_{$conid}", FALSE);
@@ -318,35 +295,67 @@ class drealty_daemon {
                 $node->body = $value;
                 break;
               case 'pic_count':
-                if ($file) {
+                if ($process_images) {
                   drush_log(dt("pic_count: @count", array("@count" => $value)));
                   $node->dr_images = array();
                   $prop_dir = "{$img_dir}";
-                  if (!is_dir($prop_dir) && !mkdir($prop_dir, 0755)) {
-                    drush_log(dt("Directory @dir doesn't exist and could not be created. (Most likely a permissions problem).", array("@dir" => $prop_dir)), 'error');
+
+                  if(!is_dir($prop_dir)) {
+                    mkdir($prop_dir);
                   }
-                  else {
-                    for ($j = 1; $j <= intval($value); $j++) {
-                      $fname = "{$prop->$id}-{$j}.jpeg";
-                      $dest = "{$prop_dir}/{$fname}";
-                      // Since file_copy stupidly doesn't let us specify the destination
-                      // path explicitly, stopping us from copying a file so it has a
-                      // different filename than the source, we do this workaround.
-                      $file->filename = $fname;
-                      $fclone = clone $file;
-                      if (file_copy($fclone, $prop_dir, FILE_EXISTS_REPLACE)) {
-                        $file->filepath = $dest;
-                        drupal_write_record('files', $_file);
-                        $_placeholder = array();
-                        $_placeholder['fid'] = $_file->fid;
-                        $_placeholder['filename'] = $fname;
-                        $_placeholder['filepath'] = $dest;
-                        $node->dr_images[] = $_placeholder;
-                      }
-                      else {
-                        drush_log(dt("File @file couldn't be saved. (Most likely a permissions problem).", array('@file' => $dest)), 'error');
-                      }
-                    }
+
+                  if (is_dir($prop_dir) ) {
+
+                    if ($this->connect($conid)) {
+                      // grab the image data from the RETS server
+                      drush_log(dt("Retrieving Image Data for @mls.", array("@mls" => $prop->$id)));
+                      $photos = self::get_phrets()->GetObject("Property", "Photo", $prop->$id);
+                      // don't need the connection anymore so disconnect
+                      $this->disconnect();
+                      drush_log(dt("Finished Retrieving Image Data."));
+
+                      // loop through the response from the RETS server
+                      foreach ($photos as $photo) {
+                        // grab the mlsid and object id from the response. Use these
+                        // to name the file.
+                        $mlsid = $photo['Content-ID'];
+                        $number = $photo['Object-ID'];
+
+                        // make sure we actually retrived this particular image
+                        if ($photo['Success'] == TRUE) {
+                          // setup the filename and filepath, then write the file to disk
+                          $filename = "{$mlsid}-{$number}.jpg";
+                          $filepath = "{$prop_dir}/{$filename}";
+                          file_put_contents($filepath, $photo['Data'], LOCK_EX);
+
+                          // setup a file array that we can use to update the db
+                          $file = array(
+                            'uid' => 0,
+                            'filename' => $filename,
+                            'filepath' => $filepath,
+                            'filemime' => $photo['Content-Type'],
+                            'status' => FILE_STATUS_PERMANENT,
+                            'timestamp' => time(),
+                            'filesize' => $photo['Length'],
+                          );
+                          // insert the file record to the files table
+                          drupal_write_record('files', $file, array());
+
+                          // modify this array so we can just reuse it to add to the node
+                          $file['title'] = t('dReatly property Image');
+                          $file['mimetype'] = $file['filemime'];
+                          $file['description'] = '';
+                          $file['list'] = TRUE;
+                          $file['data'] = array(
+                            'alt' => t('property image'),
+                            'title' => t('property image'),
+                          );
+                          // add this image to the node
+                          $node->dr_images[] = $file;
+                        } // endif $photo['Sucess']
+                      } // endfor $photos
+                      unset($photos, $file, $filename, $filepath);
+                    } // endif $this->connect();
                   } // end if is_dir && mkdir
                 }
                 break;
@@ -400,25 +409,28 @@ class drealty_daemon {
 
 
           $node = node_submit($node);
-          
-//          if ($new) {
-//            watchdog('drealty', 'Creating node @nid (@title).', array('@nid' => $node->nid, '@title' => $node->title));
-//          }
-//          else {
-//            watchdog('drealty', 'Updating node @nid (@title).', array('@nid' => $node->nid, '@title' => $node->title));
-//          }
+
+          if ($new) {
+            watchdog('drealty', 'Creating node @nid (@title).', array('@nid' => $node->nid, '@title' => $node->title));
+          }
+          else {
+            watchdog('drealty', 'Updating node @nid (@title).', array('@nid' => $node->nid, '@title' => $node->title));
+          }
           $this->drealty_node_save($node);
 
           drush_log(dt('Creating node @nid (@title).', array('@nid' => $node->nid, '@title' => $node->title)));
           unset($node, $prop, $location_data, $value, $fclone, $_SESSION['messages']);
 
         } // endif
+        else {
+          drush_log(dt("Skipping @propid", array("@propid" => $prop->$id)));
+        }
 
       } // endfor $data_count
       unset($_props);
       cache_clear_all($chunk_name, 'cache');
     } // endfor $chunk_count
-    
+
     cache_clear_all();
   }
 

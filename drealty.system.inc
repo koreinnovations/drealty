@@ -15,7 +15,7 @@ function drealty_configure_system(&$form_state) {
     '#default_value' => variable_get("drealty_use_batch_api", 1),
     '#required' => TRUE,
   );
-
+  
   //$form['submit'] = array('#type' => 'submit', '#value' => t('Save Settings'));
   return system_settings_form($form);
 }

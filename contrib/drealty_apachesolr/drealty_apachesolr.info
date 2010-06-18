@@ -1,6 +1,8 @@
-name = WCMLS IDX Search Enhancements
+name = IDX Search Enhancements
 description = "WCMLS Search Customizations for the Drealty Idx System."
 package = dRealty IDX
 dependencies[] = drealty
+dependencies[] = idx
+dependencies[] = apachesolr
 core = 6.x
 version = 6.x-1.0-dev

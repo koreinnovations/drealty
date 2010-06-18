@@ -100,7 +100,7 @@ function drealty_connection_delete_confirm_submit($form, &$form_state) {
     // delete any cck fields used by this connection
     $active_fields = drealty_fields_active_fetch($conid, $mapping['resource']);
     foreach ($active_fields as $field) {
-      content_field_instance_delete($field['field_name'], $mapping['node_type'], FALSE);
+      content_field_instance_delete("dr_{$field['cck_field_name']}", $mapping['node_type'], FALSE);
       $rebuild = TRUE;
     }
   }
@@ -1565,8 +1565,8 @@ function drealty_export_connection($conid) {
   $connection['agent_configured'] = variable_get('drealty_agent_configured', FALSE);
   $connection['property_configured'] = variable_get('drealty_property_configured', FALSE);
   $connection['open_house_configured'] = variable_get('drealty_open_house_configured', FALSE);
-
-  $string .= "\$condata = " . var_export($connection, TRUE) . ";\n";
+  $string = serialize($resources);
+  //$string .= "\$condata = " . var_export($connection, TRUE) . ";\n";
   //$string .= "\$condata['resources'] = " . var_export($resources, TRUE) . ";\n";
 
   return $string;
@@ -1609,7 +1609,7 @@ function drealty_import_connection_form_submit($form, &$form_state) {
     // Convert the import formatted text back into a $connection array.
     // Return if errors generated or not an array.
     // Use '@' to suppress errors about undefined constants in the macro.
-    $condata = drupal_eval($form_values['macro']);
+    @eval($form_values['macro']);
 
 
     // Preliminary error trapping, must have valid arrays to work with.

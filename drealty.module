@@ -324,7 +324,7 @@ function drealty_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
-  $items['admin/drealty/system'] = array(
+  $items['admin/drealty/idx_settings'] = array(
     'title' => 'IDX Setup',
     'description' => 'Setup Various IDX System Settings.',
     'access arguments' => array('admin drealty configuration'),
@@ -600,6 +600,22 @@ function drealty_fields_active_fetch($conid, $resource) {
       $fields[$field['systemName']] = $field;
     }
     cache_set("drealty_fields_active_{$resource}_{$conid}", $fields);
+    return $fields;
+  }
+  else {
+    return $cached->data;
+  }
+}
+
+function drealty_fields_active_field_names_fetch_all($resource) {
+  $cached = cache_get("drealty_fields_active_field_names_fetch_all_{$resource}");
+  if ($cached === 0) {
+    $result = db_query("SELECT * FROM {drealty_fields} WHERE resource = '%s' AND display = 1", $resource);
+    $fields = array();
+    while ($field = db_fetch_array($result)) {
+      $fields["dr_{$field['cck_field_name']}"] = "dr_{$field['cck_field_name']}";
+    }
+    cache_set("drealty_fields_active_field_names_fetch_all_{$resource}", $fields);
     return $fields;
   }
   else {

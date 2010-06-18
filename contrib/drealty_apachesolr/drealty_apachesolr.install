@@ -2,10 +2,10 @@
 // $Id$
 
 
-function wcmls_search_install() {
+function drealty_apachesolr_install() {
   // Put weight before apachesolr_search
   $record = array(
-    'name' => 'wcmls_search',
+    'name' => 'drealty_apachesolr',
     'weight' => -1,
   );
   drupal_write_record('system', $record, 'name');

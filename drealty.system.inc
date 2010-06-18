@@ -6,7 +6,7 @@ function drealty_configure_system(&$form_state) {
 
   $form = array();
 
-  $form['cron_settings'] = array('#type' => 'fieldset', '#title' => t('Cron Settings'));
+  $form['cron_settings'] = array('#type' => 'fieldset', '#title' => t('Cron Settings'),'#collapsible' => TRUE, '#weight' => -10);
   $form['cron_settings']['drealty_use_batch_api'] = array(
     '#type' => 'radios',
     '#title' => t('Import Method'),
@@ -16,7 +16,6 @@ function drealty_configure_system(&$form_state) {
     '#required' => TRUE,
   );
   
-  //$form['submit'] = array('#type' => 'submit', '#value' => t('Save Settings'));
   return system_settings_form($form);
 }
 

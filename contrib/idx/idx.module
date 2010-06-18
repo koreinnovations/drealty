@@ -62,7 +62,7 @@ function idx_block($op = 'list', $delta = 0, $edit = array()) {
       }
       else {
         // non-node blocks
-        
+
       }
 
   }
@@ -71,55 +71,57 @@ function idx_block($op = 'list', $delta = 0, $edit = array()) {
 function idx_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   switch($op) {
     case 'presave':
-      idx_populate_bathrooms($node);
-      idx_populate_bedrooms($node);
+      if(variable_get("idx_use_numerical_bed_bath", FALSE)) {
+        idx_populate_bathrooms($node);
+        idx_populate_bedrooms($node);
+      }
       break;
   }
 }
 
 
 function idx_populate_bathrooms(&$node) {
-  if (isset($node->dr_l_bathrooms)) {
-    $bathrooms = isset($node->dr_l_bathrooms[0]['value'])?$node->dr_l_bathrooms[0]['value']:$node->dr_l_bathrooms;
-    switch($bathrooms) {
-      case 'One':
-        $node->idx_bathrooms[0]['value'] = 1;
-        break;
-      case 'Two':
-        $node->idx_bathrooms[0]['value'] = 2;
-        break;
-      case 'Three':
-        $node->idx_bathrooms[0]['value'] = 3;
-        break;
-      case 'Four or More':
-        $node->idx_bathrooms[0]['value'] = 4;
-        break;
+  $bathroom_field = variable_get('idx_bathroom_field', FALSE);
+  if ($bathroom_field) {
+    if (isset($node->$bathroom_field)) {
+      $bathrooms = isset($node->{$bathroom_field}[0]['value'])?$node->{$bathroom_field}[0]['value']:$node->$bathroom_field;
+
+      $values = variable_get("idx_bathroom_key_value_pairs", FALSE);
+      if ($values) {
+
+        $pairs = explode("\n", $values);
+
+        foreach ($pairs as $pair) {
+          list($key, $value) = explode("|", $pair);
+          if ($bathrooms == $key) {
+            $node->idx_bathrooms[0]['value'] = $value;
+            break;
+          }
+        }
+      }
     }
   }
 }
 
 function idx_populate_bedrooms(&$node) {
-  if (isset($node->dr_l_bedrooms)) {
-    $bedrooms = isset($node->dr_l_bedrooms[0]['value'])?$node->dr_l_bedrooms[0]['value']:$node->dr_l_bedrooms;
-    switch($bedrooms) {
-      case 'One':
-        $node->idx_bedrooms[0]['value'] = 1;
-        break;
-      case 'Two':
-        $node->idx_bedrooms[0]['value'] = 2;
-        break;
-      case 'Three':
-        $node->idx_bedrooms[0]['value'] = 3;
-        break;
-      case 'Four':
-        $node->idx_bedrooms[0]['value'] = 4;
-        break;
-      case 'Five':
-        $node->idx_bedrooms[0]['value'] = 5;
-        break;
-      case 'Six or More':
-        $node->idx_bedrooms[0]['value'] = 6;
-        break;
+  $bedroom_field = variable_get('idx_bedroom_field', FALSE);
+  if ($bedroom_field) {
+    if (isset($node->$bedroom_field)) {
+      $bedrooms = isset($node->{$bedroom_field}[0]['value'])?$node->{$bedroom_field}[0]['value']:$node->$bedroom_field;
+
+      $values = variable_get("idx_bedroom_key_value_pairs", FALSE);
+      if ($values) {
+
+        $pairs = explode("\n", $values);
+
+        foreach ($pairs as $pair) {
+          list($key, $value) = explode("|", $pair);
+          if ($bedrooms == $key) {
+            $node->idx_bedrooms[0]['value'] = $value;
+            break;
+          }
+        }
+      }
     }
   }
 }
@@ -150,6 +152,7 @@ function idx_theme() {
  * @param string $message
  */
 function idx_modify_message(&$message) {
+
 //Add here whatever you need to recognize and modify this message:
 
   global $user;
@@ -223,4 +226,47 @@ function idx_flag_default_flags() {
     'api_version' => 2,
   );
   return $flags;
+}
+
+function idx_form_drealty_configure_system_alter(&$form, &$form_state) {
+  $form['idx'] = array('#type' => 'fieldset', '#title' => t('IDX Settings'), '#collapsible' => TRUE, '#weight' => 0,
+    '#description' => t('dRealty uses the COMPACT-DECODED format for response, which typically means that the values stored for the bedroom and bathrooms are "One", "Two", "Three", "Four or more". This allows you to convert those to numerical values. <br />
+      <br /><strong>Note, this is experimental at best and has yet to be tested on anything other than Fnisrets.</strong>'));
+  $fields = drealty_fields_active_field_names_fetch_all('property');
+
+  $form['idx']['idx_use_numerical_bed_bath'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Convert bedroom and bathroom fields'),
+    '#default_value' => variable_get("idx_use_numerical_bed_bath", FALSE),
+  );
+
+  $form['idx']['idx_bathroom_field'] = array(
+    '#type' => 'select',
+    '#options' => $fields,
+    '#title' => t('CCK Bathroom Field'),
+    '#default_value' => variable_get("idx_bathroom_field", ''),
+    '#description' => t('Select the CCK Field that represents the total number of bathrooms from the MLS.'),
+  );
+
+  $form['idx']['idx_bathroom_key_value_pairs'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Bathroom Key|Value pairs'),
+    '#default_value' => variable_get("idx_bathroom_key_value_pairs", ''),
+    '#description' => t('Place one set of key|value pairs on each line. The key being the COMPACT-DECODED string you want to replace with a numeric value. ie: Five|5.')
+  );
+
+  $form['idx']['idx_bedroom_field'] = array(
+    '#type' => 'select',
+    '#options' => $fields,
+    '#title' => t('CCK Bedroom Field'),
+    '#default_value' => variable_get("idx_bedroom_field", ''),
+    '#description' => t('Select the CCK Field that represents the total number of bedrooms from the MLS.'),
+  );
+
+  $form['idx']['idx_bedroom_key_value_pairs'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Bathroom Key|Value pairs'),
+    '#default_value' => variable_get("idx_bedroom_key_value_pairs", ''),
+    '#description' => t('Place one set of key|value pairs on each line. The key being the COMPACT-DECODED string you want to replace with a numeric value. ie: Five|5.')
+  );
 }

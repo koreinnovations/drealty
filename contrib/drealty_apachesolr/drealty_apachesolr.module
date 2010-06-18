@@ -3,7 +3,7 @@
 /**
  * Implementation of hook_apachesolr_facets().
  */
-function wcmls_search_apachesolr_facets() {
+function drealty_apachesolr_apachesolr_facets() {
   $key_sq_ft = 'fs_wcmls_dr_l_total_sqft';
   $facets[$key_sq_ft] = array(
     'info' => t('Drealty IDX: Filter by Sq Ft [Range]'),
@@ -64,11 +64,11 @@ function wcmls_search_apachesolr_facets() {
 /**
  * Implementation of hook_block().
  */
-function wcmls_search_block($op = 'list', $delta = 0, $edit = array()) {
+function drealty_apachesolr_block($op = 'list', $delta = 0, $edit = array()) {
   switch ($op) {
     case 'list':
-      $enabled_facets = apachesolr_get_enabled_facets('wcmls_search');
-      $facets = wcmls_search_apachesolr_facets();
+      $enabled_facets = apachesolr_get_enabled_facets('drealty_apachesolr');
+      $facets = drealty_apachesolr_apachesolr_facets();
       // Add the blocks
       $blocks = array();
       foreach ($enabled_facets as $delta => $facet_field) {
@@ -76,11 +76,11 @@ function wcmls_search_block($op = 'list', $delta = 0, $edit = array()) {
           $blocks[$delta] = $facets[$delta] + array('cache' => BLOCK_CACHE_PER_PAGE,);
         }
       }
-      $blocks['wcmls_search_price_block'] = array(
+      $blocks['drealty_apachesolr_price_block'] = array(
         'info' => 'WCMLS Price Search',
         'cache' => BLOCK_NO_CACHE,
       );
-      $blocks['wcmls_search_keyword_block'] = array(
+      $blocks['drealty_apachesolr_keyword_block'] = array(
         'info' => 'WCMLS Keyword Search',
         'cache' => BLOCK_NO_CACHE,
       );
@@ -92,7 +92,7 @@ function wcmls_search_block($op = 'list', $delta = 0, $edit = array()) {
 
     case 'view':
       if (apachesolr_has_searched()) {
-        $facets = wcmls_search_apachesolr_facets();
+        $facets = drealty_apachesolr_apachesolr_facets();
         $facet = $facets[$delta];
 
         $response = apachesolr_static_response_cache();
@@ -105,11 +105,11 @@ function wcmls_search_block($op = 'list', $delta = 0, $edit = array()) {
           case 'fs_wcmls_dr_l_total_sqft':
           case 'fs_wcmls_idx_bedrooms':
           case 'fs_wcmls_idx_bathrooms':
-            return wcmls_search_ranged_facet_block($response, $query, 'wcmls_search', $delta, $facet['ranged_query'], $facet['title']);
-          case 'wcmls_search_price_block':
-            return array('subject' => 'Price', 'content' => drupal_get_form('wcmls_search_price_search_form', $query));
-          case 'wcmls_search_keyword_block':
-            return array('subject' => 'Search', 'content' => drupal_get_form('wcmls_search_keyword_form', $query));
+            return drealty_apachesolr_ranged_facet_block($response, $query, 'drealty_apachesolr', $delta, $facet['ranged_query'], $facet['title']);
+          case 'drealty_apachesolr_price_block':
+            return array('subject' => 'Price', 'content' => drupal_get_form('drealty_apachesolr_price_search_form', $query));
+          case 'drealty_apachesolr_keyword_block':
+            return array('subject' => 'Search', 'content' => drupal_get_form('drealty_apachesolr_keyword_form', $query));
 
         }
 
@@ -117,13 +117,13 @@ function wcmls_search_block($op = 'list', $delta = 0, $edit = array()) {
       else {
         switch ($delta) {
           case 'wcmls_front_page_search_block':
-            return array('subject' => '', 'content' => drupal_get_form('wcmls_search_front_search_form'));
+            return array('subject' => '', 'content' => drupal_get_form('drealty_apachesolr_front_search_form'));
         }
       }
       break;
 
     case 'configure':
-      return apachesolr_facetcount_form('wcmls_search', $delta);
+      return apachesolr_facetcount_form('drealty_apachesolr', $delta);
     case 'save':
       apachesolr_facetcount_save($edit);
       break;
@@ -135,7 +135,7 @@ function wcmls_search_block($op = 'list', $delta = 0, $edit = array()) {
  *
  * @return array
  */
-function wcmls_search_get_price_options() {
+function drealty_apachesolr_get_price_options() {
   $opts_low = array(
     '*' => 'Any',
     '1000' => '$1,000',
@@ -191,7 +191,7 @@ function wcmls_search_get_price_options() {
 /**
  * Helper function for displaying a facet block.
  */
-function wcmls_search_ranged_facet_block($response, $query, $module, $delta, $facet_ranges, $filter_by, $facet_callback = FALSE) {
+function drealty_apachesolr_ranged_facet_block($response, $query, $module, $delta, $facet_ranges, $filter_by, $facet_callback = FALSE) {
   if (!empty($response->facet_counts->facet_queries)) {
     $facet_query_sorts = variable_get('apachesolr_facet_query_sorts', array());
     $contains_active = FALSE;
@@ -283,9 +283,9 @@ function wcmls_search_ranged_facet_block($response, $query, $module, $delta, $fa
 
 
 
-function wcmls_search_front_search_form() {
+function drealty_apachesolr_front_search_form() {
 
-  $opts = wcmls_search_get_price_options();
+  $opts = drealty_apachesolr_get_price_options();
 
   $form['price_field'] = array('#type' => 'value', '#value' => 'fs_cck_dr_prop_price');
   $form['bathroom_field'] = array('#type' => 'value', '#value' => 'fs_wcmls_idx_bathrooms');
@@ -338,7 +338,7 @@ function wcmls_search_front_search_form() {
   return $form;
 }
 
-function wcmls_search_front_search_form_submit($form, &$form_state) {
+function drealty_apachesolr_front_search_form_submit($form, &$form_state) {
 
   $opt_low = $form_state['values']['opts_low'];
   $opt_high = $form_state['values']['opts_high'];
@@ -383,7 +383,7 @@ function wcmls_search_front_search_form_submit($form, &$form_state) {
 
 }
 
-function wcmls_search_keyword_form(&$form_state, $query = NULL) {
+function drealty_apachesolr_keyword_form(&$form_state, $query = NULL) {
   $keywords = '';
   if (apachesolr_has_searched()) {
     $query = apachesolr_current_query();
@@ -403,7 +403,7 @@ function wcmls_search_keyword_form(&$form_state, $query = NULL) {
   return $form;
 }
 
-function wcmls_search_keyword_form_submit($form, &$form_state) {
+function drealty_apachesolr_keyword_form_submit($form, &$form_state) {
 
   $keywords = '';
   $keywords = $form_state['values']['keywords'];
@@ -426,9 +426,9 @@ function wcmls_search_keyword_form_submit($form, &$form_state) {
   }
 }
 
-function wcmls_search_price_search_form(&$form_state, $query = NULL) {
+function drealty_apachesolr_price_search_form(&$form_state, $query = NULL) {
 
-  $opts = wcmls_search_get_price_options();
+  $opts = drealty_apachesolr_get_price_options();
 
   if (apachesolr_has_searched()) {
     $response = apachesolr_static_response_cache();
@@ -467,7 +467,7 @@ function wcmls_search_price_search_form(&$form_state, $query = NULL) {
   return $form;
 }
 
-function wcmls_search_price_search_form_submit($form, &$form_state) {
+function drealty_apachesolr_price_search_form_submit($form, &$form_state) {
 
   $opt_low = $form_state['values']['opts_low'];
   $opt_high = $form_state['values']['opts_high'];
@@ -496,10 +496,10 @@ function wcmls_search_price_search_form_submit($form, &$form_state) {
 
 }
 
-function wcmls_search_apachesolr_modify_query(&$query, &$params, $caller) {
+function drealty_apachesolr_apachesolr_modify_query(&$query, &$params, $caller) {
   if ($caller == 'drealty' || $caller == 'drealty_map') {
 
-    $facets = wcmls_search_apachesolr_facets();
+    $facets = drealty_apachesolr_apachesolr_facets();
 
     foreach ($facets as $facet_name => $facet) {
       if ($facet['facet_ranged']) {
@@ -518,13 +518,14 @@ function wcmls_search_apachesolr_modify_query(&$query, &$params, $caller) {
  * @param <type> $document
  * @param <type> $node
  */
-function wcmls_search_apachesolr_update_index(&$document, $node) {
+function drealty_apachesolr_apachesolr_update_index(&$document, $node) {
 
   if($node->type == 'drealty_property') {
-    $document->fs_wcmls_dr_l_total_sqft = isset($node->dr_l_total_fnsh_sqft[0]['value'])?$node->dr_l_total_fnsh_sqft[0]['value']:0;
-    $document->fs_wcmls_idx_bedrooms = isset($node->idx_bedrooms[0]['value'])?$node->idx_bedrooms[0]['value']:0;
-    $document->fs_wcmls_idx_bathrooms = isset($node->idx_bathrooms[0]['value'])?$node->idx_bathrooms[0]['value']:0;
-    $document->ss_wcmls_idx_keyword = $node->dr_prop_address[0]['value'] . ' ' . $node->dr_prop_city[0]['value'] . ', ' . $node->dr_prop_state[0]['value'] . ' ' . $node->dr_prop_zip[0]['value'] . ' ' . $node->dr_prop_mls_id_value[0]['value'];
+
+    $document->fs_idx_total_sqft = isset($node->dr_l_total_fnsh_sqft[0]['value'])?$node->dr_l_total_fnsh_sqft[0]['value']:0;
+    $document->fs_idx_bedrooms = isset($node->idx_bedrooms[0]['value'])?$node->idx_bedrooms[0]['value']:0;
+    $document->fs_idx_bathrooms = isset($node->idx_bathrooms[0]['value'])?$node->idx_bathrooms[0]['value']:0;
+    $document->ss_idx_keyword = $node->dr_prop_address[0]['value'] . ' ' . $node->dr_prop_city[0]['value'] . ', ' . $node->dr_prop_state[0]['value'] . ' ' . $node->dr_prop_zip[0]['value'] . ' ' . $node->dr_prop_mls_id_value[0]['value'];
 
   }
 
@@ -538,7 +539,7 @@ function wcmls_search_apachesolr_update_index(&$document, $node) {
  * @param $query
  *   The Solr query object.
  */
-function wcmls_search_currentsearch_block($response, $query) {
+function drealty_apachesolr_currentsearch_block($response, $query) {
   $fields = $query->get_filters();
   $links = array();
 
@@ -607,7 +608,7 @@ function wcmls_search_currentsearch_block($response, $query) {
  * @param string $fieldname
  *
  */
-function wcmls_search_apachesolr_theme_breadcrumb_alter(&$fieldname) {
+function drealty_apachesolr_apachesolr_theme_breadcrumb_alter(&$fieldname) {
   if ($fieldname == 'apachesolr_breadcrumb_fs_cck_dr_prop_price') {
     $fieldname = 'apachesolr_breadcrumb_fs_dr_prop_price';
   }
@@ -619,7 +620,7 @@ function wcmls_search_apachesolr_theme_breadcrumb_alter(&$fieldname) {
  * The breadcrumb function assumes that apachesolr_og_gid_key() returns im_og_gid
  * If that changes, modify the theme name appropriately
  */
-function wcmls_search_theme() {
+function drealty_apachesolr_theme() {
   return array(
     'apachesolr_breadcrumb_fs_wcmls_dr_l_total_sqft' => array('arguments' => array('query' => NULL)),
     'apachesolr_breadcrumb_fs_wcmls_idx_bedrooms' => array('arguments' => array('query' => NULL)),
@@ -636,7 +637,7 @@ function theme_apachesolr_breadcrumb_fs_wcmls_dr_l_total_sqft($field) {
 
   $query = $field['#value'];
 
-  $facets = wcmls_search_apachesolr_facets();
+  $facets = drealty_apachesolr_apachesolr_facets();
   $facet = $facets['fs_wcmls_dr_l_total_sqft'];
 
   $ranges = array();
@@ -655,7 +656,7 @@ function theme_apachesolr_breadcrumb_fs_wcmls_idx_bedrooms($field) {
 
   $query = $field['#value'];
 
-  $facets = wcmls_search_apachesolr_facets();
+  $facets = drealty_apachesolr_apachesolr_facets();
   $facet = $facets['fs_wcmls_idx_bedrooms'];
 
   $ranges = array();
@@ -674,7 +675,7 @@ function theme_apachesolr_breadcrumb_fs_wcmls_idx_bathrooms($field) {
 
   $query = $field['#value'];
 
-  $facets = wcmls_search_apachesolr_facets();
+  $facets = drealty_apachesolr_apachesolr_facets();
   $facet = $facets['fs_wcmls_idx_bathrooms'];
 
   $ranges = array();
@@ -701,4 +702,37 @@ function theme_apachesolr_breadcrumb_fs_cck_dr_prop_price($query) {
   $end_price = number_format($query['#end'], 0);
   $breadcrumb = "\${$start_price} to \${$end_price}";
   return $breadcrumb;
+}
+
+function drealty_apachesolr_form_drealty_configure_system_alter(&$form, &$form_state) {
+
+  $fields = drealty_fields_active_field_names_fetch_all('property');
+
+  $form['apachesolr_enhancements'] = array('#type' => 'fieldset', '#title' => t('Apache Solr Enhancements'), '#collapsible' => TRUE, '#weight' => 0);
+
+  $form['apachesolr_enhancements']['drealty_apachesolr_enable_bathroom_range_facet'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable Bathroom Range Facet'),
+    '#default_value' => variable_get('drealty_apachesolr_enable_bathroom_range_facet', FALSE),
+  );
+
+  $form['idx']['drealty_apachesolr_bathroom_field'] = array(
+    '#type' => 'select',
+    '#options' => $fields,
+    '#title' => t('CCK Bathroom Field'),
+    '#default_value' => variable_get("idx_bathroom_field", ''),
+    '#description' => t('Select the CCK Field that represents the total number of bathrooms from the MLS.'),
+  );
+
+  $form['apachesolr_enhancements']['drealty_apachesolr_enable_bedroom_range_facet'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable Bedroom Range Facet'),
+    '#default_value' => variable_get('drealty_apachesolr_enable_bedroom_range_facet', FALSE),
+  );
+
+  $form['apachesolr_enhancements']['drealty_apachesolr_enable_sqft_range_facet'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable Sqaure Footage Range Facet'),
+    '#default_value' => variable_get('drealty_apachesolr_enable_sqft_range_facet', FALSE),
+  );
 }

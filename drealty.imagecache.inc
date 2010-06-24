@@ -21,7 +21,7 @@
  */
 function drealty_fetch_image(&$image, $data) {
   // Does it look like a placholder JPEG?
-  if (preg_match('~/drealty_img/(.*/)*((\w+)-(\d+)\.jpeg)$~', $image->source, $matches) && $image->info['file_size'] === 304) {
+  if (preg_match('~/drealty_img/(.*/)*((\d+)-(\d+)\.jpeg)$~', $image->source, $matches) && $image->info['file_size'] === 304) {
     // Try to fetch the picture
 
     //grab the new ones

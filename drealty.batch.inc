@@ -140,13 +140,19 @@ function drealty_import_batch_fetch($conid, $resource, $class, $type, &$context)
         }
       }
     }
+    $res = strtolower($resource);
+    if( !variable_get("drealty_override_status_query_{$res}_{$conid}", FALSE)) {
+      //build the query
+      $statuses = $resources[$mappings[$type]['resource']]['selection_values'];
+      $status_q = "|$statuses";
 
-    //build the query
-    $statuses = $resources[$mappings[$type]['resource']]['selection_values'];
-    $status_q = "|$statuses";
-
-    $context['sandbox']['query'] = array();
-    $context['sandbox']['query'][] = "{$status_field}={$status_q}";
+      $context['sandbox']['query'] = array();
+      $context['sandbox']['query'][] = "{$status_field}={$status_q}";
+    }
+    else {
+      $context['sandbox']['query'] = array();
+      $context['sandbox']['query'][] = variable_get("drealty_override_status_query_text_{$res}_{$conid}", '');
+    }
 
     if (isset($price_field)) {
       $context['sandbox']['query'][] = "{$price_field}=0+";
@@ -179,7 +185,7 @@ function drealty_import_batch_fetch($conid, $resource, $class, $type, &$context)
      *
      */
     $search = $ph_rets->SearchQuery($resource, $class, "($query)", array("Format" => "COMPACT-DECODED", "Limit" => "{$context['sandbox']['limit']}",
-      "Offset" => "{$context['sandbox']['offset']}", "Select" => "$ask_fields", "RestrictedIndicator" => "****", "Count" => "1"));
+      "Offset" => "{$context['sandbox']['offset']}", "Select" => "$ask_fields", "RestrictedIndicator" => "xxxx", "Count" => "1"));
 
     $listings = array();
     while ($listing = $ph_rets->FetchRow($search)) {
@@ -191,7 +197,7 @@ function drealty_import_batch_fetch($conid, $resource, $class, $type, &$context)
     $context['sandbox']['offset'] += count($listings);
     $context['sandbox']['total_records'] = $ph_rets->TotalRecordsFound();
 
-
+    $error = $ph_rets->Error();
     $ph_rets->FreeResult($search);
     $ph_rets->Disconnect();
 

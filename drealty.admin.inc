@@ -132,6 +132,9 @@ function drealty_connection_delete_confirm_submit($form, &$form_state) {
   else {
     drupal_set_message(t("Failed to deleted Connection: @conname", array('@conname' => $connections[$conid]['name'])), WATCHDOG_ERROR);
   }
+
+  // remove any global variables we used.
+
   // check to see if we need to rebuild
   if ($rebuild) {
     content_clear_type_cache(TRUE);
@@ -1230,6 +1233,19 @@ function drealty_configure_property_limits(&$form_state, $conid = NULL, $resourc
     '#description' => t('Select the appropriate values to limit the search query.'),
     '#multiple' => TRUE,
   );
+
+  $form['status_override'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Override !s with the following query.', array('!s' => $status)),
+    '#default_value' => variable_get("drealty_override_status_query_{$resource}_{$conid}", FALSE),
+  );
+
+  $form['status_override_query'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Query to use'),
+    '#default_value' => variable_get("drealty_override_status_query_text_{$resource}_{$conid}", ''),
+  );
+
   $form['chunk'] = array(
     '#title' => t('Record chunk size'),
     '#type' => 'select',
@@ -1267,6 +1283,8 @@ function drealty_configure_property_limits_submit($form, &$form_state) {
   drupal_set_message(t("The configuration options have been saved."));
   // set a variable that can be check to see if a particular 'type' has been configured.
   variable_set("drealty_{$resource}_configured", TRUE);
+  variable_set("drealty_override_status_query_text_{$resource}_{$conid}", $form_state['values']['status_override_query']);
+  variable_set("drealty_override_status_query_{$resource}_{$conid}", $form_state['values']['status_override']);
 
 }
 
@@ -1836,31 +1854,35 @@ function drealty_import_connection($condata) {
     //check to see if we need location or image fields
 
     if (variable_get("drealty_use_img_{$mapping['resource']}_{$conid}", FALSE)) {
-      $img = array(
-        'field_name' => 'dr_images',
-        'type_name' => $mapping['node_type'],
-        'label' => t('Images'),
-        'type' => 'filefield',
-        'widget_type' => 'imagefield_widget',
-        'file_extensions' => 'gif jpg jpeg png',
-        'custom_alt' => FALSE,
-        'custom_title' => FALSE,
-        'group' => "{$resource}_group",
-        'multiple' => TRUE,
-        'weight' => -10,
-      );
+      $field_name = "dr_images";
+      $image_field = content_field_instance_read(array('field_name' => $field_name));
+      if (!$image_field) {
+        $img = array(
+          'field_name' => 'dr_images',
+          'type_name' => $mapping['node_type'],
+          'label' => t('Images'),
+          'type' => 'filefield',
+          'widget_type' => 'imagefield_widget',
+          'file_extensions' => 'gif jpg jpeg png',
+          'custom_alt' => FALSE,
+          'custom_title' => FALSE,
+          'group' => "{$resource}_group",
+          'multiple' => TRUE,
+          'weight' => -10,
+        );
 
-      content_field_instance_create($img, FALSE);
-      if (module_exists('fieldgroup')) {
-        fieldgroup_update_fields($img);
-      }
-      if (module_exists('content_permissions') && module_exists('permissions_api')) {
-        $permissions_view = array("view {$img['field_name']}");
-        $permissions_edit = array("edit {$img['field_name']}");
-        $roles = user_roles();
-        foreach ($roles as $role) {
-          permissions_grant_permissions($role, $permissions_view);
-          permissions_revoke_permissions($role, $permissions_edit);
+        content_field_instance_create($img, FALSE);
+        if (module_exists('fieldgroup')) {
+          fieldgroup_update_fields($img);
+        }
+        if (module_exists('content_permissions') && module_exists('permissions_api')) {
+          $permissions_view = array("view {$img['field_name']}");
+          $permissions_edit = array("edit {$img['field_name']}");
+          $roles = user_roles();
+          foreach ($roles as $role) {
+            permissions_grant_permissions($role, $permissions_view);
+            permissions_revoke_permissions($role, $permissions_edit);
+          }
         }
       }
     }
@@ -1868,23 +1890,28 @@ function drealty_import_connection($condata) {
 
     if (variable_get("drealty_use_loc_{$mapping['resource']}_{$conid}", FALSE)) {
 
-      $loc = drealty_get_loc_array($mapping['node_type']);
-      module_load_include('inc', 'content', 'includes/content.crud');
-      drupal_set_message(t('Creating <em>Location</em> field.'));
-      content_field_instance_create($loc, FALSE);
-      if (module_exists('fieldgroup')) {
-        fieldgroup_update_fields($loc);
-      }
-      if (module_exists('content_permissions') && module_exists('permissions_api')) {
-        $permissions_view = array("view {$loc['field_name']}");
-        $permissions_edit = array("edit {$loc['field_name']}");
-        $roles = user_roles();
-        foreach ($roles as $role) {
-          permissions_grant_permissions($role, $permissions_view);
-          permissions_revoke_permissions($role, $permissions_edit);
+      // check to see if we already have this field created
+      $field_name = "{$mapping['node_type']}_loc";
+      $location_field = content_field_instance_read(array('field_name' => $field_name));
+      if (!$location_field) {
+        // field doesn't exists so we'll create one
+        $loc = drealty_get_loc_array($mapping['node_type']);
+        module_load_include('inc', 'content', 'includes/content.crud');
+        drupal_set_message(t('Creating <em>Location</em> field.'));
+        content_field_instance_create($loc, FALSE);
+        if (module_exists('fieldgroup')) {
+          fieldgroup_update_fields($loc);
+        }
+        if (module_exists('content_permissions') && module_exists('permissions_api')) {
+          $permissions_view = array("view {$loc['field_name']}");
+          $permissions_edit = array("edit {$loc['field_name']}");
+          $roles = user_roles();
+          foreach ($roles as $role) {
+            permissions_grant_permissions($role, $permissions_view);
+            permissions_revoke_permissions($role, $permissions_edit);
+          }
         }
       }
-
     }
 
   }

@@ -115,12 +115,19 @@ class drealty_daemon {
 
     unset($fields);
 
-    // setup the query
-    $statuses = $resources[$mappings[$type]['resource']]['selection_values'];
-    $status_q = "|$statuses";
+    $res = strtolower($resource);
+    if( !variable_get("drealty_override_status_query_{$res}_{$conid}", FALSE)) {
+      //build the query
+      $statuses = $resources[$mappings[$type]['resource']]['selection_values'];
+      $status_q = "|$statuses";
 
-    $query = array();
-    $query[] = "$status_field=$status_q";
+      $context['sandbox']['query'] = array();
+      $context['sandbox']['query'][] = "{$status_field}={$status_q}";
+    }
+    else {
+      $context['sandbox']['query'] = array();
+      $context['sandbox']['query'][] = variable_get("drealty_override_status_query_text_{$res}_{$conid}", '');
+    }
 
     if (isset($price_field)) {
       $query[] = "{$price_field}=0+";
@@ -149,7 +156,7 @@ class drealty_daemon {
           'Limit' => "$limit",
           'Offset' => "$offset",
           'Select' => "$fields",
-          'RestrictedIndicator' => '*****',
+          'RestrictedIndicator' => 'xxxx',
           'Count' => '1',
         );
         // do the actual search

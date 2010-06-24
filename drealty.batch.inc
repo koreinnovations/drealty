@@ -605,10 +605,9 @@ function drealty_process_images_batch($nids, &$context) {
           );
           drupal_write_record('files', $record, 'filename');
         }
-        drealty_disconnect($ph_rets);
-
       }
     }
+    drealty_disconnect($ph_rets);
     unset($_SESSION['messages']);
     $context['finished'] = ++$context['sandbox']['index'] / $context['sandbox']['count'];
   }

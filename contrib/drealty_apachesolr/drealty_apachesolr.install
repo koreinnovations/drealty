@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 
 function drealty_apachesolr_install() {

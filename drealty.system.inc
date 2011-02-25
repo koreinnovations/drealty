@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 
 function drealty_configure_system(&$form_state) {

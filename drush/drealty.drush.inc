@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  *
  * @file realpro.drush.inc

@@ -1,14 +1,30 @@
-name = dRealty IDX
-description = "MLS Listing Data Import and Support"
-package = dRealty IDX
-dependencies[] = content
-dependencies[] = fieldgroup
-dependencies[] = text
-dependencies[] = number
-dependencies[] = optionwidgets
-dependencies[] = date
-dependencies[] = imagecache
-dependencies[] = imagefield
-core = 6.x
-version = 6.x-1.0-beta7
-php = 5.2
+name = dRealty
+description = Provides an implementation of the RETS standard to facilitate the importing of Real Estate listing information into Drupal as entities.
+core = 7.x
+version = 7.x-1.0-beta1
+
+dependencies[] = entity
+dependencies[] = views
+dependencies[] = libraries
+dependencies[] = geocode
+
+files[] = phRets.inc
+files[] = drealty_connection.admin.inc
+files[] = drealty_listings.admin.inc
+files[] = drealtyConnection.inc
+files[] = drealtyResources.inc
+files[] = drealtyDaemon.php
+files[] = drealty.info.inc
+files[] = views/drealty.views.inc
+files[] = views/drealty_connection_handler_edit_link_field.inc
+files[] = views/drealty_connection_handler_connection_operations_field.inc
+files[] = views/drealty_listing_field_handler.inc
+files[] = views/drealty_listing_field_handler_price.inc
+files[] = views/drealty_listings_handler_operations_field.inc
+
+package = Real Estate
+
+
+
+
+

@@ -1,6 +1,0 @@
-name = IDX Enhancements
-description = "IDX Customizations & Misc Helper Functions for the Drealty Idx System."
-package = dRealty IDX
-dependencies[] = drealty
-core = 6.x
-version = 6.x-1.0-dev

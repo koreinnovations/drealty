@@ -37,6 +37,7 @@ function drealty_entity_info() {
           ),
           'entity keys' => array(
               'id' => 'id',
+              'label' => 'name',
           ),
           'admin ui' => array(
               'path' => 'admin/content/listings',
@@ -374,26 +375,22 @@ function drealty_theme($existing, $type, $theme, $path) {
 
   $themes['drealty_listings'] = array(
       'render element' => 'elements',
-      'template' => 'drealty-listings',
+      'template' => 'templates/drealty-listings',
   );
 
   $themes['drealty_mls_images'] = array(
       'variables' => array('mls_images', 'listing' => NULL),
-      'template' => 'drealty-mls-images',
+      'template' => 'templates/drealty-mls-images',
   );
 
 
   $themes['drealty_search_map'] = array(
       'variables' => array('listings' => null),
-      'template' => 'drealty-search-map',
+      'template' => 'templates/drealty-search-map',
   );
 
 
   return $themes;
-}
-
-function drealty_preprocess_drealty_listings(&$vars) {
-  $blah = $vars;
 }
 
 function drealty_listings_load($listing_mlsid, $reset = FALSE) {
@@ -436,7 +433,7 @@ function drealty_listings_uri(DrealtyListing $listing) {
 }
 
 function drealty_preprocess_entity(&$variables) {
-  
+  $x = $variables;
 }
 
 function drealty_search_api_multitext_getter_callback($item, $options = array(), $name = NULL) {
@@ -479,17 +476,6 @@ class DrealtyLIstingController extends EntityAPIController {
           '#markup' => empty($value) ? NULL : "<div><div class='field-label'><strong>$key</strong></div><div class='field-value'>$value</div></div>",
       );
     }
-    // get all the images
-//    $fids = db_select('file_usage', 'f')
-//      ->fields('f', array('fid'))
-//      ->condition('id', $entity->id)
-//      ->execute()
-//      ->fetchAllKeyed();
-//    $fids = array_keys($fids);
-//    $files = file_load_multiple($fids);
-//    $content['mls_images'] = array(
-//        '#markup' => theme('drealty_mls_images', array('mls_images' => $files, 'listing' => $entity)),
-//    );
     return $content;
   }
 

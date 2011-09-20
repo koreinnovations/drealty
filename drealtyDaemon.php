@@ -66,7 +66,7 @@ class drealtyDaemon {
 
 
       $query = array();
-      $query[] = "{$fieldmappings['listing_status']->systemname}={$status_q}";
+      $query[] = "{$fieldmappings[$query_field]->systemname}={$status_q}";
     } else {
       $query = array();
       drush_log(dt("using @var", array("@var" => $class->override_status_query_text)));
@@ -180,16 +180,31 @@ class drealtyDaemon {
     if (!empty($result)) {
       $existing_items_tmp = entity_load($entity_type, array_keys($result[$entity_type]));
     }
+
+    switch ($entity_type) {
+      case 'drealty_listing':
+      case 'drealty_openhouse':
+        $key_field = 'listing_key';
+        break;
+      case 'drealty_agent':
+        $key_field = 'agent_id';
+        break;
+      case 'drealty_office':
+        $key_field = 'office_id';
+        break;
+    }
+
     //re-key the array to use the ListingKey 
     $existing_items = array();
     foreach ($existing_items_tmp as $existing_item_tmp) {
-      $existing_items[$existing_item_tmp->listing_key] = $existing_item_tmp;
+      $existing_items[$existing_item_tmp->{$key_field}] = $existing_item_tmp;
     }
 
     // get the fieldmappings
     $field_mappings = $connection->FetchFieldMappings($resource, $class->cid);
-    // set $id to the systemname of the ListingKey to make the code easier to read
-    $id = $field_mappings['listing_key']->systemname;
+
+    // set $id to the systemname of the entity's corresponding key from the rets feed to make the code easier to read
+    $id = $field_mappings[$key_field]->systemname;
 
     for ($i = 0; $i < $chunk_count; $chunk_idx++, $i++) {
       $chunk_name = "drealty_chunk_{$resource}_{$class->systemname}_{$chunk_idx}";

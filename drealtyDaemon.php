@@ -180,7 +180,24 @@ class drealtyDaemon {
     if (!empty($result)) {
       $existing_items_tmp = entity_load($entity_type, array_keys($result[$entity_type]));
     }
+<<<<<<< HEAD
     
+=======
+
+    switch ($entity_type) {
+      case 'drealty_listing':
+      case 'drealty_openhouse':
+        $key_field = 'listing_key';
+        break;
+      case 'drealty_agent':
+        $key_field = 'agent_id';
+        break;
+      case 'drealty_office':
+        $key_field = 'office_id';
+        break;
+    }
+
+>>>>>>> origin/7.x-2.x
     //re-key the array to use the ListingKey 
         switch ($entity_type) {
       case 'drealty_listing':

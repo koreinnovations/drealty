@@ -1,0 +1,7 @@
+Install per normal drupal module.
+
+download/installing phRets
+
+1. Download phRETS from http://troda.com/projects/phrets/index.php?title=Download
+2. Place in your libraries folder [sites/all/libraries/phRets/phRets.php] typically.. the important part is: phRets/phRets.php
+3. ... tbd

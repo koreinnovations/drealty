@@ -71,7 +71,7 @@ function drush_drealty_rets_reprocess_images() {
 //  $daemon = new drealtyDaemon();
 //  $daemon->process_images(1, 'Property');
 
-  $listings = entity_load('drealty_listings');
+  $listings = entity_load('drealty_listing');
 
   foreach ($listings as $listing) {
     $result = db_select('file_managed', 'f')
@@ -87,7 +87,7 @@ function drush_drealty_rets_reprocess_images() {
     $files = file_load_multiple($fids);
 
     foreach ($files as $file) {
-      file_usage_add($file, 'drealty', 'drealty_listings', $listing->id);
+      file_usage_add($file, 'drealty', 'drealty_listing', $listing->id);
       drush_log(dt("Adding usage for @filename to listing: @id", array("@filename" => $file->filename, "@id" => $listing->id)), 'success');
     }    
     unset($fids, $result, $files, $file);
@@ -96,11 +96,7 @@ function drush_drealty_rets_reprocess_images() {
 
 function drush_drealty_rets_flush() {
   set_time_limit(0);
-
-
-  $listings = entity_load("drealty_listings", FALSE, array(), TRUE);
-
-
+  $listings = entity_load("drealty_listing", FALSE, array(), TRUE);
   foreach ($listings as $listing) {
     drush_log(dt('Deleting listing @id', array('@id' => $listing->id)), 'success');
     $listing->delete();

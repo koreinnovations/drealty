@@ -15,11 +15,11 @@ function drealty_views_data_alter(&$data) {
           'handler' => 'drealty_connection_handler_connection_operations_field',
       ),
   );
-  $data['drealty_listings']['operations'] = array(
+  $data['drealty_listing']['operations'] = array(
       'field' => array(
           'title' => t('Operations Links'),
           'help' => t('Display all operations available for this listing.'),
-          'handler' => 'drealty_listings_handler_operations_field',
+          'handler' => 'drealty_listing_handler_operations_field',
       ),
   );
 }

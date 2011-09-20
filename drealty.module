@@ -4,71 +4,203 @@ define('OFFSET', 268435456);
 define('RADIUS', 85445659.4471); /* $offset / pi() */
 
 function drealty_entity_info() {
-  return array(
-      'drealty_listings' => array(
-          'label' => t('dRealty Listing'),
-          'entity class' => 'DrealtyListing',
-          'controller class' => 'DrealtyLIstingController',
-          'base table' => 'drealty_listings',
-          'uri callback' => 'entity_class_uri',
-          'fieldable' => TRUE,
-          'view modes' => array(
-              'full' => array(
-                  'label' => 'Full View',
-                  'custom settings' => FALSE,
-              ),
-              'search' => array(
-                  'label' => 'Search View',
-                  'custom settings' => TRUE,
-              ),
-              'list' => array(
-                  'label' => 'List View',
-                  'custom settings' => TRUE,
-              ),
+  $entities = array();
+  $entities['drealty_listing'] = array(
+      'label' => t('dRealty Listing'),
+      'entity class' => 'DrealtyListing',
+      'controller class' => 'DrealtyListingController',
+      'base table' => 'drealty_listing',
+      'uri callback' => 'entity_class_uri',
+      'fieldable' => TRUE,
+      'view modes' => array(
+          'full' => array(
+              'label' => 'Full View',
+              'custom settings' => FALSE,
           ),
-          'bundles' => array(
-              'drealty_listings' => array(
-                  'label' => t('dRealty Listing'),
-                  'admin' => array(
-                      'path' => 'admin/drealty/settings',
-                      'access arguments' => array('administer content'),
-                  ),
-              ),
+          'search' => array(
+              'label' => 'Search View',
+              'custom settings' => TRUE,
           ),
-          'entity keys' => array(
-              'id' => 'id',
-              'label' => 'name',
+          'list' => array(
+              'label' => 'List View',
+              'custom settings' => TRUE,
           ),
-          'admin ui' => array(
-              'path' => 'admin/content/listings',
-              'file' => 'drealty_listings.admin.inc',
-              'controller class' => 'DrealtyListingsUIController',
-              'menu wildcard' => '%drealty_listings',
-          ),
-          'module' => 'drealty',
-          'access callback' => 'drealty_connection_entity_access',
       ),
-      'drealty_connection_entity' => array(
-          'label' => t('dRealty Connection'),
-          'entity class' => 'dRealtyConnectionEntity',
-          'controller class' => 'dRealtyConnectionEntityContoller',
-          'exportable' => TRUE,
-          'fieldable' => FALSE,
-          'base table' => 'drealty_connections',
-          'entity keys' => array(
-              'id' => 'conid',
-              'label' => 'name',
-              'name' => 'name'
+      'bundles' => array(
+          'drealty_listing' => array(
+              'label' => t('dRealty Listing'),
+              'admin' => array(
+                  'path' => 'admin/drealty/settings/listing',
+                  'access arguments' => array('administer content'),
+              ),
           ),
-          'module' => 'drealty',
-          'access callback' => 'drealty_connection_entity_access',
-          'admin ui' => array(
-              'path' => 'admin/drealty/connections',
-              'file' => 'drealty_connection.admin.inc',
-              'controller class' => 'DrealtyConnectionUIController',
+      ),
+      'entity keys' => array(
+          'id' => 'id',
+          'label' => 'name',
+      ),
+      'admin ui' => array(
+          'path' => 'admin/content/listings',
+          'file' => 'drealty_listing.admin.inc',
+          'controller class' => 'DrealtyListingsUIController',
+          'menu wildcard' => '%drealty_listing',
+      ),
+      'module' => 'drealty',
+      'access callback' => 'drealty_connection_entity_access',
+  );
+
+  $entities['drealty_openhouse'] = array(
+      'label' => t('dRealty OpenHouse'),
+      'entity class' => 'DrealtyOpenHouse',
+      'controller class' => 'DrealtyOpenHouseController',
+      'base table' => 'drealty_openhouse',
+      'uri callback' => 'entity_class_uri',
+      'fieldable' => TRUE,
+      'view modes' => array(
+          'full' => array(
+              'label' => 'Full View',
+              'custom settings' => FALSE,
           ),
+          'search' => array(
+              'label' => 'Search View',
+              'custom settings' => TRUE,
+          ),
+          'list' => array(
+              'label' => 'List View',
+              'custom settings' => TRUE,
+          ),
+      ),
+      'bundles' => array(
+          'drealty_openhouse' => array(
+              'label' => t('dRealty Open House'),
+              'admin' => array(
+                  'path' => 'admin/drealty/settings/openhouse',
+                  'access arguments' => array('administer content'),
+              ),
+          ),
+      ),
+      'entity keys' => array(
+          'id' => 'id',
+          'label' => 'name',
+      ),
+      'admin ui' => array(
+          'path' => 'admin/content/openhouses',
+          'file' => 'drealty_openhouse.admin.inc',
+          'controller class' => 'DrealtyOpenHouseUIController',
+          'menu wildcard' => '%drealty_openhouse',
+      ),
+      'module' => 'drealty',
+      'access callback' => 'drealty_connection_entity_access',
+  );
+  
+$entities['drealty_agent'] = array(
+      'label' => t('dRealty Agent'),
+      'entity class' => 'DrealtyAgent',
+      'controller class' => 'DrealtyAgentController',
+      'base table' => 'drealty_agent',
+      'uri callback' => 'entity_class_uri',
+      'fieldable' => TRUE,
+      'view modes' => array(
+          'full' => array(
+              'label' => 'Full View',
+              'custom settings' => FALSE,
+          ),
+          'search' => array(
+              'label' => 'Search View',
+              'custom settings' => TRUE,
+          ),
+          'list' => array(
+              'label' => 'List View',
+              'custom settings' => TRUE,
+          ),
+      ),
+      'bundles' => array(
+          'drealty_agent' => array(
+              'label' => t('dRealty Agent'),
+              'admin' => array(
+                  'path' => 'admin/drealty/settings/agent',
+                  'access arguments' => array('administer content'),
+              ),
+          ),
+      ),
+      'entity keys' => array(
+          'id' => 'id',
+      ),
+      'admin ui' => array(
+          'path' => 'admin/content/agents',
+          'file' => 'drealty_agent.admin.inc',
+          'controller class' => 'DrealtyAgentUIController',
+          'menu wildcard' => '%drealty_agent',
+      ),
+      'module' => 'drealty',
+      'access callback' => 'drealty_connection_entity_access',
+  );
+
+$entities['drealty_office'] = array(
+      'label' => t('dRealty Office'),
+      'entity class' => 'DrealtyOffice',
+      'controller class' => 'DrealtyOfficeController',
+      'base table' => 'drealty_office',
+      'uri callback' => 'entity_class_uri',
+      'fieldable' => TRUE,
+      'view modes' => array(
+          'full' => array(
+              'label' => 'Full View',
+              'custom settings' => FALSE,
+          ),
+          'search' => array(
+              'label' => 'Search View',
+              'custom settings' => TRUE,
+          ),
+          'list' => array(
+              'label' => 'List View',
+              'custom settings' => TRUE,
+          ),
+      ),
+      'bundles' => array(
+          'drealty_office' => array(
+              'label' => t('dRealty Office'),
+              'admin' => array(
+                  'path' => 'admin/drealty/settings/office',
+                  'access arguments' => array('administer content'),
+              ),
+          ),
+      ),
+      'entity keys' => array(
+          'id' => 'id',
+      ),
+      'admin ui' => array(
+          'path' => 'admin/content/offices',
+          'file' => 'drealty_office.admin.inc',
+          'controller class' => 'DrealtyOfficeUIController',
+          'menu wildcard' => '%drealty_office',
+      ),
+      'module' => 'drealty',
+      'access callback' => 'drealty_connection_entity_access',
+  );
+
+  $entities['drealty_connection_entity'] = array(
+      'label' => t('dRealty Connection'),
+      'entity class' => 'dRealtyConnectionEntity',
+      'controller class' => 'dRealtyConnectionEntityContoller',
+      'exportable' => TRUE,
+      'fieldable' => FALSE,
+      'base table' => 'drealty_connections',
+      'entity keys' => array(
+          'id' => 'conid',
+          'label' => 'name',
+          'name' => 'name'
+      ),
+      'module' => 'drealty',
+      'access callback' => 'drealty_connection_entity_access',
+      'admin ui' => array(
+          'path' => 'admin/drealty/connections',
+          'file' => 'drealty_connection.admin.inc',
+          'controller class' => 'DrealtyConnectionUIController',
       ),
   );
+
+  return $entities;
 }
 
 function drealty_connection_entity_access($op, $type = NULL, $account = NULL) {
@@ -114,35 +246,35 @@ function drealty_menu() {
 
   $items['listings/map'] = array(
       'title' => 'Search Map',
-      'page callback' => 'drealty_listings_map',
+      'page callback' => 'drealty_listing_map',
       'access callback' => TRUE,
       'type' => MENU_NORMAL_ITEM,
   );
 
   $items['drealty/js/map'] = array(
-      'page callback' => 'drealty_listings_map_get_listings',
+      'page callback' => 'drealty_listing_map_get_listings',
       'access callback' => TRUE,
       'type' => MENU_CALLBACK,
   );
   return $items;
 }
 
-function drealty_listings_map() {
-  $listings = entity_load('drealty_listings');
+function drealty_listing_map() {
+  $listings = entity_load('drealty_listing');
   drupal_add_js('http://maps.googleapis.com/maps/api/js?sensor=false', array('type' => 'external'));
   $module_path = drupal_get_path('module', 'drealty');
   drupal_add_js($module_path . '/js/drealty.search.map.js', array('type' => 'file'));
   return theme('drealty_search_map', $listings);
 }
 
-function drealty_listings_map_get_listings() {
+function drealty_listing_map_get_listings() {
 
   $bb = $_REQUEST['bounding_box'];
 
   $lat_condition = $bb['south_west']['lat'] . ' AND ' . $bb['north_east']['lat'];
   $lon_condition = $bb['south_west']['lng'] . ' AND ' . $bb['north_east']['lng'];
 
-  $markers = db_select('drealty_listings', 'l')
+  $markers = db_select('drealty_listing', 'l')
     ->fields('l', array('latitude', 'longitude', 'id', 'listing_id'))
     ->where("(latitude BETWEEN $lat_condition) AND (longitude BETWEEN $lon_condition)")
     ->execute()
@@ -241,6 +373,35 @@ function _fields_autocomplete($conid, $class, $string) {
   exit();
 }
 
+function drealty_sentence_case($string) {
+  $sentences = preg_split('/([.?!]+)/', $string, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
+  $new_string = '';
+  foreach ($sentences as $key => $sentence) {
+    $new_string .= ($key & 1) == 0 ?
+      ucfirst(strtolower(trim($sentence))) :
+      $sentence . ' ';
+  }
+  return trim($new_string);
+}
+
+function drealty_word_limit($text, $limit=40) {
+  $explode = explode(' ', $text);
+  $string = '';
+
+  $dots = '...';
+  if (count($explode) <= $limit) {
+    $dots = '';
+  }
+  for ($i = 0; $i < $limit; $i++) {
+    $string .= $explode[$i] . " ";
+  }
+  if ($dots) {
+    $string = substr($string, 0, strlen($string));
+  }
+
+  return "$string $dots";
+}
+
 function drealty_geocode($address) {
 
 
@@ -270,6 +431,20 @@ function drealty_geocode($address) {
     }
   }
   return $latlon;
+}
+
+function drealty_load_phrets() {
+  static $static_cache = FALSE;
+  if (!$static_cache) {
+    $path = libraries_get_path('phRets');
+    $file = $path . '/phRets.php';
+    if (file_exists($file)) {
+      if (include_once($file)) {
+        $static_cache = $file;
+      }
+    }
+  }
+  return $static_cache;
 }
 
 function drealty_settings_form($form, &$form_state) {
@@ -333,6 +508,14 @@ function drealty_listing_access($op, $listing = NULL, $account = NULL) {
   return TRUE;
 }
 
+function drealty_openhouse_access($op, $openhouse = NULL, $account = NULL) {
+  return TRUE;
+}
+
+function drealty_agent_access($op, $agent = NULL, $account = NULL) {
+  return TRUE;
+}
+
 /**
  * Implements hook_title_callback().
  *
@@ -373,15 +556,21 @@ function drealty_theme($existing, $type, $theme, $path) {
       'arguments' => array('view' => NULL),
   );
 
-  $themes['drealty_listings'] = array(
+  $themes['drealty_listing'] = array(
       'render element' => 'elements',
       'template' => 'templates/drealty-listings',
+  );
+
+  $themes['drealty_listing__drealty_listing__search'] = array(
+      'render element' => 'elements',
+      'template' => 'templates/drealty-listings--search',
   );
 
   $themes['drealty_mls_images'] = array(
       'variables' => array('mls_images', 'listing' => NULL),
       'template' => 'templates/drealty-mls-images',
   );
+
 
 
   $themes['drealty_search_map'] = array(
@@ -393,27 +582,90 @@ function drealty_theme($existing, $type, $theme, $path) {
   return $themes;
 }
 
-function drealty_listings_load($listing_mlsid, $reset = FALSE) {
+function drealty_office_load($office_mlsid, $reset = FALSE) {
   $query = new EntityFieldQuery();
   $result = $query
-    ->entityCondition('entity_type', 'drealty_listings')
+    ->entityCondition('entity_type', 'drealty_office')
+    ->propertyCondition('office_id', $office_mlsid)
+    ->execute();
+
+  return reset(entity_load('drealty_office', array_keys($result['drealty_office']), array(), $reset));
+}
+
+function drealty_agent_load($agent_mlsid, $reset = FALSE) {
+  $query = new EntityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'drealty_agent')
+    ->propertyCondition('agent_id', $agent_mlsid)
+    ->execute();
+
+  return reset(entity_load('drealty_agent', array_keys($result['drealty_agent']), array(), $reset));
+}
+
+function drealty_openhouse_load($listing_mlsid, $reset = FALSE) {
+  $query = new EntityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'drealty_openhouse')
     ->propertyCondition('listing_id', $listing_mlsid)
     ->execute();
 
-  return reset(entity_load('drealty_listings', array_keys($result['drealty_listings']), array(), $reset));
+  return reset(entity_load('drealty_openhouse', array_keys($result['drealty_openhouse']), array(), $reset));
 }
 
-function drealty_listings_load_multiple($listing_mlsids = array(), $conditions = array(), $reset = FALSE) {
+function drealty_listing_load($listing_mlsid, $reset = FALSE) {
+  $query = new EntityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'drealty_listing')
+    ->propertyCondition('listing_id', $listing_mlsid)
+    ->execute();
+
+  return reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), $reset));
+}
+
+function drealty_listing_load_multiple($listing_mlsids = array(), $conditions = array(), $reset = FALSE) {
   
 }
 
-function drealty_listings_page_title(DrealtyListing $listing) {
+function drealty_listing_page_title(DrealtyListing $listing) {
   return $listing->name;
 }
 
-function drealty_listings_page_view($listing, $view_mode = 'full', $langcode = NULL, $page = NULL) {
-  $controller = entity_get_controller('drealty_listings');
+function drealty_openhouse_page_title(DrealtyOpenHouse $openHouse) {
+  return $openHouse->name;
+}
+
+function drealty_agent_page_title(DrealtyAgent $agent) {
+  return "{$agent->first_name} {$agent->last_name}";
+}
+
+function drealty_office_page_title(DrealtyAgent $office) {
+  return $office->name;
+}
+
+function drealty_listing_page_view($listing, $view_mode = 'full', $langcode = NULL, $page = NULL) {
+  $controller = entity_get_controller('drealty_listing');
   $content = $controller->view(array($listing->id => $listing), $view_mode, $langcode, $page);
+
+  return $content;
+}
+
+function drealty_openhouse_page_view($openhouse, $view_mode = 'full', $langcode = NULL, $page = NULL) {
+  $controller = entity_get_controller('drealty_openhouse');
+  $content = $controller->view(array($openhouse->id => $openhouse), $view_mode, $langcode, $page);
+
+  return $content;
+}
+
+function drealty_agent_page_view($agent, $view_mode = 'full', $langcode = NULL, $page = NULL) {
+  $controller = entity_get_controller('drealty_agent');
+  $content = $controller->view(array($agent->id => $agent), $view_mode, $langcode, $page);
+
+  return $content;
+}
+
+function drealty_office_page_view($office, $view_mode = 'full', $langcode = NULL, $page = NULL) {
+  $controller = entity_get_controller('drealty_office');
+  $content = $controller->view(array($office->id => $office), $view_mode, $langcode, $page);
 
   return $content;
 }
@@ -428,12 +680,21 @@ function drealty_views_api() {
   );
 }
 
-function drealty_listings_uri(DrealtyListing $listing) {
+function drealty_listing_uri(DrealtyListing $listing) {
   return array('path' => 'listings/' . $listing->id);
 }
 
 function drealty_preprocess_entity(&$variables) {
-  $x = $variables;
+  if ($variables['entity_type'] == 'drealty_listing') {
+    drupal_add_css($path . '/css/drealty.base.css', array('type' => 'file', 'group' => CSS_DEFAULT, 'every_page' => FALSE, 'media' => 'all'));
+    $path = drupal_get_path('module', 'drealty');
+    switch ($variables['view_mode']) {
+      case 'search':
+        drupal_add_css($path . '/css/drealty.search.css', array('type' => 'file', 'group' => CSS_DEFAULT, 'every_page' => FALSE, 'media' => 'all'));
+        break;
+      default:
+    }
+  }
 }
 
 function drealty_search_api_multitext_getter_callback($item, $options = array(), $name = NULL) {
@@ -442,13 +703,25 @@ function drealty_search_api_multitext_getter_callback($item, $options = array(),
 }
 
 function drealty_listing_create($values = array()) {
-  return entity_get_controller('drealty_listings')->create($values);
+  return entity_get_controller('drealty_listing')->create($values);
+}
+
+function drealty_openhouse_create($values = array()) {
+  return entity_get_controller('drealty_openhouse')->create($values);
+}
+
+function drealty_agent_create($values = array()) {
+  return entity_get_controller('drealty_agent')->create($values);
+}
+
+function drealty_office_create($values = array()) {
+  return entity_get_controller('drealty_office')->create($values);
 }
 
 class DrealtyListing extends Entity {
 
   public function __construct(array $values = array()) {
-    parent::__construct($values, 'drealty_listings');
+    parent::__construct($values, 'drealty_listing');
   }
 
   protected function defaultLabel() {
@@ -456,12 +729,12 @@ class DrealtyListing extends Entity {
   }
 
   protected function defaultUri() {
-    return array('path' => 'listings/' . $this->id);
+    return array('path' => 'listings/' . $this->listing_id);
   }
 
 }
 
-class DrealtyLIstingController extends EntityAPIController {
+class DrealtyListingController extends EntityAPIController {
 
   public function __construct($entityType) {
     parent::__construct($entityType);
@@ -497,6 +770,154 @@ class DrealtyLIstingController extends EntityAPIController {
   public function create(array $values = array()) {
     $listing = parent::create($values);
     return $listing;
+  }
+
+  public function delete($ids, DatabaseTransaction $transaction = NULL) {
+
+    $entities = $ids ? $this->load($ids) : FALSE;
+    if (!$entities) {
+      // Do nothing, in case invalid or no ids have been passed.
+      return;
+    }
+    foreach ($entities as $entity) {
+      foreach ($entity->mls_images as $file) {
+        file_delete($file, TRUE);
+      }
+    }
+
+    parent::delete($ids, $transaction);
+  }
+
+}
+
+class DrealtyOpenHouse extends Entity {
+
+  public function __construct(array $values = array()) {
+    parent::__construct($values, 'drealty_openhouse');
+  }
+
+  protected function defaultLabel() {
+    return $this->id;
+  }
+
+  protected function defaultUri() {
+    return array('path' => 'openhouses/' . $this->listing_id);
+  }
+
+}
+
+class DrealtyOpenHouseController extends EntityAPIController {
+
+  public function __construct($entityType) {
+    parent::__construct($entityType);
+  }
+
+  public function attachLoad(&$queried_entities, $revision_id = FALSE) {
+    parent::attachLoad($queried_entities, $revision_id);
+
+    foreach ($queried_entities as $entity) {
+      $query = new EntityFieldQuery();
+      $result = $query
+        ->entityCondition('entity_type', 'drealty_listing')
+        ->propertyCondition('listing_key', $entity->listing_key)
+        ->execute();
+      if ($result) {
+        $entity->listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
+      }
+    }
+  }
+
+  public function create(array $values = array()) {
+    $openhouse = parent::create($values);
+    return $openhouse;
+  }
+
+}
+
+class DrealtyAgent extends Entity {
+
+  public function __construct(array $values = array()) {
+    parent::__construct($values, 'drealty_agent');
+  }
+
+  protected function defaultLabel() {
+    return $this->id;
+  }
+
+  protected function defaultUri() {
+    return array('path' => 'agents/' . $this->agent_id);
+  }
+
+}
+
+class DrealtyAgentController extends EntityAPIController {
+
+  public function __construct($entityType) {
+    parent::__construct($entityType);
+  }
+
+  public function attachLoad(&$queried_entities, $revision_id = FALSE) {
+    parent::attachLoad($queried_entities, $revision_id);
+
+//    foreach ($queried_entities as $entity) {
+//      $query = new EntityFieldQuery();
+//      $result = $query
+//        ->entityCondition('entity_type', 'drealty_agent')
+//        ->propertyCondition('listing_key', $entity->listing_key)
+//        ->execute();
+//      if ($result) {
+//        $entity->listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
+//      }
+//    }
+  }
+
+  public function create(array $values = array()) {
+    $agent = parent::create($values);
+    return $agent;
+  }
+
+}
+
+class DrealtyOffice extends Entity {
+
+  public function __construct(array $values = array()) {
+    parent::__construct($values, 'drealty_office');
+  }
+
+  protected function defaultLabel() {
+    return $this->id;
+  }
+
+  protected function defaultUri() {
+    return array('path' => 'offices/' . $this->office_id);
+  }
+
+}
+
+class DrealtyOfficeController extends EntityAPIController {
+
+  public function __construct($entityType) {
+    parent::__construct($entityType);
+  }
+
+  public function attachLoad(&$queried_entities, $revision_id = FALSE) {
+    parent::attachLoad($queried_entities, $revision_id);
+
+//    foreach ($queried_entities as $entity) {
+//      $query = new EntityFieldQuery();
+//      $result = $query
+//        ->entityCondition('entity_type', 'drealty_office')
+//        ->propertyCondition('listing_key', $entity->listing_key)
+//        ->execute();
+//      if ($result) {
+//        $entity->listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
+//      }
+//    }
+  }
+
+  public function create(array $values = array()) {
+    $office = parent::create($values);
+    return $office;
   }
 
 }

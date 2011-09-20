@@ -1,4 +1,4 @@
-
+<h1>dRealty Listing</h1>
 
 <div class="<?php print $classes; ?> clearfix"<?php print $attributes; ?>>
   <?php if (!$page): ?>

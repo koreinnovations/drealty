@@ -33,10 +33,10 @@ class drealty_connection_handler_connection_operations_field extends views_handl
         $operation .= ' | ' . l("Deactivate", "admin/drealty/connections/manage/$name/deactivate");
         $operation .= ' | ' . l("Export", "admin/drealty/connections/manage/$name/export");
        // $operation .= ' | ' . l("Data Management", "admin/config/drealty/connection/manual_update/{$connection->conid}");
-        $operation .= ' <br /> ' . "Configure: " . l("Properties", "admin/drealty/connections/manage/$name/resource/drealty_listing");
-        $operation .= ' | ' . l("Open Houses", "admin/drealty/connections/manage/$name/resource/drealty_openhouse");
-        $operation .= ' | ' . l("Offices", "admin/drealty/connections/manage/$name/resource/drealty_office");
-        $operation .= ' | ' . l("Agents", "admin/drealty/connections/manage/$name/resource/drealty_agent");
+        $operation .= ' <br /> ' . "Configure: " . l("Properties", "admin/drealty/connections/manage/$name/resource/property");
+        $operation .= ' | ' . l("Open Houses", "admin/drealty/connections/manage/$name/resource/open_house");
+        $operation .= ' | ' . l("Offices", "admin/drealty/connections/manage/$name/resource/office");
+        $operation .= ' | ' . l("Agents", "admin/drealty/connections/manage/$name/resource/agent");
       } else {
         $operation .= ' | ' . l("Activate", "admin/drealty/connections/manage/$name/activate");
       }

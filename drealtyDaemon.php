@@ -180,10 +180,16 @@ class drealtyDaemon {
     if (!empty($result)) {
       $existing_items_tmp = entity_load($entity_type, array_keys($result[$entity_type]));
     }
-<<<<<<< HEAD
-    
-=======
+    //re-key the array to use the ListingKey 
+    $existing_items = array();
+    foreach ($existing_items_tmp as $existing_item_tmp) {
+      $existing_items[$existing_item_tmp->listing_key] = $existing_item_tmp;
+    }
 
+    // get the fieldmappings
+    $field_mappings = $connection->FetchFieldMappings($resource, $class->cid);
+
+    // set $id to the systemname of the entity's corresponding key from the rets feed to make the code easier to read
     switch ($entity_type) {
       case 'drealty_listing':
       case 'drealty_openhouse':
@@ -197,30 +203,8 @@ class drealtyDaemon {
         break;
     }
 
->>>>>>> origin/7.x-2.x
-    //re-key the array to use the ListingKey 
-        switch ($entity_type) {
-      case 'drealty_listing':
-      case 'drealty_openhouse':
-        $key_field = 'listing_key';
-        break;
-      case 'drealty_agent':
-        $key_field = 'agent_id';
-        break;
-      case 'drealty_office':
-        $key_field = 'office_id';
-        break;
-    }
-    
-    $existing_items = array();
-    foreach ($existing_items_tmp as $existing_item_tmp) {
-      $existing_items[$existing_item_tmp->{$key_field}] = $existing_item_tmp;
-    }
 
-    // get the fieldmappings
-    $field_mappings = $connection->FetchFieldMappings($resource, $class->cid);
 
-    // set $id to the systemname of the entity's corresponding key from the rets feed to make the code easier to read
     $id = $field_mappings[$key_field]->systemname;
 
     for ($i = 0; $i < $chunk_count; $chunk_idx++, $i++) {

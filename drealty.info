@@ -8,9 +8,11 @@ dependencies[] = views
 dependencies[] = libraries
 dependencies[] = geocode
 
-files[] = phRets.inc
 files[] = drealty_connection.admin.inc
-files[] = drealty_listings.admin.inc
+files[] = drealty_listing.admin.inc
+files[] = drealty_openhouse.admin.inc
+files[] = drealty_agent.admin.inc
+files[] = drealty_office.admin.inc
 files[] = drealtyConnection.inc
 files[] = drealtyResources.inc
 files[] = drealtyDaemon.php
@@ -20,7 +22,7 @@ files[] = views/drealty_connection_handler_edit_link_field.inc
 files[] = views/drealty_connection_handler_connection_operations_field.inc
 files[] = views/drealty_listing_field_handler.inc
 files[] = views/drealty_listing_field_handler_price.inc
-files[] = views/drealty_listings_handler_operations_field.inc
+files[] = views/drealty_listing_handler_operations_field.inc
 
 package = Real Estate
 

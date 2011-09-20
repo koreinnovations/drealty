@@ -23,6 +23,12 @@ function drealty_uninstall() {
 
   global $conf;
 
+  $listings = entity_load("drealty_listing", FALSE, array(), TRUE);
+  // need to delete all the listings this way so that we can clean up the database and remove all the images properly
+  foreach ($listings as $listing) {
+    $listing->delete();
+  }
+
   cache_clear_all('drealty_', 'cache', TRUE);
   field_purge_batch(1000);
 
@@ -138,13 +144,99 @@ function drealty_schema() {
           'mid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
           'conid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
           'resource' => array('type' => 'varchar', 'length' => 128, 'not null' => TRUE, 'default' => ''),
-          'node_type' => array('type' => 'varchar', 'length' => 128, 'not null' => TRUE, 'default' => ''),
+          'entity_type' => array('type' => 'varchar', 'length' => 128, 'not null' => TRUE, 'default' => ''),
       ),
       'primary key' => array('mid'),
   );
 
+  
+  $schema['drealty_agent'] = array(
+    'description' => 'Table to hold Agents',
+      'fields' => array(
+          'id' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The internal Id', 'group' => 'hidden'),
+          'agent_id' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'Agent Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
+          'type' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The type of agent.', 'group' => 'required', 'required' => TRUE),
+          'first_name' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 50, 'description' => 'First name of the Agent..', 'group' => 'general'),
+          'last_name' =>array('type' => 'varchar', 'not null' => FALSE, 'length' => 50, 'description' => 'Last Name of the Agent.', 'group' => 'general'),
+          'address_number' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'Address number.', 'group' => 'address'),
+          'address_street' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 128, 'description' => 'Address street.', 'group' => 'address'),
+          'address_direction' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'Address direction.', 'group' => 'address'),
+          'address_2' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 128, 'description' => 'Address line 2.', 'group' => 'address'),
+          'city' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 128, 'description' => 'The city.', 'group' => 'address'),
+          'state_or_parish' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The state or parish.', 'group' => 'address'),
+          'postal_code' =>array('type' => 'varchar', 'not null' => FALSE, 'length' => 12, 'description' => 'The postal code.', 'group' => 'address'),
+          'email' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 128, 'description' => 'The email address for the Agent.', 'group' => 'contact'),
+          'web_address' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 255, 'description' => 'The web address for the Agent.', 'group' => 'contact'),
+          'phone_office' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The phone number for the Agent.', 'group' => 'contact'),
+          'phone_office_ext' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The phone extentension for the Agent.', 'group' => 'contact'),
+          'phone_cell' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The cell phone for the Agent.', 'group' => 'contact'),
+          'office_name' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The office name of the Agent.', 'group' => 'office'),
+          'office_id' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The the office mls id for the agent.', 'group' => 'office'),
+          'office_address_number' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The address number of the office.', 'group' => 'office'),
+          'office_address_street' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 128, 'description' => 'The address street of the office.', 'group' => 'office'),
+          'office_address_direction' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The address direction of the office.', 'group' => 'office'),
+          'office_address_2' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 128, 'description' => 'The address line 2 of the office.', 'group' => 'office'),
+          'office_city' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 128, 'description' => 'The office city.', 'group' => 'office'),
+          'office_state_or_parish' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The office state or parish.', 'group' => 'office'),
+          'office_zip' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 12, 'description' => 'The type of agent.', 'group' => 'office'),
+          'office_phone' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The office phone.', 'group' => 'office'),
+          'office_fax' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The office fax.', 'group' => 'office'),
+          'office_email' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 128, 'description' => 'The office email address.', 'group' => 'office'),
+          'office_web_address' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 255, 'description' => 'The office web address.', 'group' => 'office'),          
+      ),
+      'primary key' => array('id'),
+  );
+  
+  
+    $schema['drealty_office'] = array(
+    'description' => 'Table to hold Offices or Brokers',
+      'fields' => array(
+          'id' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The internal Id', 'group' => 'hidden'),
+          'office_id' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'Broker or Office Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
+          'type' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The type of office.', 'group' => 'required', 'required' => TRUE),
+          'name' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 255, 'description' => 'The name of the Office..', 'group' => 'general'),
+          'short_name' =>array('type' => 'varchar', 'not null' => FALSE, 'length' => 128, 'description' => 'The short name of the Office.', 'group' => 'general'),
+          'address_number' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'Address number.', 'group' => 'address'),
+          'address_street' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 128, 'description' => 'Address street.', 'group' => 'address'),
+          'address_direction' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'Address direction.', 'group' => 'address'),
+          'address_2' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'Address line 2.', 'group' => 'address'),
+          'city' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 50, 'description' => 'The city.', 'group' => 'address'),
+          'state_or_parish' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The state or parish.', 'group' => 'address'),
+          'postal_code' =>array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The postal code.', 'group' => 'address'),
+          'email' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 128, 'description' => 'The email address for the Office.', 'group' => 'contact'),
+          'web_address' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 255, 'description' => 'The web address for the Office.', 'group' => 'contact'),
+          'phone' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The phone number for the Office.', 'group' => 'contact'),
+          'ext' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The phone extentension for the Office.', 'group' => 'contact'),
+          'fax' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The fax number  for the Office.', 'group' => 'contact'),
+      ),
+      'primary key' => array('id'),
+  );
+  
+  
+  $schema['drealty_openhouse'] = array(
+      'description' => 'Table to hold open houses',
+      'fields' => array(
+          'id' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The internal Id', 'group' => 'hidden'),
+          'name' => array('type' => 'varchar', 'length' => 50, 'not null' => TRUE, 'default' => '', 'description' => "Name or Title of the Listing", 'group' => 'hidden'),
+          'conid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The connection Id', 'group' => 'hidden'),
+          'hash' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => '', 'description' => 'MD5 Hash used to determine if a listing has changed.', 'group' => 'hidden'),
+          'class' => array('type' => 'int', 'not null' => FALSE, 'default' => 0, 'description' => 'The Resource Class from the MLS', 'group' => 'hidden'),
+          'created' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Date the listing was created in the system.', 'group' => 'hidden'),
+          'changed' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Last date the listing was changed/updated in the system', 'group' => 'hidden'),
+          'rets_imported' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'tiny', 'not null' => FALSE, 'default' => 1, 'description' => 'Is this a user submitted listing or mls imported', 'group' => 'hidden'),
+          'openhouse_id' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => 'The unique Open House Id # used to look up an individual open house listing listing.', 'group' => 'required', 'required' => TRUE, 'weight' => 1),
+          'listing_id' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => 'The unique MLS # used to look up an individual listing.', 'group' => 'required', 'required' => TRUE, 'weight' => 1),
+          'listing_key' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => 'A unique identifier for this record from the source system. Typically this is the MLS #, however systems like Interealty use a sysid field. Select the apporpriate field.', 'group' => 'required', 'required' => TRUE, 'weight' => 0),
+          'listing_status' => array('type' => 'varchar', 'length' => 50, 'not null' => FALSE, 'default' => NULL, 'description' => "Local or regional status that are well known by business users. Each MlsStatus must map to a single RetsStatus. Multiple MlsStatus may map to a single RetsStatus.", 'group' => 'required', 'required' => TRUE),
+          'start_datetime' => array('type' => 'int', 'not null' => TRUE, 'description' => 'The Start Date Time.', 'group' => 'date'),
+          'end_datetime' => array('type' => 'int', 'not null' => TRUE, 'description' => 'The End Date Time.', 'group' => 'date'),
+          'comments' => array('type' => 'text', 'not null' => FALSE, 'default' => NULL, 'description' => "Text comments if any.", 'group' => 'general'),       
+          'list_office_mls_id' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => "The local, well-known identifier. This value may not be unique, specifically in the case of aggregation systems, this value should be the identifier from the original system.", 'group' => 'general'),
+      ),
+      'primary key' => array('id'),
+  );
 
-  $schema['drealty_listings'] = array(
+  $schema['drealty_listing'] = array(
       'description' => 'Table to hold listing data',
       'fields' => array(
         'id' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The internal Id', 'group' => 'hidden'),

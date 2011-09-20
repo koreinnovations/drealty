@@ -17,20 +17,20 @@ class drealtyDaemon {
       foreach ($mappings as $mapping) {
         $classes = $connection->FetchClasses($mapping->resource);
         foreach ($classes as $class) {
-          if ($class->enabled && $class->lifetime <= time() - ($class->lastupdate + 120)) {
-            $this->ProcessRetsClass($connection, $mapping->resource, $class, $mapping->node_type);
+          if ($class->enabled && $class->lifetime <= time() - ($class->lastupdate + 60)) {
+            $this->ProcessRetsClass($connection, $mapping->resource, $class, $mapping->entity_type);
             $class->lastupdate = time();
             drupal_write_record('drealty_classes', $class, 'cid');
           }
         }
       }
     }
-    unset($coneections, $mappings, $classes);
+    unset($connections, $mappings, $classes);
     cache_clear_all();
     return TRUE;
   }
 
-  private function ProcessRetsClass(dRealtyConnectionEntity $connection, $resource, $class) {
+  private function ProcessRetsClass(dRealtyConnectionEntity $connection, $resource, $class, $entity_type) {
 
     $query_fields = array();
     $offset = 0;
@@ -45,15 +45,25 @@ class drealtyDaemon {
     $fieldmappings = $connection->FetchFieldMappings($resource, $class->cid);
 
 
-    $res = strtolower($resource);
-    if ($res == "activeagent") {
-      $res = "agent";
-    }
-    drush_log(dt("Processing @res", array("@res" => $res)));
+    drush_log(dt("Processing @res", array("@res" => $resource)));
     if (!$class->override_status_query) {
       //build the query
       $statuses = $class->status_values;
       $status_q = "|$statuses";
+
+      switch ($entity_type) {
+        case 'drealty_listing':
+        case 'drealty_openhouse':
+          $query_field = 'listing_status';
+          break;
+        case 'drealty_agent':
+        case 'drealty_office':
+          $query_field = 'type';
+          break;
+        default:
+          $query_field = 'listing_status';
+      }
+
 
       $query = array();
       $query[] = "{$fieldmappings['listing_status']->systemname}={$status_q}";
@@ -92,40 +102,37 @@ class drealtyDaemon {
         );
         // do the actual search
         $search = $this->dc->get_phrets()->SearchQuery($resource, $class->systemname, "($q)", $optional_params);
-        $listings = array();
+        $items = array();
         // loop through the search results
-        while ($listing = $this->dc->get_phrets()->FetchRow($search)) {
+        while ($item = $this->dc->get_phrets()->FetchRow($search)) {
           // calculate the hash
-          $listing['hash'] = $this->calculate_hash($listing);
-          $listings[] = $listing;
+          $item['hash'] = $this->calculate_hash($item);
+          $items[] = $item;
         }
         if ($error = $this->dc->get_phrets()->Error()) {
           drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
         }
-        drush_log(dt("caching @count listings for resource: @resource | class: @class", array("@count" => count($listings), "@resource" => $resource, "@class" => $class->systemname)));
-        cache_set("drealty_chunk_{$resource}_{$class->systemname}_" . $chunks++, $listings);
+        drush_log(dt("caching @count items for resource: @resource | class: @class", array("@count" => count($items), "@resource" => $resource, "@class" => $class->systemname)));
+        cache_set("drealty_chunk_{$resource}_{$class->systemname}_" . $chunks++, $items);
 
-        $offset += count($listings) + 1;
+        $offset += count($items) + 1;
         if ($limit == 'NONE') {
           $end = FALSE;
         } else {
           $end = $this->dc->get_phrets()->IsMaxrowsReached();
         }
         $this->dc->get_phrets()->FreeResult($search);
-        // clean up
-        //unset($listings, $listing, $search, $optional_params);
-        // end the loop if we're getting all the listings in one go
       }
       $this->dc->disconnect();
 
       // do some cleanup
-      unset($listings, $query_fields, $offset, $mls_field, $price_field, $mappings, $resources);
+      unset($items, $query_fields, $offset, $mls_field, $price_field, $mappings, $resources);
 
       // at this point we have data waiting to be processed. Need to process the
       // data which will insert/update/delete the listing data as nodes
       drush_log(dt("process_results( connection: @connection_name, resource: @resource, class: @class, chunks: @chunks)", array("@connection_name" => $connection->name, "@resource" => $resource,
             "@class" => $class->systemname, "@chunks" => $chunks)));
-      $this->process_results($connection, $resource, $class, $chunks);
+      $this->process_results($connection, $resource, $class, $entity_type, $chunks);
       $this->process_images($connection, $resource);
     } else {
       $error = $this->dc->get_phrets()->Error();
@@ -152,11 +159,11 @@ class drealtyDaemon {
    *  The number of chunks that need to be processed
    *
    */
-  protected function process_results(dRealtyConnectionEntity $connection, $resource, $class, $chunk_count) {
+  protected function process_results(dRealtyConnectionEntity $connection, $resource, $class, $entity_type, $chunk_count) {
 
     // $first_run = variable_get("drealty_connection_{$connection->conid}_first_run", TRUE);
 
-    $schema = drupal_get_schema_unprocessed("drealty", "drealty_listings");
+    $schema = drupal_get_schema_unprocessed("drealty", $entity_type);
     $schema_fields = $schema['fields'];
 
     drush_log('processing results');
@@ -165,18 +172,18 @@ class drealtyDaemon {
 
 
     $query = new EntityFieldQuery();
-    $result = $query->entityCondition('entity_type', 'drealty_listings', '=')
+    $result = $query->entityCondition('entity_type', $entity_type, '=')
       ->propertyCondition('conid', $connection->conid)
       ->execute();
 
-    $existing_listings_tmp = array();
+    $existing_items_tmp = array();
     if (!empty($result)) {
-      $existing_listings_tmp = entity_load('drealty_listings', array_keys($result['drealty_listings']));
+      $existing_items_tmp = entity_load($entity_type, array_keys($result[$entity_type]));
     }
     //re-key the array to use the ListingKey 
-    $existing_listings = array();
-    foreach ($existing_listings_tmp as $existing_listing_tmp) {
-      $existing_listings[$existing_listing_tmp->listing_key] = $existing_listing_tmp;
+    $existing_items = array();
+    foreach ($existing_items_tmp as $existing_item_tmp) {
+      $existing_items[$existing_item_tmp->listing_key] = $existing_item_tmp;
     }
 
     // get the fieldmappings
@@ -186,98 +193,89 @@ class drealtyDaemon {
 
     for ($i = 0; $i < $chunk_count; $chunk_idx++, $i++) {
       $chunk_name = "drealty_chunk_{$resource}_{$class->systemname}_{$chunk_idx}";
-      $rets_listings = cache_get($chunk_name);
+      $rets_results = cache_get($chunk_name);
 
-      $rets_listings_count = count($rets_listings->data);
+      $rets_results_count = count($rets_results->data);
 
-      for ($j = 0; $j < $rets_listings_count; $j++) {
+      for ($j = 0; $j < $rets_results_count; $j++) {
 
 
-        drush_log(dt("Item @idx of @total", array("@idx" => $j + 1, "@total" => $rets_listings_count)));
-        $rets_listing = $rets_listings->data[$j];
-        $in_rets[] = $rets_listing[$id];
+        drush_log(dt("Item @idx of @total", array("@idx" => $j + 1, "@total" => $rets_results_count)));
+        $rets_item = $rets_results->data[$j];
+        $in_rets[] = $rets_item[$id];
 
-        //TODO: might be a better place for this .. maybe move it into the admin section, not really sure.
-//        if ($first_run) {
-//
-//          drush_log("Running first search query and marking which fields are actually returned in the search as opposed to what the metadata says there is.");
-//
-//          $first_run_fields = $connection->FetchFields($resource);
-//
-//          foreach ($first_run_fields as $first_run_field) {
-//            if (!isset($rets_listing[$first_run_field->systemname])) {
-//              
-//              drush_log(dt("Marking @fieldname as not returned", array("@fieldname" => $first_run_field->longname)));
-//              
-//              db_update('drealty_fields')
-//                ->fields(array('rets_returned' => 0))
-//                ->condition('systemname', $first_run_field->systemname)
-//                ->execute();
-//            }
-//          }
-//          variable_set("drealty_connection_{$connection->conid}_first_run", FALSE);
-//        }
-        //check to see if this listing is in the db or to see if any of the values have changed
-        if (!isset($existing_listings[$rets_listing[$id]]) || $existing_listings[$rets_listing[$id]]->hash != $rets_listing['hash']) {
+        if (!isset($existing_items[$rets_item[$id]]) || $existing_items[$rets_item[$id]]->hash != $rets_item['hash']) {
 
-          $listing = new Entity(array('conid' => $connection->conid), 'drealty_listings');
+          $item = new Entity(array('conid' => $connection->conid), $entity_type);
 
           // this listing either doesn't exist in the IDX or has changed. 
           // determine if we need to update or create a new one.
-          if (isset($existing_listings[$rets_listing[$id]])) {
+          if (isset($existing_items[$rets_item[$id]])) {
             // this listing exists so we'll get a reference to it and set the values to what came to us in the RETS result
-            $listing = &$existing_listings[$rets_listing[$id]];
+            $item = &$existing_items[$rets_item[$id]];
           } else {
-            $listing->created = time();
+            $item->created = time();
           }
 
-          $listing->conid = $connection->conid;
-          $listing->name = $rets_listing[$id];
-          $listing->class = $class->cid;
-          $listing->process_images = TRUE;
-          $listing->hash = $rets_listing['hash'];
-          $listing->changed = time();
-          $listing->rets_imported = TRUE;
+          $item->conid = $connection->conid;
+          $item->name = $rets_item[$id];
+          $item->hash = $rets_item['hash'];
+          $item->changed = time();
+          $item->class = $class->cid;
+          $item->rets_imported = TRUE;
+
+          if ($entity_type == 'drealty_listing') {
+            $item->process_images = FALSE;
+          }
 
           foreach ($field_mappings as $mapping) {
-            if (isset($rets_listing[$mapping->systemname])) {
+            if (isset($rets_item[$mapping->systemname])) {
 
               $value = '';
 
               switch ($schema_fields[$mapping->field_name]['type']) {
                 case 'varchar':
                 case 'char':
-                  $value = substr($rets_listing[$mapping->systemname], 0, $schema_fields[$mapping->field_name]['length']);
+                  $value = substr($rets_item[$mapping->systemname], 0, $schema_fields[$mapping->field_name]['length']);
                   break;
                 case 'integer':
                 case 'float':
                 case 'decimal':
                 case 'numeric':
-                  $val = preg_replace('/[^0-9\.]/Uis', '', $string);
-                  $value = is_numeric($val) ? $val : 0;
+                case 'int':
+                  $string = $rets_item[$mapping->systemname];
+                  switch ($mapping->field_name) {
+                    case 'end_datetime':
+                    case 'start_datetime':
+                      drush_log($string);
+                      $value = strtotime($string);
+                      break;
+                    default:
+                      $val = preg_replace('/[^0-9\.]/Uis', '', $string);
+                      $value = is_numeric($val) ? $val : 0;
+                  }
                   break;
                 default:
-                  $value = $rets_listing[$mapping->systemname];
+                  $value = $rets_item[$mapping->systemname];
               }
-
-              $listing->{$mapping->field_name} = $value;
+              $item->{$mapping->field_name} = $value;
             }
           }
 
           if ($class->do_geocoding) {
-            $street_number = isset($listing->street_number) ? $listing->street_number : '';
-            $street_name = isset($listing->street_name) ? $listing->street_name : '';
-            $street_suffix = isset($listing->street_suffix) ? $listing->street_suffix : '';
+            $street_number = isset($item->street_number) ? $item->street_number : '';
+            $street_name = isset($item->street_name) ? $item->street_name : '';
+            $street_suffix = isset($item->street_suffix) ? $item->street_suffix : '';
 
-            $geoaddress = "{$street_number} {$street_name} {$street_suffix}, {$listing->city}, {$listing->state_or_province} {$listing->postal_code}";
+            $geoaddress = "{$street_number} {$street_name} {$street_suffix}, {$item->city}, {$item->state_or_province} {$item->postal_code}";
             // remove any double spaces
             $geoaddress = str_replace("  ", "", $geoaddress);
 
             if ($latlon = drealty_geocode($geoaddress)) {
               if ($latlon->success) {
-                $listing->latitude = $latlon->lat;
-                $listing->longitude = $latlon->lon;
-                drush_log(dt('Geocoded: @address to (@lat, @lon)', array('@address' => $geoaddress, '@lat' => $listing->latitude, '@lon' => $listing->longitude)));
+                $item->latitude = $latlon->lat;
+                $item->longitude = $latlon->lon;
+                drush_log(dt('Geocoded: @address to (@lat, @lon)', array('@address' => $geoaddress, '@lat' => $item->latitude, '@lon' => $item->longitude)));
               } else {
                 drush_log(dt('Failed to Geocode: @address)', array('@address' => $geoaddress)));
               }
@@ -287,15 +285,15 @@ class drealtyDaemon {
           }
 
           try {
-            $listing->save();
+            $item->save();
           } catch (Exception $e) {
             drush_log($e->getMessage());
           }
-          drush_log(dt('Saving listing @name', array('@name' => $listing->name)));
-          unset($listing);
+          drush_log(dt('Saving item @name', array('@name' => $item->name)));
+          unset($item);
         } else {
-          // skipping this listing
-          drush_log(dt("Skipping listing @name", array("@name" => $rets_listing[$id])));
+          // skipping this item
+          drush_log(dt("Skipping item @name", array("@name" => $rets_item[$id])));
         }
       }
       cache_clear_all($chunk_name, 'cache');
@@ -309,16 +307,16 @@ class drealtyDaemon {
    * @param array $listing
    * @return string
    */
-  protected function calculate_hash(array $listing) {
+  protected function calculate_hash(array $item) {
     $tmp = '';
-    foreach ($listing as $key => $value) {
+    foreach ($item as $key => $value) {
       $tmp .= strtolower(trim($value));
     }
     return md5($tmp);
   }
 
   public function process_images($conid, $resource) {
-    $entity_type = 'drealty_listings';
+    $entity_type = 'drealty_listing';
     $chunk_size = 25;
 
     $query = new EntityFieldQuery();
@@ -398,10 +396,10 @@ class drealtyDaemon {
             // load the entity that is associated with the image
             $query = new EntityFieldQuery();
             $result = $query
-              ->entityCondition('entity_type', 'drealty_listings')
+              ->entityCondition('entity_type', 'drealty_listing')
               ->propertyCondition('listing_key', $mlskey)
               ->execute();
-            $listing = reset(entity_load('drealty_listings', array_keys($result['drealty_listings']), array(), FALSE));
+            $listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
 
             file_usage_add($file, 'drealty', $entity_type, $listing->id);
 

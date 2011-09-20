@@ -5,7 +5,7 @@ class drealtyResources {
   private $defaultCache = 'cache';
 
   function __construct() {
-
+    drealty_load_phrets();
     $defaultCache = 'cache';
   }
 
@@ -39,7 +39,7 @@ class drealtyResources {
       $result = db_query("SELECT * FROM {drealty_resource_mappings} WHERE conid = :conid", array(':conid' => $conid))->fetchAll();
       $mappings = array();
       foreach ($result as $mapping) {
-        $mappings[$mapping->node_type] = $mapping;
+        $mappings[$mapping->entity_type] = $mapping;
       }
       cache_set($cache_name, $mappings);
     } else {
@@ -64,12 +64,29 @@ class drealtyResources {
     }
   }
 
-  function FetchFieldMappings($conid, $resource, $class) {
+  function FetchFieldMappings($conid, $resource = NULL, $class = NULL) {
     $cache_name = "drealty_field_mapping_{$resource}_{$conid}";
     $cached = cache_get($cache_name, $this->defaultCache);
 
     if (!$cached) {
-      $results = db_query("SELECT * FROM {drealty_field_mappings} WHERE conid = :conid AND resource = :resource AND cid = :class", array(':conid' => $conid, ':resource' => $resource, ':class' => $class))->fetchAll();
+    
+      $query = db_select('drealty_field_mappings', 'dfm')
+        ->fields('dfm')
+        ->condition('conid', $conid);
+
+      if(isset($resource)) {
+        $ra = db_and();
+        $ra->condition('resource', $resource);
+        $query->condition($ra);
+      }
+      if(isset($class)) {
+        $ca = db_and();
+        $ca->where('cid = :cid', array(':cid' => $class));
+        $query->condition($ca);
+      }
+
+     $results = $query->execute()->fetchAll();
+
       $mappings = array();
       foreach ($results as $result) {
         $mappings[$result->field_name] = $result;
@@ -174,12 +191,11 @@ class drealtyResources {
     return $fields;
   }
 
-  
   function FetchClass($cid) {
     $result = db_query('SELECT * FROM {drealty_classes} WHERE cid = :id', array(':id' => $cid));
     return $result->fetchObject();
   }
-  
+
   /**
    * Retrive all MLS Class Definitions for the connection and resource.
    * @param int $conid
@@ -230,7 +246,7 @@ class drealtyResources {
         $newClass->description = $class->Description;
         $newClass->rid = $resources[$resource]->rid;
         $newClass->lastupdate = NULL;
-        $newClass->lifetime =  28800;
+        $newClass->lifetime = 28800;
         $newClass->enabled = FALSE;
         $rets_classes[$class->ClassName] = $newClass;
       }

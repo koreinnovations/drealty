@@ -2,6 +2,10 @@
 
 class dRealtyConnection {
 
+  public function __construct() {
+    drealty_load_phrets();
+  }
+
   /**
    *
    * @param int $conid
@@ -187,7 +191,7 @@ class dRealtyListingEntity extends Entity {
   public $BathsFull;
 
   public function __construct($values = array()) {
-    parent::__construct($values, 'drealty_listings');
+    parent::__construct($values, 'drealty_listing');
   }
 
   protected function defaultLabel() {
@@ -330,7 +334,7 @@ class dRealtyConnectionEntity extends Entity {
     $this->resource_mappings = $this->ResourceMappings();
     $this->classes = $this->FetchClasses();
     $this->fields = $this->FetchFields();
-    $this->field_mappings = $this->FetchFieldMappings();
+    $this->field_mappings = $this->FetchFieldMappings(NULL, NULL);
   }
 
   public function delete() {
@@ -366,9 +370,9 @@ class dRealtyConnectionEntityContoller extends EntityAPIControllerExportable {
         'ua_string' => 'DREALTY/1.0',
         'ua_password' => '',
         'version' => '1.5',
-        'use_interealty_auth' => FALSE,
-        'force_basic_auth' => FALSE,
-        'use_compression' => FALSE,
+        'use_interealty_auth' => '0',
+        'force_basic_auth' => '0',
+        'use_compression' => '0',
         'active' => FALSE,
     );
     $dRealtyConnectionEntity = parent::create($values);

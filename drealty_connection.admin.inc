@@ -145,21 +145,21 @@ function drealty_connection_entity_edit_form($form, &$form_state, $connection) {
       '#title' => t('Use Interealty Authentication'),
       '#options' => array(TRUE => 'yes', FALSE => 'no'),
       '#required' => TRUE,
-      '#default_value' => isset($connection->use_interealty_auth) ? $connection->use_interealty_auth : 0,
+      '#default_value' => isset($connection->use_interealty_auth) ? $connection->use_interealty_auth : '0',
   );
   $form['force_basic_auth'] = array(
       '#type' => 'radios',
       '#title' => t('Force Basic Authentication'),
       '#options' => array(TRUE => 'yes', FALSE => 'no'),
       '#required' => TRUE,
-      '#default_value' => isset($connection->force_basic_auth) ? $connection->force_basic_auth : 0,
+      '#default_value' => isset($connection->force_basic_auth) ? $connection->force_basic_auth : '0',
   );
   $form['use_compression'] = array(
       '#type' => 'radios',
       '#title' => t('Use Compression'),
       '#options' => array(TRUE => 'yes', FALSE => 'no'),
       '#required' => TRUE,
-      '#default_value' => isset($connection->use_compression) ? $connection->use_compression : 0,
+      '#default_value' => isset($connection->use_compression) ? $connection->use_compression : '0',
   );
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
@@ -232,7 +232,6 @@ function drealty_activate_connection_form($form, &$form_state, $connection = NUL
           "</table>"
       );
 
-      $form['conid'] = array('#type' => 'value', '#value' => $conid);
       $form['activate'] = array(
           '#type' => 'submit',
           '#value' => t('Activate'),
@@ -291,7 +290,7 @@ function drealty_connection_delete_form_wrapper(dRealtyConnectionEntity $connect
   return drupal_get_form('drealty_connection_delete_form', $connection);
 }
 
-function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionEntity $connection = NULL, $resource = NULL) {
+function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionEntity $connection = NULL, $entity_type = NULL) {
 
 
   if (!isset($connection)) {
@@ -299,6 +298,7 @@ function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionE
   }
 
   $form_state['connection'] = $connection;
+  $form_state['entity_type'] = $entity_type;
 
 // grab the mappings and see if we have one already
   $mappings = $connection->resourceMappings();
@@ -310,13 +310,13 @@ function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionE
     $resources[$res->systemname] = $res->systemname;
   }
 
-  $form['mid'] = array('#type' => 'value', '#value' => isset($mappings["drealty_$resource"]) ? $mappings["drealty_$resource"]->mid : NULL);
+  $form['mid'] = array('#type' => 'value', '#value' => isset($mappings[$entity_type]) ? $mappings[$entity_type]->mid : NULL);
   $form['conid'] = array('#type' => 'value', '#value' => $connection->conid);
-  $form['resource'] = array('#type' => 'value', '#value' => $resource);
+  $form['resource'] = array('#type' => 'value', '#value' => $entity_type);
   $form['prop_resource'] = array(
       '#type' => 'select',
-      '#title' => t('@resource Resource', array('@resource' => ucwords(str_replace("_", " ", $resource)))),
-      '#default_value' => isset($mappings["drealty_$resource"]) ? $mappings["drealty_$resource"]->resource : NULL,
+      '#title' => t('@resource Resource', array('@resource' => ucwords(str_replace("_", " ", $entity_type)))),
+      '#default_value' => isset($mappings[$entity_type]) ? $mappings[$entity_type]->resource : NULL,
       '#options' => $resources,
   );
   $form['select_prop_resource'] = array(
@@ -326,11 +326,11 @@ function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionE
       '#suffix' => '<br /><br />',
   );
 
-  if (isset($form_state['input']['prop_resource']) || isset($mappings["drealty_$resource"])) {
+  if (isset($form_state['input']['prop_resource']) || isset($mappings[$entity_type])) {
     if (isset($form_state['input']['prop_resource'])) {
       $results = $connection->fetchClasses($form_state['input']['prop_resource']);
     } else {
-      $results = $connection->fetchClasses($mappings["drealty_$resource"]->resource);
+      $results = $connection->fetchClasses($mappings[$entity_type]->resource);
     }
 
     $life_opts = array(0 => t('Every time')) + drupal_map_assoc(array(
@@ -364,8 +364,8 @@ function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionE
       $form['classes'][$key]['enabled'] = array('#type' => 'checkbox', '#default_value' => $class->enabled, '#attributes' => $class->enabled ? array('checked' => 'checked') : NULL, '#disabled' => $class->configured ? FALSE : TRUE,);
 
       $form['classes'][$key]['lifetime'] = array('#type' => 'select', '#options' => $life_opts, '#default_value' => isset($class->lifetime) ? $class->lifetime : 28000, '#disabled' => $class->configured ? FALSE : TRUE,);
-      $configure_fields_link = l("configure fields", "admin/drealty/connections/manage/{$connection->name}/resource/{$resource}/{$class->cid}/fields");
-      $configure_limits_link = l("configure limits", "admin/drealty/connections/manage/{$connection->name}/resource/{$resource}/{$class->cid}/limits");
+      $configure_fields_link = l("configure fields", "admin/drealty/connections/manage/{$connection->name}/resource/{$entity_type}/{$class->cid}/fields");
+      $configure_limits_link = l("configure limits", "admin/drealty/connections/manage/{$connection->name}/resource/{$entity_type}/{$class->cid}/limits");
       $form['classes'][$key]['actions'] = array('#markup' => "$configure_fields_link | $configure_limits_link");
       $form['classes'][$key]['rid'] = array('#type' => 'value', '#value' => $class->rid);
       $form['classes'][$key]['conid'] = array('#type' => 'value', '#value' => $class->conid);
@@ -386,14 +386,14 @@ function drealty_configure_resource_form_submit($form, &$form_state) {
 
   $connection = $form_state['connection'];
 
-  $resource = $form_state['values']['resource'];
+  $entity_type = $form_state['entity_type'];
 
 // update the resource mapping for this connection
   $mapping = array(
       'mid' => isset($form_state['values']['mid']) ? $form_state['values']['mid'] : NULL,
       'conid' => $connection->conid,
       'resource' => $form_state['values']['prop_resource'],
-      'node_type' => "drealty_$resource",
+      'entity_type' => $entity_type,
   );
 // update or insert
   if (isset($mapping['mid'])) {
@@ -420,9 +420,13 @@ function drealty_configure_resource_form_submit($form, &$form_state) {
   drupal_set_message(t('The Configuration options have been Saved.'));
 }
 
-function drealty_configure_resource_fields_form($form, &$form_state, dRealtyConnectionEntity $connection = NULL, $resource = NULL, $class = NULL) {
+function drealty_configure_resource_fields_form($form, &$form_state, dRealtyConnectionEntity $connection = NULL, $entity_type = NULL, $class = NULL) {
 
-  $schema = drupal_get_schema_unprocessed("drealty", "drealty_listings");
+  if (empty($entity_type)) {
+    drupal_set_message("Error");
+  }
+
+  $schema = drupal_get_schema_unprocessed("drealty", $entity_type);
   drupal_add_css("div.description {
     white-space: normal;
     }", array('type' => 'inline'));
@@ -431,13 +435,13 @@ function drealty_configure_resource_fields_form($form, &$form_state, dRealtyConn
 
 
   $form_state['connection'] = $connection;
-  $form_state['resource'] = $resource;
+  $form_state['entity_type'] = $entity_type;
   $form_state['class'] = $class;
 
   //$form['fields']['#tree'] = TRUE;
 
 
-  $listing_info = entity_get_property_info('drealty_listings');
+  $listing_info = entity_get_property_info($entity_type);
   $props = $listing_info['properties'];
 
   $pattern = '/(.*?[a-z]{1})([A-Z]{1}.*?)/';
@@ -450,49 +454,97 @@ function drealty_configure_resource_fields_form($form, &$form_state, dRealtyConn
 
   $mappings = $connection->resourceMappings();
 
-  if (!isset($mappings["drealty_$resource"])) {
-    drupal_set_message(t('You must configure the @resource Resource type first.', array("@resource" => ucwords($resource))), 'error');
+  if (!isset($mappings[$entity_type])) {
+    drupal_set_message(t('You must configure the @resource Resource type first.', array("@resource" => ucwords($entity_type))), 'error');
     return $form;
   }
 
-  $field_mappings = $connection->FetchFieldMappings($resource, $class->cid);
-  $fields = $connection->FetchFields($mappings["drealty_$resource"]->resource);
+  $field_mappings = $connection->FetchFieldMappings($mappings[$entity_type]->resource, $class->cid);
+  $fields = $connection->FetchFields($mappings[$entity_type]->resource);
 
-  $form['sections']['required'] = array('#type' => 'fieldset', '#title' => 'Required', '#collapsible' => TRUE, '#collapsed' => FALSE);
-  $form['sections']['general'] = array('#type' => 'fieldset', '#title' => 'General', '#collapsible' => TRUE, '#collapsed' => TRUE);
-  $form['sections']['Listing:Location:Address'] = array('#type' => 'fieldset', '#title' => 'Address', '#collapsible' => TRUE, '#collapsed' => TRUE);
-  $form['sections']['Listing:Location:School'] = array('#type' => 'fieldset', '#title' => 'School', '#collapsible' => TRUE, '#collapsed' => TRUE);
-  $form['sections']['Listing:Location:Area'] = array('#type' => 'fieldset', '#title' => 'Area', '#collapsible' => TRUE, '#collapsed' => TRUE);
-  $form['sections']['Listing:Location:GIS'] = array('#type' => 'fieldset', '#title' => 'GIS / Mapping', '#collapsible' => TRUE, '#collapsed' => TRUE);
-  $form['sections']['Listing:AgentOffice:ListAgent'] = array('#type' => 'fieldset', '#title' => 'Listing Agent', '#collapsible' => TRUE, '#collapsed' => TRUE);
-  $form['sections']['Listing:AgentOffice:ListOffice'] = array('#type' => 'fieldset', '#title' => 'Listing Office', '#collapsible' => TRUE, '#collapsed' => TRUE);
-  $form['sections']['Listing:AgentOffice:CoListAgent'] = array('#type' => 'fieldset', '#title' => 'Co-Listing Agent', '#collapsible' => TRUE, '#collapsed' => TRUE);
-  $form['sections']['Listing:AgentOffice:CoListOffice'] = array('#type' => 'fieldset', '#title' => 'Co-Listing Office', '#collapsible' => TRUE, '#collapsed' => TRUE);
-  $form['sections']['Listing:Property'] = array('#type' => 'fieldset', '#title' => 'Property Information', '#collapsible' => TRUE, '#collapsed' => TRUE);
-  $form['sections']['Listing:Property:Structure'] = array('#type' => 'fieldset', '#title' => 'Structure', '#collapsible' => TRUE, '#collapsed' => TRUE);
-  $form['sections']['Listing:Property:Rooms'] = array('#type' => 'fieldset', '#title' => 'Individual Rooms', '#collapsible' => TRUE, '#collapsed' => TRUE);
+  switch ($entity_type) {
+    case 'drealty_listing':
 
-  $form['sections']['required']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
-  $form['sections']['general']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
-  $form['sections']['Listing:Location:Address']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
-  $form['sections']['Listing:Location:School']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
-  $form['sections']['Listing:Location:Area']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
-  $form['sections']['Listing:Location:GIS']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
-  $form['sections']['Listing:AgentOffice:ListAgent']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
-  $form['sections']['Listing:AgentOffice:ListOffice']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
-  $form['sections']['Listing:AgentOffice:CoListAgent']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
-  $form['sections']['Listing:AgentOffice:CoListOffice']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
-  $form['sections']['Listing:Property']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
-  $form['sections']['Listing:Property:Structure']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
-  $form['sections']['Listing:Property:Rooms']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['required'] = array('#type' => 'fieldset', '#title' => 'Required', '#collapsible' => TRUE, '#collapsed' => FALSE);
+      $form['sections']['general'] = array('#type' => 'fieldset', '#title' => 'General', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['Listing:Location:Address'] = array('#type' => 'fieldset', '#title' => 'Address', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['Listing:Location:School'] = array('#type' => 'fieldset', '#title' => 'School', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['Listing:Location:Area'] = array('#type' => 'fieldset', '#title' => 'Area', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['Listing:Location:GIS'] = array('#type' => 'fieldset', '#title' => 'GIS / Mapping', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['Listing:AgentOffice:ListAgent'] = array('#type' => 'fieldset', '#title' => 'Listing Agent', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['Listing:AgentOffice:ListOffice'] = array('#type' => 'fieldset', '#title' => 'Listing Office', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['Listing:AgentOffice:CoListAgent'] = array('#type' => 'fieldset', '#title' => 'Co-Listing Agent', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['Listing:AgentOffice:CoListOffice'] = array('#type' => 'fieldset', '#title' => 'Co-Listing Office', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['Listing:Property'] = array('#type' => 'fieldset', '#title' => 'Property Information', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['Listing:Property:Structure'] = array('#type' => 'fieldset', '#title' => 'Structure', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['Listing:Property:Rooms'] = array('#type' => 'fieldset', '#title' => 'Individual Rooms', '#collapsible' => TRUE, '#collapsed' => TRUE);
 
-  $form['sections']['Listing:Location:GIS']['settings'] = array('#type' => 'fieldset', '#title' => 'Settings', '#collapsible' => TRUE, '#collapsed' => FALSE, '#weight' => -1, '#description' => 'Special settings for the dRealty IDX system concerning GIS/Mapping');
-  $form['sections']['Listing:Location:GIS']['settings']['geocode'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Perform Geocoding'),
-      '#description' => t('Not all MLS systems provide geocoding for listings. If you would like dRealty to geocode the listing for you make sure to enable this setting.'),
-      '#default_value' => $class->do_geocoding,
-  );
+      $form['sections']['required']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['general']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['Listing:Location:Address']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['Listing:Location:School']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['Listing:Location:Area']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['Listing:Location:GIS']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['Listing:AgentOffice:ListAgent']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['Listing:AgentOffice:ListOffice']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['Listing:AgentOffice:CoListAgent']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['Listing:AgentOffice:CoListOffice']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['Listing:Property']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['Listing:Property:Structure']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['Listing:Property:Rooms']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+
+      $form['sections']['Listing:Location:GIS']['settings'] = array('#type' => 'fieldset', '#title' => 'Settings', '#collapsible' => TRUE, '#collapsed' => FALSE, '#weight' => -1, '#description' => 'Special settings for the dRealty IDX system concerning GIS/Mapping');
+      $form['sections']['Listing:Location:GIS']['settings']['geocode'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Perform Geocoding'),
+          '#description' => t('Not all MLS systems provide geocoding for listings. If you would like dRealty to geocode the listing for you make sure to enable this setting.'),
+          '#default_value' => $class->do_geocoding,
+      );
+      break;
+    case 'drealty_openhouse':
+      $form['sections']['required'] = array('#type' => 'fieldset', '#title' => 'Required', '#collapsible' => TRUE, '#collapsed' => FALSE);
+      $form['sections']['general'] = array('#type' => 'fieldset', '#title' => 'General', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['date'] = array('#type' => 'fieldset', '#title' => 'Date(s)', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['OpenHouse:Location:Address'] = array('#type' => 'fieldset', '#title' => 'Address', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['OpenHouse:Location:Area'] = array('#type' => 'fieldset', '#title' => 'Area', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['OpenHouse:Location:GIS'] = array('#type' => 'fieldset', '#title' => 'GIS / Mapping', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['OpenHouse:AgentOffice:ListOffice'] = array('#type' => 'fieldset', '#title' => 'Listing Office', '#collapsible' => TRUE, '#collapsed' => TRUE);
+
+      $form['sections']['required']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['general']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['date']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['OpenHouse:Location:Address']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['OpenHouse:Location:Area']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['OpenHouse:Location:GIS']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['OpenHouse:AgentOffice:ListOffice']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      break;
+
+    case 'drealty_agent':
+      $form['sections']['required'] = array('#type' => 'fieldset', '#title' => 'Required', '#collapsible' => TRUE, '#collapsed' => FALSE);
+      $form['sections']['general'] = array('#type' => 'fieldset', '#title' => 'General', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['contact'] = array('#type' => 'fieldset', '#title' => 'Contact', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['address'] = array('#type' => 'fieldset', '#title' => 'Address', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['office'] = array('#type' => 'fieldset', '#title' => 'Office', '#collapsible' => TRUE, '#collapsed' => TRUE);
+
+      $form['sections']['required']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['general']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['contact']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['address']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['office']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      break;
+
+    case 'drealty_office':
+      $form['sections']['required'] = array('#type' => 'fieldset', '#title' => 'Required', '#collapsible' => TRUE, '#collapsed' => FALSE);
+      $form['sections']['general'] = array('#type' => 'fieldset', '#title' => 'General', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['contact'] = array('#type' => 'fieldset', '#title' => 'Contact', '#collapsible' => TRUE, '#collapsed' => TRUE);
+      $form['sections']['address'] = array('#type' => 'fieldset', '#title' => 'Address', '#collapsible' => TRUE, '#collapsed' => TRUE);
+
+      $form['sections']['required']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['general']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['contact']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      $form['sections']['address']['fields'] = array('#tree' => TRUE, '#theme' => 'drealty_fields_form');
+      break;
+  }
 
   asort($props);
   foreach ($props as $key => $property) {
@@ -524,7 +576,15 @@ function drealty_configure_resource_fields_form($form, &$form_state, dRealtyConn
 }
 
 function drealty_configure_resource_fields_form_validate($form, &$form_state) {
-  $mls_fields = $form_state['connection']->fetchFields($form_state['resource']);
+  $connection = $form_state['connection'];
+  $entity_type = $form_state['entity_type'];
+  $class = $form_state['class'];
+
+  $mappings = $connection->resourceMappings();
+
+  $field_mappings = $connection->FetchFieldMappings($mappings[$entity_type]->resource, $class->cid);
+  $mls_fields = $connection->FetchFields($mappings[$entity_type]->resource);
+
 
   $fields = $form_state['values']['fields'];
 
@@ -541,13 +601,15 @@ function drealty_configure_resource_fields_form_validate($form, &$form_state) {
 
 function drealty_configure_resource_fields_form_submit($form, &$form_state) {
 
-  $resource = $form_state['resource'];
+  $entity_type = $form_state['entity_type'];
   $class = $form_state['class'];
 
 
   $connection = new dRealtyConnectionEntity();
   $connection = $form_state['connection'];
 
+  $mappings = $connection->resourceMappings();
+  $resource = $mappings[$entity_type]->resource;
 
   $fields = $form_state['values']['fields'];
 
@@ -571,48 +633,62 @@ function drealty_configure_resource_fields_form_submit($form, &$form_state) {
   dsm('Configuration options have been saved.');
 }
 
-function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConnectionEntity $connection = NULL, $resource = NULL, $class = NULL) {
+function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConnectionEntity $connection = NULL, $entity_type = NULL, $class = NULL) {
 
 
   // grab the mappings and see if we have one already
   $mappings = $connection->ResourceMappings();
-  if (!isset($mappings["drealty_$resource"])) {
-    drupal_set_message(t('You must configure the @resource Resource type first.', array("@resource" => ucwords($resource))), 'error');
-    drupal_goto("admin/drealty/connections/manage/{$connection->name}/resource/$resource");
+  if (!isset($mappings[$entity_type])) {
+    drupal_set_message(t('You must configure the @resource Resource type first.', array("@resource" => ucwords($entity_type))), 'error');
+    drupal_goto("admin/drealty/connections/manage/{$connection->name}/resource/$entity_type");
   }
 
-  $res = $mappings["drealty_$resource"]->resource;
+  $resource = $mappings[$entity_type]->resource;
   $resources = $connection->Resources();
 
   $form_state['connection'] = $connection;
-  $form_state['resource'] = $resource;
+  $form_state['resource'] = $entity_type;
   $form_state['class'] = $class;
 
   $fieldmappings = $connection->FetchFieldMappings($resource, $class->cid);
   $fields = $connection->FetchFields($resource);
 
 
+  switch ($entity_type) {
+    case 'drealty_listing':
+    case 'drealty_openhouse':
+      $query_field = 'listing_status';
+      break;
+    case 'drealty_agent':
+    case 'drealty_office':
+      $query_field = 'type';
+      break;
+    default:
+      drupal_set_message(t('Please configure the fields before you attempt to configure the limits.', array('@status' => $status)), 'error');
+      drupal_goto("admin/drealty/connections/manage/{$connection->name}/resource/$entity_type");
+  }
 
-  if (!isset($fieldmappings['listing_status'])) {
+  if (!isset($fieldmappings[$query_field])) {
     drupal_set_message(t('Please configure the fields before you attempt to configure the limits.', array('@status' => $status)), 'warning');
-    drupal_goto("admin/drealty/connections/manage/{$connection->name}/resource/$resource");
+    drupal_goto("admin/drealty/connections/manage/{$connection->name}/resource/$entity_type");
   }
 
   $is_active = '';
   $opts = array();
 
-  $lookup_table = array_shift(unserialize($fields[$fieldmappings['listing_status']->systemname]->lookupname));
+  $tables = unserialize($fields[$fieldmappings[$query_field]->systemname]->lookupname);
+  $lookup_table = $tables[$class->systemname];
 
   if (empty($lookup_table)) {
     drupal_set_message(t('There was an error in your selection of the status field. Please ensure you have selected the correct MLS field. The <strong>@fieldname</strong> is not a valid type for the status.', array("@fieldname" => $fieldmappings['listing_status']->systemname)), 'error');
-    drupal_goto("admin/drealty/connections/manage/{$connection->name}/resource/$resource");
+    drupal_goto("admin/drealty/connections/manage/{$connection->name}/resource/$entity_type");
   }
 
   $rets = new dRealtyConnection();
 
 
   if ($rets->connect($connection->conid)) {
-    $values = $rets->get_phrets()->GetLookupValues($res, $lookup_table);
+    $values = $rets->get_phrets()->GetLookupValues($resource, $lookup_table);
     foreach ($values as $val) {
       $opts[$val['Value']] = check_plain($val['LongValue']);
     }
@@ -662,13 +738,13 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
 function drealty_configure_resource_limits_form_submit($form, &$form_state) {
   $connection = new dRealtyConnectionEntity();
   $connection = $form_state['connection'];
-  $resource = $form_state['resource'];
+  $entity_type = $form_state['resource'];
   $class = $form_state['class'];
 
   // grab the mappings and see if we have one already
   $mappings = $connection->ResourceMappings();
 
-  $res = $mappings["drealty_$resource"]->resource;
+  $res = $mappings[$entity_type]->resource;
 
   $resources = $connection->Resources();
 

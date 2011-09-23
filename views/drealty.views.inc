@@ -22,6 +22,29 @@ function drealty_views_data_alter(&$data) {
           'handler' => 'drealty_listing_handler_operations_field',
       ),
   );
+  $data['drealty_listing']['mls_images'] = array(
+      'field' => array(
+          'title' => t('MLS Images'),
+          'help' => t('Display images pulled from the MLS.'),
+          'handler' => 'drealty_listing_handler_mls_images_field',
+      ),
+  );
+  $data['drealty_listing']['mls_address'] = array(
+            'field' => array(
+          'title' => t('MLS Composite Address'),
+          'help' => t('Display a formatted address. Street City, State Zip.'),
+          'handler' => 'drealty_listing_handler_mls_address_field',
+      ),
+  );
+  $data['drealty_openhouse']['listing_id'] = array(
+      'relationship' => array(
+          'handler' => 'views_handler_relationship',
+          'base' => 'drealty_listing',
+          'base field' => 'listing_id',
+          'title' => t('Drealty Listing'),
+          'label' => t('Get the Listing associated with an Open House.'),
+      ),
+  );
 }
 
 function drealty_views_default_views() {

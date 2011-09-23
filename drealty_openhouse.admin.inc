@@ -113,7 +113,7 @@ function drealty_openhouse_admin_overview($form, &$form_state, $arg) {
     $links = menu_contextual_links('model', 'admin/content/openhouses/openhouse', array($openhouse->openhouse_id));
     $options[$openhouse->id] = array(
         'openhouse_id' => $openhouse->id,
-        'mls_id' => array('data' => array('#type' => 'link', '#title' => $openhouse->openhouse_id, '#href' => 'openhouses/' . $openhouse->openhouse_id)),
+        'mls_id' => array('data' => array('#type' => 'link', '#title' => $openhouse->listing_id, '#href' => 'listings/' . $openhouse->listing_id)),
         'date' => date("l F dS, Y", $openhouse->start_datetime) . " From: " . date("g:ia", $openhouse->start_datetime) .' to ' . date("g:ia", $openhouse->end_datetime),
         'address' => $address,
         'operations' => theme('links', array('links' => $links, 'attributes' => array('class' => array('links', 'inline', 'operations')))),

@@ -133,7 +133,9 @@ class drealtyDaemon {
       drush_log(dt("process_results( connection: @connection_name, resource: @resource, class: @class, chunks: @chunks)", array("@connection_name" => $connection->name, "@resource" => $resource,
             "@class" => $class->systemname, "@chunks" => $chunks)));
       $this->process_results($connection, $resource, $class, $entity_type, $chunks);
-      $this->process_images($connection, $resource);
+      if ($entity_type == 'drealty_listing') {
+        $this->process_images($connection, $resource);
+      }
     } else {
       $error = $this->dc->get_phrets()->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
@@ -181,15 +183,6 @@ class drealtyDaemon {
       $existing_items_tmp = entity_load($entity_type, array_keys($result[$entity_type]));
     }
     //re-key the array to use the ListingKey 
-    $existing_items = array();
-    foreach ($existing_items_tmp as $existing_item_tmp) {
-      $existing_items[$existing_item_tmp->listing_key] = $existing_item_tmp;
-    }
-
-    // get the fieldmappings
-    $field_mappings = $connection->FetchFieldMappings($resource, $class->cid);
-
-    // set $id to the systemname of the entity's corresponding key from the rets feed to make the code easier to read
     switch ($entity_type) {
       case 'drealty_listing':
       case 'drealty_openhouse':
@@ -204,7 +197,15 @@ class drealtyDaemon {
     }
 
 
+    $existing_items = array();
+    foreach ($existing_items_tmp as $existing_item_tmp) {
+      $existing_items[$existing_item_tmp->{$key_field}] = $existing_item_tmp;
+    }
 
+    // get the fieldmappings
+    $field_mappings = $connection->FetchFieldMappings($resource, $class->cid);
+
+    // set $id to the systemname of the entity's corresponding key from the rets feed to make the code easier to read
     $id = $field_mappings[$key_field]->systemname;
 
     for ($i = 0; $i < $chunk_count; $chunk_idx++, $i++) {
@@ -241,7 +242,7 @@ class drealtyDaemon {
           $item->rets_imported = TRUE;
 
           if ($entity_type == 'drealty_listing') {
-            $item->process_images = FALSE;
+            $item->process_images = TRUE;
           }
 
           foreach ($field_mappings as $mapping) {
@@ -421,6 +422,7 @@ class drealtyDaemon {
 
             $listing->process_images = 0;
             $listing->save();
+            
           }
           unset($photos);
         }

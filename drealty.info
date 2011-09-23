@@ -23,6 +23,8 @@ files[] = views/drealty_connection_handler_connection_operations_field.inc
 files[] = views/drealty_listing_field_handler.inc
 files[] = views/drealty_listing_field_handler_price.inc
 files[] = views/drealty_listing_handler_operations_field.inc
+files[] = views/drealty_listing_handler_mls_images_field.inc
+files[] = views/drealty_listing_handler_mls_address_field.inc
 
 package = Real Estate
 

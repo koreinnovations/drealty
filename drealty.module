@@ -9,6 +9,7 @@ function drealty_entity_info() {
       'label' => t('dRealty Listing'),
       'entity class' => 'DrealtyListing',
       'controller class' => 'DrealtyListingController',
+      'token type' => 'drealty_listing',
       'base table' => 'drealty_listing',
       'uri callback' => 'entity_class_uri',
       'fieldable' => TRUE,
@@ -92,8 +93,8 @@ function drealty_entity_info() {
       'module' => 'drealty',
       'access callback' => 'drealty_connection_entity_access',
   );
-  
-$entities['drealty_agent'] = array(
+
+  $entities['drealty_agent'] = array(
       'label' => t('dRealty Agent'),
       'entity class' => 'DrealtyAgent',
       'controller class' => 'DrealtyAgentController',
@@ -136,7 +137,7 @@ $entities['drealty_agent'] = array(
       'access callback' => 'drealty_connection_entity_access',
   );
 
-$entities['drealty_office'] = array(
+  $entities['drealty_office'] = array(
       'label' => t('dRealty Office'),
       'entity class' => 'DrealtyOffice',
       'controller class' => 'DrealtyOfficeController',
@@ -201,6 +202,95 @@ $entities['drealty_office'] = array(
   );
 
   return $entities;
+}
+
+function drealty_token_info_alter(&$data) {
+  $blah = $data;
+}
+
+/**
+ * Implements hook_token_info().
+ */
+function drealty_token_info() {
+  $blah = entity_get_info();
+  $type = array(
+      'name' => t('dRealty Listing'),
+      'description' => t('Tokens related to individual content items, or "Listings".'),
+      'needs-data' => 'drealty_listing',
+  );
+
+  // Core tokens for nodes.
+  $listing['id'] = array(
+      'name' => t("ID"),
+      'description' => t('The unique ID of the Listing.'),
+  );
+
+  $listing['listing_key'] = array(
+      'name' => t("Listing Key"),
+      'description' => t('The unique ID of the Listing from the MLS.'),
+  );
+
+  $listing['listing_id'] = array(
+      'name' => t("Listing ID"),
+      'description' => t('The Human ID of the Listing from the MLS.'),
+  );
+
+  return array(
+      'types' => array('drealty_listing' => $type),
+      'tokens' => array('drealty_listing' => $listing),
+  );
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function drealty_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  $url_options = array('absolute' => TRUE);
+  if (isset($options['language'])) {
+    $url_options['language'] = $options['language'];
+    $language_code = $options['language']->language;
+  } else {
+    $language_code = NULL;
+  }
+  $sanitize = !empty($options['sanitize']);
+
+  $replacements = array();
+
+  if ($type == 'drealty_listing' && !empty($data['drealty_listing'])) {
+    $listing = $data['drealty_listing'];
+
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        // Simple key values on the node.
+        case 'id':
+          $replacements[$original] = $listing->id;
+          break;
+
+        case 'listing_id':
+          $replacements[$original] = $listing->listing_id;
+          break;
+
+        case 'listing_key':
+          $replacements[$original] = $listing->listing_key;
+          break;
+      }
+    }
+  }
+
+  return $replacements;
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ *
+ * It simply tells panels where to find the .inc files that define various
+ * args, contexts, content_types. In this case the subdirectories of
+ * ctools_plugin_example/panels are used.
+ */
+function drealty_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'ctools' && !empty($plugin)) {
+    return "plugins/$plugin";
+  }
 }
 
 function drealty_connection_entity_access($op, $type = NULL, $account = NULL) {
@@ -686,8 +776,8 @@ function drealty_listing_uri(DrealtyListing $listing) {
 
 function drealty_preprocess_entity(&$variables) {
   if ($variables['entity_type'] == 'drealty_listing') {
-    drupal_add_css($path . '/css/drealty.base.css', array('type' => 'file', 'group' => CSS_DEFAULT, 'every_page' => FALSE, 'media' => 'all'));
     $path = drupal_get_path('module', 'drealty');
+    drupal_add_css($path . '/css/drealty.base.css', array('type' => 'file', 'group' => CSS_DEFAULT, 'every_page' => FALSE, 'media' => 'all'));
     switch ($variables['view_mode']) {
       case 'search':
         drupal_add_css($path . '/css/drealty.search.css', array('type' => 'file', 'group' => CSS_DEFAULT, 'every_page' => FALSE, 'media' => 'all'));
@@ -760,10 +850,12 @@ class DrealtyListingController extends EntityAPIController {
         ->fields('f', array('fid'))
         ->condition('id', $entity->id)
         ->execute()
-        ->fetchAllKeyed();
-      $fids = array_keys($fids);
-      $files = file_load_multiple($fids);
-      $entity->mls_images = $files;
+        ->fetchAllAssoc('fid');
+      if ($fids) {
+        $fids = array_keys($fids);
+        $files = file_load_multiple($fids);
+        $entity->mls_images = $files;
+      }
     }
   }
 

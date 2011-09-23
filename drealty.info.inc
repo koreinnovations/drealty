@@ -17,7 +17,11 @@ function drealty_entity_property_info_alter(&$entity_info) {
       $entity_info[$entity]['properties'][$key]['required'] = isset($field['required']) ? $field['required'] : NULL;
 
       if (isset($field['multi']) && $field['multi']) {
+        $entity_info[$entity]['properties'][$key]['type'] = 'list<text>';
         $entity_info[$entity]['properties'][$key]['getter callback'] = 'drealty_search_api_multitext_getter_callback';
+      }
+      if (isset($field['entity_property_type']) && $field['entity_property_type']) {
+        $entity_info[$entity]['properties'][$key]['type'] = $field['entity_property_type'];
       }
     }
   }

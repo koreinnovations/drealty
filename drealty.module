@@ -648,12 +648,12 @@ function drealty_theme($existing, $type, $theme, $path) {
 
   $themes['drealty_listing'] = array(
       'render element' => 'elements',
-      'template' => 'templates/drealty-listings',
+      'template' => 'templates/drealty-listing',
   );
 
   $themes['drealty_listing__drealty_listing__search'] = array(
       'render element' => 'elements',
-      'template' => 'templates/drealty-listings--search',
+      'template' => 'templates/drealty-listing--search',
   );
 
   $themes['drealty_mls_images'] = array(
@@ -776,6 +776,7 @@ function drealty_listing_uri(DrealtyListing $listing) {
 
 function drealty_preprocess_entity(&$variables) {
   if ($variables['entity_type'] == 'drealty_listing') {
+    
     $path = drupal_get_path('module', 'drealty');
     drupal_add_css($path . '/css/drealty.base.css', array('type' => 'file', 'group' => CSS_DEFAULT, 'every_page' => FALSE, 'media' => 'all'));
     switch ($variables['view_mode']) {

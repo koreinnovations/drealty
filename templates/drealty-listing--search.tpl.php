@@ -20,7 +20,7 @@ $street = "{$street_number} {$street_name} {$street_suffix}";
           <?php if ($drealty_listing->virtual_tour_url): ?>
             <?php print l(t('vtour'), $drealty_listing->virtual_tour_url, array('attributes' => array('target' => '_blank', 'title' => 'view virtual tour'))); ?> |
           <?php endif; ?>
-          <?php print flag_create_link('saved_listing', $drealty_listing->id); ?>
+          <?php //print flag_create_link('saved_listing', $drealty_listing->id); ?>
         </div>
       </div>
       <div class="listing-data-top clearfix">

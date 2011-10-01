@@ -30,12 +30,13 @@ function drealty_views_data_alter(&$data) {
       ),
   );
   $data['drealty_listing']['mls_address'] = array(
-            'field' => array(
+      'field' => array(
           'title' => t('MLS Composite Address'),
           'help' => t('Display a formatted address. Street City, State Zip.'),
           'handler' => 'drealty_listing_handler_mls_address_field',
       ),
   );
+
   $data['drealty_openhouse']['listing_id'] = array(
       'relationship' => array(
           'handler' => 'views_handler_relationship',
@@ -43,6 +44,29 @@ function drealty_views_data_alter(&$data) {
           'base field' => 'listing_id',
           'title' => t('Drealty Listing'),
           'label' => t('Get the Listing associated with an Open House.'),
+      ),
+  );
+
+  $data['drealty_listing']['list_agent_mls_id'] = array(
+      'relationship' => array(
+          'handler' => 'views_handler_relationship',
+          'base' => 'drealty_agent',
+          'base field' => 'agent_id',
+          'title' => t('Drealty Listing Agent'),
+          'label' => t('Drealty Listing Agent.'),
+          'help' => t('List all the listings for the listing agent'),
+      ),
+  );
+
+
+  $data['drealty_agent']['agent_id'] = array(
+      'relationship' => array(
+          'handler' => 'views_handler_relationship',
+          'base' => 'drealty_listing',
+          'base field' => 'list_agent_mls_id',
+          'title' => t('Drealty Listing Agent'),
+          'label' => t('Drealty Listing Agent.'),
+          'help' => t('List all the listings for the listing agent'),
       ),
   );
 }

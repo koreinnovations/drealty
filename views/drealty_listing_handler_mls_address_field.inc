@@ -55,6 +55,7 @@ public function options_form(&$form, &$form_state) {
 
     $address = "{$street} {$values->{$this->aliases['city']}}, {$values->{$this->aliases['state_or_province']}} {$values->{$this->aliases['postal_code']}}";
     
+    $output = '';
     $output .= ($link)?l($address, "listings/{$listing_id}", array('html' => TRUE)):$address;
     return $output;
   }

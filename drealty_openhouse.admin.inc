@@ -26,7 +26,7 @@ class DrealtyOpenHouseUIController extends EntityDefaultUIController {
         'type' => MENU_LOCAL_ACTION,
     );
     // Loading and editing model entities
-    $items[$this->path . '/openhouses/' . $wildcard] = array(
+    $items[$this->path . '/' . $wildcard] = array(
         'title' => t('Edit openhouse'),
         'page callback' => 'drealty_openhouse_form_wrapper',
         'page arguments' => array($id_count + 1),
@@ -37,14 +37,14 @@ class DrealtyOpenHouseUIController extends EntityDefaultUIController {
         'file' => 'drealty_openhouse.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module'])
     );
-    $items[$this->path . '/openhouses/' . $wildcard . '/edit'] = array(
+    $items[$this->path . '/' . $wildcard . '/edit'] = array(
         'title' => 'Edit',
         'type' => MENU_DEFAULT_LOCAL_TASK,
         'weight' => -10,
         'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
     );
 
-    $items[$this->path . '/openhouses/' . $wildcard . '/delete'] = array(
+    $items[$this->path . '/' . $wildcard . '/delete'] = array(
         'title' => 'Delete',
         'page callback' => 'model_delete_form_wrapper',
         'page arguments' => array($id_count + 1),
@@ -110,7 +110,7 @@ function drealty_openhouse_admin_overview($form, &$form_state, $arg) {
   foreach ($openhouses as $openhouse) {
     $address = "{$openhouse->listing->street_number} {$openhouse->listing->street_dir_prefix} {$openhouse->listing->street_name} {$openhouse->listing->street_dir_suffix} {$openhouse->listing->street_suffix}, {$openhouse->listing->city}, {$openhouse->listing->state_or_province} {$openhouse->listing->postal_code}";
     $address = str_replace("  ", " ", $address);
-    $links = menu_contextual_links('model', 'admin/content/openhouses/openhouse', array($openhouse->openhouse_id));
+    $links = menu_contextual_links('drealty', 'admin/content/drealty_openhouses', array($openhouse->listing_id));
     $options[$openhouse->id] = array(
         'openhouse_id' => $openhouse->id,
         'mls_id' => array('data' => array('#type' => 'link', '#title' => $openhouse->listing_id, '#href' => 'listings/' . $openhouse->listing_id)),

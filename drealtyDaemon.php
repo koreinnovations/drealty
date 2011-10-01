@@ -134,7 +134,7 @@ class drealtyDaemon {
             "@class" => $class->systemname, "@chunks" => $chunks)));
       $this->process_results($connection, $resource, $class, $entity_type, $chunks);
       if ($entity_type == 'drealty_listing') {
-        $this->process_images($connection, $resource);
+        //$this->process_images($connection, $resource);
       }
     } else {
       $error = $this->dc->get_phrets()->Error();
@@ -220,8 +220,9 @@ class drealtyDaemon {
         drush_log(dt("Item @idx of @total", array("@idx" => $j + 1, "@total" => $rets_results_count)));
         $rets_item = $rets_results->data[$j];
         $in_rets[] = $rets_item[$id];
-
-        if (!isset($existing_items[$rets_item[$id]]) || $existing_items[$rets_item[$id]]->hash != $rets_item['hash']) {
+        
+        $force = FALSE;
+        if (!isset($existing_items[$rets_item[$id]]) || $existing_items[$rets_item[$id]]->hash != $rets_item['hash'] || $force) {
 
           $item = new Entity(array('conid' => $connection->conid), $entity_type);
 
@@ -279,7 +280,7 @@ class drealtyDaemon {
             }
           }
 
-          if ($class->do_geocoding) {
+          if ($class->do_geocoding && !$force)  {
             $street_number = isset($item->street_number) ? $item->street_number : '';
             $street_name = isset($item->street_name) ? $item->street_name : '';
             $street_suffix = isset($item->street_suffix) ? $item->street_suffix : '';

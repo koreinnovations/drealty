@@ -26,7 +26,7 @@ class DrealtyAgentUIController extends EntityDefaultUIController {
         'type' => MENU_LOCAL_ACTION,
     );
     // Loading and editing model entities
-    $items[$this->path . '/agents/' . $wildcard] = array(
+    $items[$this->path . '/' . $wildcard] = array(
         'title' => t('Edit agent'),
         'page callback' => 'drealty_agent_form_wrapper',
         'page arguments' => array($id_count + 1),
@@ -37,14 +37,14 @@ class DrealtyAgentUIController extends EntityDefaultUIController {
         'file' => 'drealty_agent.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module'])
     );
-    $items[$this->path . '/agents/' . $wildcard . '/edit'] = array(
+    $items[$this->path . '/' . $wildcard . '/edit'] = array(
         'title' => 'Edit',
         'type' => MENU_DEFAULT_LOCAL_TASK,
         'weight' => -10,
         'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
     );
 
-    $items[$this->path . '/agents/' . $wildcard . '/delete'] = array(
+    $items[$this->path . '/' . $wildcard . '/delete'] = array(
         'title' => 'Delete',
         'page callback' => 'model_delete_form_wrapper',
         'page arguments' => array($id_count + 1),
@@ -108,7 +108,7 @@ function drealty_agent_admin_overview($form, &$form_state, $arg) {
   $options = array();
 
   foreach ($agents as $agent) {
-    $links = menu_contextual_links('model', 'admin/content/agents/agent', array($agent->agent_id));
+    $links = menu_contextual_links('drealty', 'admin/content/drealty_agents', array($agent->agent_id));
     $options[$agent->id] = array(
         'id' => $agent->id,
         'agent_id' => array('data' => array('#type' => 'link', '#title' => $agent->agent_id, '#href' => 'agents/' . $agent->agent_id)),

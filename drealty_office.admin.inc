@@ -26,7 +26,7 @@ class DrealtyOfficeUIController extends EntityDefaultUIController {
         'type' => MENU_LOCAL_ACTION,
     );
     // Loading and editing model entities
-    $items[$this->path . '/offices/' . $wildcard] = array(
+    $items[$this->path . '/' . $wildcard] = array(
         'title' => t('Edit office'),
         'page callback' => 'drealty_office_form_wrapper',
         'page arguments' => array($id_count + 1),
@@ -37,14 +37,14 @@ class DrealtyOfficeUIController extends EntityDefaultUIController {
         'file' => 'drealty_office.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module'])
     );
-    $items[$this->path . '/offices/' . $wildcard . '/edit'] = array(
+    $items[$this->path . '/' . $wildcard . '/edit'] = array(
         'title' => 'Edit',
         'type' => MENU_DEFAULT_LOCAL_TASK,
         'weight' => -10,
         'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
     );
 
-    $items[$this->path . '/offices/' . $wildcard . '/delete'] = array(
+    $items[$this->path . '/' . $wildcard . '/delete'] = array(
         'title' => 'Delete',
         'page callback' => 'model_delete_form_wrapper',
         'page arguments' => array($id_count + 1),
@@ -108,7 +108,7 @@ function drealty_office_admin_overview($form, &$form_state, $arg) {
   $options = array();
 
   foreach ($offices as $office) {
-    $links = menu_contextual_links('model', 'admin/content/offices/office', array($office->office_id));
+    $links = menu_contextual_links('drealty', 'admin/content/drealty_offices', array($office->office_id));
     $options[$office->id] = array(
         'id' => $office->id,
         'office_id' => $office->office_id,

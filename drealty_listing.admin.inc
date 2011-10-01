@@ -26,7 +26,7 @@ class DrealtyListingsUIController extends EntityDefaultUIController {
         'type' => MENU_LOCAL_ACTION,
     );
     // Loading and editing model entities
-    $items[$this->path . '/listings/' . $wildcard] = array(
+    $items[$this->path . '/' . $wildcard] = array(
         'title' => t('Edit Listing'),
         'page callback' => 'drealty_listing_form_wrapper',
         'page arguments' => array($id_count + 1),
@@ -37,16 +37,16 @@ class DrealtyListingsUIController extends EntityDefaultUIController {
         'file' => 'drealty_listing.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module'])
     );
-    $items[$this->path . '/listings/' . $wildcard . '/edit'] = array(
+    $items[$this->path . '/' . $wildcard . '/edit'] = array(
         'title' => 'Edit',
         'type' => MENU_DEFAULT_LOCAL_TASK,
         'weight' => -10,
         'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
     );
 
-    $items[$this->path . '/listings/' . $wildcard . '/delete'] = array(
+    $items[$this->path . '/' . $wildcard . '/delete'] = array(
         'title' => 'Delete',
-        'page callback' => 'model_delete_form_wrapper',
+        'page callback' => 'drealty_listing_form_wrapper',
         'page arguments' => array($id_count + 1),
         'access callback' => 'drealty_listing_access',
         'access arguments' => array('edit', $id_count + 1),
@@ -109,7 +109,8 @@ function drealty_listing_admin_overview($form, &$form_state, $arg) {
   foreach ($listings as $listing) {
     $address = "{$listing->street_number} {$listing->street_dir_prefix} {$listing->street_name} {$listing->street_dir_suffix} {$listing->street_suffix}, {$listing->city}, {$listing->state_or_province} {$listing->postal_code}";
     $address = str_replace("  ", " ", $address);
-    $links = menu_contextual_links('model', 'admin/content/listings/listing', array($listing->listing_id));
+    $links = menu_contextual_links('drealty', 'admin/content/drealty_listings', array($listing->listing_id));
+    
     $options[$listing->id] = array(
         'listing_id' => $listing->id,
         'mls_id' => array('data' => array('#type' => 'link', '#title' => $listing->listing_id, '#href' => 'listings/' . $listing->listing_id)),

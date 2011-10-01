@@ -104,6 +104,10 @@ function listingcontext_convert_list() {
       'id' => t('id'),
       'listing_id' => t('Listing Id'),
       'listing_key' => t('Listing Key'),
+      'latitude' => t('Latitude'),
+      'longitude' => t('Longitude'),
+      'list_office_mls_id' => t("Listing Office MLS Id"),
+      'list_agent_mls_id' => t("Listing Agent MLS Id"),
   );
 }
 
@@ -111,13 +115,15 @@ function listingcontext_convert_list() {
  * Convert a context into a string to be used as a keyword by content types, etc.
  */
 function listingcontext_convert($context, $type) {
-  switch ($type) {
-    case 'id':
-      return $context->data->id;
-    case 'listing_id':
-      return $context->data->listing_id;
-    case 'listing_key':
-      return $context->data->listing_key;
-  }
+  
+  return $context->data->{$type};
+//  switch ($type) {
+//    case 'id':
+//      return $context->data->id;
+//    case 'listing_id':
+//      return $context->data->listing_id;
+//    case 'listing_key':
+//      return $context->data->listing_key;
+//  }
 }
 

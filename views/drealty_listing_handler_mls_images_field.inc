@@ -70,6 +70,7 @@ class drealty_listing_handler_mls_images_field extends views_handler_field {
   function render($values) {
 
     $links = array();
+    $output = '';
 
     $id = $values->{$this->aliases['property_id']};
 
@@ -98,6 +99,7 @@ class drealty_listing_handler_mls_images_field extends views_handler_field {
       } else {
         $img = theme_image_style(array('style_name' => $style_name, 'path' => $images[$i]->uri, 'alt' => ''));
       }      
+      
       $output .= ($link)?l($img, "listings/{$listing_id}", array('html' => TRUE)):$img;
       
     }

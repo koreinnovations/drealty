@@ -1,6 +1,6 @@
 <?php
 
-class DrealtyListingsUIController extends EntityDefaultUIController {
+class DrealtyListingUIController extends EntityDefaultUIController {
 
   public function hook_menu() {
 
@@ -110,7 +110,7 @@ function drealty_listing_admin_overview($form, &$form_state, $arg) {
     $address = "{$listing->street_number} {$listing->street_dir_prefix} {$listing->street_name} {$listing->street_dir_suffix} {$listing->street_suffix}, {$listing->city}, {$listing->state_or_province} {$listing->postal_code}";
     $address = str_replace("  ", " ", $address);
     $links = menu_contextual_links('drealty', 'admin/content/drealty_listings', array($listing->listing_id));
-    
+
     $options[$listing->id] = array(
         'listing_id' => $listing->id,
         'mls_id' => array('data' => array('#type' => 'link', '#title' => $listing->listing_id, '#href' => 'listings/' . $listing->listing_id)),

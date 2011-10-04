@@ -31,9 +31,7 @@ function drealty_entity_info() {
           'drealty_listing' => array(
               'label' => t('dRealty Listing'),
               'admin' => array(
-                  'path' => 'admin/drealty/structure/%/fields',
-                  'bundle argument' => 3,
-                  'real path' => 'admin/drealty/structure/drealty_listing/fields',
+                  'path' => 'admin/drealty/structure/drealty_listing',
               ),
           ),
       ),
@@ -76,9 +74,7 @@ function drealty_entity_info() {
           'drealty_openhouse' => array(
               'label' => t('dRealty Open House'),
               'admin' => array(
-                  'path' => 'admin/drealty/structure/%/fields',
-                  'bundle argument' => 3,
-                  'real path' => 'admin/drealty/structure/drealty_openhouse/fields',
+                  'path' => 'admin/drealty/structure/drealty_openhouse',
               ),
           ),
       ),
@@ -121,6 +117,9 @@ function drealty_entity_info() {
       'bundles' => array(
           'drealty_agent' => array(
               'label' => t('dRealty Agent'),
+              'admin' => array(
+                  'path' => 'admin/drealty/structure/drealty_agent',
+              ),
           ),
       ),
       'entity keys' => array(
@@ -160,6 +159,9 @@ function drealty_entity_info() {
       'bundles' => array(
           'drealty_office' => array(
               'label' => t('dRealty Office'),
+              'admin' => array(
+                  'path' => 'admin/drealty/structure/drealty_office',
+              ),
           ),
       ),
       'entity keys' => array(
@@ -289,18 +291,24 @@ function drealty_connection_entity_access($op, $type = NULL, $account = NULL) {
 }
 
 function drealty_menu_alter(&$items) {
+  $items['admin/drealty/structure/drealty_office/fields']['title'] = "Manage Office Fields";
+  $items['admin/drealty/structure/drealty_agent/fields']['title'] = "Manage Agent Fields";
+  $items['admin/drealty/structure/drealty_listing/fields']['title'] = "Manage Listing Fields";
+  $items['admin/drealty/structure/drealty_openhouse/fields']['title'] = "Manage Open House Fields";
 
+  $items['admin/drealty/structure/drealty_office/display']['title'] = "Manage Office Display";
+  $items['admin/drealty/structure/drealty_agent/display']['title'] = "Manage Agent Display";
+  $items['admin/drealty/structure/drealty_listing/display']['title'] = "Manage Listing Display";
+  $items['admin/drealty/structure/drealty_openhouse/display']['title'] = "Manage Open House Display";
 }
 
 function drealty_menu() {
   $items = array();
   $items['admin/drealty'] = array(
       'title' => 'dRealty',
-      'description' => 'Add edit and update connections.',
-      'page callback' => 'system_admin_menu_block_page',
+      'description' => 'Manage the dRealty Installation.',
+      'page callback' => 'drealty_management_page',
       'access arguments' => array('access administration pages'),
-      'file path' => drupal_get_path('module', 'system'),
-      'file' => 'system.admin.inc',
       'type' => MENU_NORMAL_ITEM,
   );
 
@@ -313,15 +321,12 @@ function drealty_menu() {
       'file' => 'drealty.admin.inc',
       'type' => MENU_NORMAL_ITEM,
   );
-  $items['admin/drealty/settings/config'] = array(
-      'title' => 'dRealty Settings',
-      'description' => t('Configuration settings for dRealty'),
+  $items['admin/drealty/structure'] = array(
+      'title' => t('dRealty Entity Types Field Management'),
       'access arguments' => array('access administration pages'),
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('drealty_settings_form'),
-      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'page callback' => 'drealty_types_form',
+      'type' => MENU_NORMAL_ITEM,
   );
-
   $items['admin/drealty/fields_autocomplete/%/%/%'] = array(
       'title' => 'Autocomplete for fields',
       'page callback' => '_fields_autocomplete',
@@ -342,17 +347,44 @@ function drealty_menu() {
       'access callback' => TRUE,
       'type' => MENU_CALLBACK,
   );
-//  $items['admin/drealty/structure'] = array(
-//      'title' => 'dRealty Entity Field Management',
-//      'access arguments' => array('access administration pages'),
-//      'page callback' => 'drupal_get_form',
-//      'page arguments' => array('drealty_types_form'),
-//      'type' => MENU_NORMAL_ITEM,
-//  );
-
 
 
   return $items;
+}
+
+function drealty_management_page() {
+  $path = drupal_get_path('module', 'drealty') . "/css/drealty.admin.css";
+  drupal_add_css($path, array('type' => 'file'));
+
+  $content = '';
+  $content .= "<div class='section'>";
+  $content .= "<h3>dRealty RETS Configuration</h3>";
+  $content .= "<div class='description'>Use the adminstration sections below to configure one or more RETS connections.</div>";
+  $content .= "<div>";
+  $content .= l('dRealty Connections', 'admin/drealty/connections');
+  $content .= "<div class='description'>Manage dRealty Connections</div>";
+  $content .= "</div>";
+
+  $content .= "<div>";
+  $content .= l('dRealty Settings', 'admin/drealty/settings');
+  $content .= "<div class='description'>Manage dRealty Global Settings</div>";
+  $content .= "</div>";
+  $content .= "</div>";
+
+  $content .= "<div class='section'>";
+  $content .= "<h3>dRealty Entity Field Configuration</h3>";
+  $content .= "<div class='description'>Use the adminstration sections below to manage fields for the various dRealty Entities.</div>";
+  $content .= "<div><strong>dRealty Listings</strong></div>";
+  $content .= "<div>" . l("Manage Fields", "admin/drealty/structure/drealty_listing/fields") . ' | ' . l("Manage Display", "admin/drealty/structure/drealty_listing/display") . '</div>';
+  $content .= "<div><strong>dRealty Open Houses</strong></div>";
+  $content .= "<div>" . l("Manage Fields", "admin/drealty/structure/drealty_openhouse/fields") . ' | ' . l("Manage Display", "admin/drealty/structure/drealty_openhouse/display") . '</div>';
+  $content .= "<div><strong>dRealty Agents</strong></div>";
+  $content .= "<div>" . l("Manage Fields", "admin/drealty/structure/drealty_agent/fields") . ' | ' . l("Manage Display", "admin/drealty/structure/drealty_agent/display") . '</div>';
+  $content .= "<div><strong>dRealty Offices</strong></div>";
+  $content .= "<div>" . l("Manage Fields", "admin/drealty/structure/drealty_office/fields") . ' | ' . l("Manage Display", "admin/drealty/structure/drealty_office/display") . '</div>';
+  $content .= "</div>";
+
+  return $content;
 }
 
 function drealty_listing_map() {
@@ -544,10 +576,24 @@ function drealty_load_phrets() {
 }
 
 function drealty_types_form($form, &$form_state) {
-  $form['something'] = array(
-      '#markup' => 'Some text',
-  );
-  return $form;
+
+  $path = drupal_get_path('module', 'drealty') . "/css/drealty.admin.css";
+  drupal_add_css($path, array('type' => 'file'));
+  
+  $content .= "<div class='section'>";
+  $content .= "<h3>dRealty Entity Field Configuration</h3>";
+  $content .= "<div class='description'>Use the adminstration sections below to manage fields for the various dRealty Entities.</div>";
+  $content .= "<div><strong>dRealty Listings</strong></div>";
+  $content .= "<div>" . l("Manage Fields", "admin/drealty/structure/drealty_listing/fields") . ' | ' . l("Manage Display", "admin/drealty/structure/drealty_listing/display") . '</div>';
+  $content .= "<div><strong>dRealty Open Houses</strong></div>";
+  $content .= "<div>" . l("Manage Fields", "admin/drealty/structure/drealty_openhouse/fields") . ' | ' . l("Manage Display", "admin/drealty/structure/drealty_openhouse/display") . '</div>';
+  $content .= "<div><strong>dRealty Agents</strong></div>";
+  $content .= "<div>" . l("Manage Fields", "admin/drealty/structure/drealty_agent/fields") . ' | ' . l("Manage Display", "admin/drealty/structure/drealty_agent/display") . '</div>';
+  $content .= "<div><strong>dRealty Offices</strong></div>";
+  $content .= "<div>" . l("Manage Fields", "admin/drealty/structure/drealty_office/fields") . ' | ' . l("Manage Display", "admin/drealty/structure/drealty_office/display") . '</div>';
+  $content .= "</div>";
+
+  return $content;
 }
 
 function drealty_connection_entity_save(dRealtyConnectionEntity $connection) {

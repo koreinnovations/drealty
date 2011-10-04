@@ -59,7 +59,8 @@ function drealty_schema() {
         'force_basic_auth' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
         'use_compression' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
         'use_interealty_auth' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
-        'active' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0)
+        'active' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+        'office_id' => array('type' => 'varchar', 'length' => 12, 'not null' => FALSE),
       ) + entity_exportable_schema_fields(),
       'primary key' => array('conid'),
   );

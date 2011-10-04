@@ -176,7 +176,7 @@ class dRealtyConnection {
   }
 
   public function FetchConnection($id) {
-    return entity_load('drealty_connection', $id);
+    return reset(entity_load('drealty_connection_entity', array($id)));
   }
 
 }

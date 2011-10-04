@@ -31,7 +31,7 @@ function drealty_entity_info() {
           'drealty_listing' => array(
               'label' => t('dRealty Listing'),
               'admin' => array(
-                  'path' => 'admin/drealty/settings/listing',
+                  'path' => 'admin/drealty/structure/types/listings',
                   'access arguments' => array('administer content'),
               ),
           ),
@@ -75,7 +75,7 @@ function drealty_entity_info() {
           'drealty_openhouse' => array(
               'label' => t('dRealty Open House'),
               'admin' => array(
-                  'path' => 'admin/drealty/settings/openhouse',
+                  'real path' => 'admin/drealty/openhouse/content',
                   'access arguments' => array('administer content'),
               ),
           ),
@@ -120,7 +120,7 @@ function drealty_entity_info() {
           'drealty_agent' => array(
               'label' => t('dRealty Agent'),
               'admin' => array(
-                  'path' => 'admin/drealty/settings/agent',
+                  'path' => 'admin/drealty/agent/content',
                   'access arguments' => array('administer content'),
               ),
           ),
@@ -163,7 +163,7 @@ function drealty_entity_info() {
           'drealty_office' => array(
               'label' => t('dRealty Office'),
               'admin' => array(
-                  'path' => 'admin/drealty/settings/office',
+                  'path' => 'admin/drealty/office/content',
                   'access arguments' => array('administer content'),
               ),
           ),
@@ -204,7 +204,6 @@ function drealty_entity_info() {
 
   return $entities;
 }
-
 
 /**
  * Implements hook_token_info().
@@ -295,6 +294,13 @@ function drealty_connection_entity_access($op, $type = NULL, $account = NULL) {
   return TRUE;
 }
 
+function drealty_menu_alter(&$items) {
+  $blah = $items;
+
+  $items['admin/drealty/structure/types/listings/fields']['title'] = t('Manage Listing Fields');
+  $items['admin/drealty/structure/types/listings/display']['title'] = t('Manage Listing Display');
+}
+
 function drealty_menu() {
   $items = array();
   $items['admin/drealty'] = array(
@@ -307,12 +313,22 @@ function drealty_menu() {
       'type' => MENU_NORMAL_ITEM,
   );
 
+  $items['admin/drealty/structure/types'] = array(
+      'title' => 'dRealty Types',
+      'description' => t('Configuration settings for dRealty'),
+      'access arguments' => array('access administration pages'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('drealty_types_form'),
+      'type' => MENU_NORMAL_ITEM,
+  );
+
   $items['admin/drealty/settings'] = array(
       'title' => 'dRealty Settings',
       'description' => t('Configuration settings for dRealty'),
       'access arguments' => array('access administration pages'),
       'page callback' => 'drupal_get_form',
       'page arguments' => array('drealty_settings_form'),
+      'file' => 'drealty.admin.inc',
       'type' => MENU_NORMAL_ITEM,
   );
   $items['admin/drealty/settings/config'] = array(
@@ -535,13 +551,9 @@ function drealty_load_phrets() {
   return $static_cache;
 }
 
-function drealty_settings_form($form, &$form_state) {
-  $form['name'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Connection Name'),
-      '#description' => t('Name to identify the connection in the administration pages.'),
-      '#required' => TRUE,
-      '#size' => 80,
+function drealty_types_form($form, &$form_state) {
+  $form['something'] = array(
+      '#markup' => 'Some text',
   );
   return $form;
 }
@@ -603,6 +615,7 @@ function drealty_openhouse_access($op, $openhouse = NULL, $account = NULL) {
 function drealty_agent_access($op, $agent = NULL, $account = NULL) {
   return TRUE;
 }
+
 function drealty_office_access($op, $office = NULL, $account = NULL) {
   return TRUE;
 }
@@ -635,6 +648,11 @@ function drealty_theme($existing, $type, $theme, $path) {
   $themes['drealty_fields_form'] = array(
       'render element' => 'form',
       'file' => 'drealty_connection.admin.inc',
+  );
+
+  $themes['drealty_general_setting_form'] = array(
+      'render element' => 'form',
+      'file' => 'drealty.admin.inc',
   );
 
   $themes['views_view_field__active'] = array(
@@ -777,7 +795,7 @@ function drealty_listing_uri(DrealtyListing $listing) {
 
 function drealty_preprocess_entity(&$variables) {
   if ($variables['entity_type'] == 'drealty_listing') {
-    
+
     $path = drupal_get_path('module', 'drealty');
     drupal_add_css($path . '/css/drealty.base.css', array('type' => 'file', 'group' => CSS_DEFAULT, 'every_page' => FALSE, 'media' => 'all'));
     switch ($variables['view_mode']) {
@@ -935,7 +953,7 @@ class DrealtyAgent extends Entity {
   }
 
   protected function defaultLabel() {
-    return "{$this->first_name} {$this->last_name}" ;
+    return "{$this->first_name} {$this->last_name}";
   }
 
   protected function defaultUri() {

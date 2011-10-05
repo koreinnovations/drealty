@@ -708,6 +708,11 @@ function drealty_theme($existing, $type, $theme, $path) {
       'template' => 'templates/drealty-listing',
   );
 
+    $themes['drealty_agent'] = array(
+      'render element' => 'elements',
+      'template' => 'templates/drealty-agent',
+  );
+
   $themes['drealty_listing__drealty_listing__search'] = array(
       'render element' => 'elements',
       'template' => 'templates/drealty-listing--search',
@@ -739,11 +744,13 @@ function drealty_office_load($office_mlsid, $reset = FALSE) {
   return reset(entity_load('drealty_office', array_keys($result['drealty_office']), array(), $reset));
 }
 
-function drealty_agent_load($agent_mlsid, $reset = FALSE) {
+function drealty_agent_load($agent_name, $reset = FALSE) {
+  $name = explode("_", $agent_name);
   $query = new EntityFieldQuery();
   $result = $query
     ->entityCondition('entity_type', 'drealty_agent')
-    ->propertyCondition('agent_id', $agent_mlsid)
+    ->propertyCondition('first_name', $name[0])
+    ->propertyCondition('last_name', $name[1])
     ->execute();
 
   return reset(entity_load('drealty_agent', array_keys($result['drealty_agent']), array(), $reset));
@@ -995,7 +1002,7 @@ class DrealtyAgent extends Entity {
   }
 
   protected function defaultUri() {
-    return array('path' => 'agents/' . $this->agent_id);
+    return array('path' => 'agents/' . "{$this->first_name}_{$this->last_name}");
   }
 
 }
@@ -1005,7 +1012,18 @@ class DrealtyAgentController extends EntityAPIController {
   public function __construct($entityType) {
     parent::__construct($entityType);
   }
+  
+  public function buildContent($entity, $view_mode = 'full', $langcode = NULL, $content = array()) {
+    $content = parent::buildContent($entity, $view_mode, $langcode, $content);
 
+    foreach ($entity as $key => $value) {
+      $content[$key] = array(
+          '#value' => $value,
+          '#markup' => empty($value) ? NULL : "<div><div class='field-label'><strong>$key</strong></div><div class='field-value'>$value</div></div>",
+      );
+    }
+    return $content;
+  }
   public function attachLoad(&$queried_entities, $revision_id = FALSE) {
     parent::attachLoad($queried_entities, $revision_id);
 

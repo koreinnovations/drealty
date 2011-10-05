@@ -134,7 +134,7 @@ class drealtyDaemon {
             "@class" => $class->systemname, "@chunks" => $chunks)));
       $this->process_results($connection, $resource, $class, $entity_type, $chunks);
       if ($entity_type == 'drealty_listing') {
-        //$this->process_images($connection, $resource);
+        $this->process_images($connection, $resource);
       }
     } else {
       $error = $this->dc->get_phrets()->Error();

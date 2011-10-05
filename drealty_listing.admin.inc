@@ -20,7 +20,7 @@ class DrealtyListingUIController extends EntityDefaultUIController {
         'page callback' => 'drealty_listing_form_wrapper',
         'page arguments' => array(drealty_listing_create(array('rets_imported' => FALSE))),
         'access callback' => 'drealty_listing_access',
-        'access arguments' => array('edit', $id_count + 1),
+        'access arguments' => array('add', $id_count + 1),
         'file' => 'drealty_listing.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module']),
         'type' => MENU_LOCAL_ACTION,
@@ -29,7 +29,7 @@ class DrealtyListingUIController extends EntityDefaultUIController {
     $items[$this->path . '/' . $wildcard] = array(
         'title' => t('Edit Listing'),
         'page callback' => 'drealty_listing_form_wrapper',
-        'page arguments' => array($id_count + 1),
+        'page arguments' => array('edit', $id_count + 1),
         'access callback' => 'drealty_listing_access',
         'access arguments' => array('edit', $id_count + 1),
         'weight' => 0,
@@ -37,6 +37,8 @@ class DrealtyListingUIController extends EntityDefaultUIController {
         'file' => 'drealty_listing.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module'])
     );
+    
+    
     $items[$this->path . '/' . $wildcard . '/edit'] = array(
         'title' => 'Edit',
         'type' => MENU_DEFAULT_LOCAL_TASK,
@@ -47,9 +49,9 @@ class DrealtyListingUIController extends EntityDefaultUIController {
     $items[$this->path . '/' . $wildcard . '/delete'] = array(
         'title' => 'Delete',
         'page callback' => 'drealty_listing_form_wrapper',
-        'page arguments' => array($id_count + 1),
+        'page arguments' => array('delete', $id_count + 1),
         'access callback' => 'drealty_listing_access',
-        'access arguments' => array('edit', $id_count + 1),
+        'access arguments' => array('delete', $id_count + 1),
         'type' => MENU_LOCAL_TASK,
         'context' => MENU_CONTEXT_INLINE,
         'weight' => 10,
@@ -129,11 +131,11 @@ function drealty_listing_admin_overview($form, &$form_state, $arg) {
   return $form;
 }
 
-function drealty_listing_form_wrapper($listing) {
-  return drupal_get_form('drealty_listing_edit_form', $listing);
+function drealty_listing_form_wrapper($op, $listing) {
+  return drupal_get_form('drealty_listing_edit_form', $op, $listing);
 }
 
-function drealty_listing_edit_form($form, &$form_state, $listing) {
+function drealty_listing_edit_form($form, &$form_state, $op, $listing) {
 
   $form_state['listing'] = $listing;
 

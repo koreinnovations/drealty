@@ -15,6 +15,7 @@ function drealty_entity_property_info_alter(&$entity_info) {
       $entity_info[$entity]['properties'][$key]['group'] = isset($field['group']) ? $field['group'] : NULL;
       $entity_info[$entity]['properties'][$key]['weight'] = isset($field['weight']) ? $field['weight'] : NULL;
       $entity_info[$entity]['properties'][$key]['required'] = isset($field['required']) ? $field['required'] : NULL;
+      $entity_info[$entity]['properties'][$key]['schema_type'] = isset($field['type']) ? $field['type'] : NULL;
 
       if (isset($field['multi']) && $field['multi']) {
         $entity_info[$entity]['properties'][$key]['type'] = 'list<text>';

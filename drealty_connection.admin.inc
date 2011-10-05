@@ -426,13 +426,9 @@ function drealty_configure_resource_fields_form($form, &$form_state, dRealtyConn
     drupal_set_message("Error");
   }
 
-  $schema = drupal_get_schema_unprocessed("drealty", $entity_type);
   drupal_add_css("div.description {
     white-space: normal;
     }", array('type' => 'inline'));
-
-  $schema_fields = $schema['fields'];
-
 
   $form_state['connection'] = $connection;
   $form_state['entity_type'] = $entity_type;

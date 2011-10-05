@@ -29,9 +29,9 @@ class DrealtyAgentUIController extends EntityDefaultUIController {
     $items[$this->path . '/' . $wildcard] = array(
         'title' => t('Edit agent'),
         'page callback' => 'drealty_agent_form_wrapper',
-        'page arguments' => array($id_count + 1),
+        'page arguments' => array('edit', $id_count),
         'access callback' => 'drealty_agent_access',
-        'access arguments' => array('edit', $id_count + 1),
+        'access arguments' => array('edit', $id_count),
         'weight' => 0,
         'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
         'file' => 'drealty_agent.admin.inc',
@@ -47,9 +47,9 @@ class DrealtyAgentUIController extends EntityDefaultUIController {
     $items[$this->path . '/' . $wildcard . '/delete'] = array(
         'title' => 'Delete',
         'page callback' => 'model_delete_form_wrapper',
-        'page arguments' => array($id_count + 1),
+        'page arguments' => array('delete', $id_count),
         'access callback' => 'drealty_agent_access',
-        'access arguments' => array('edit', $id_count + 1),
+        'access arguments' => array('delete', $id_count),
         'type' => MENU_LOCAL_TASK,
         'context' => MENU_CONTEXT_INLINE,
         'weight' => 10,
@@ -57,7 +57,16 @@ class DrealtyAgentUIController extends EntityDefaultUIController {
         'file path' => drupal_get_path('module', $this->entityInfo['module'])
     );
 
-
+    $items[$this->path . '/' . $wildcard . '/view'] = array(
+        'title' => t('View'),
+        'page callback' => 'drealty_agent_page_view',
+        'page arguments' => array($id_count),
+        'access callback' => 'drealty_agent_access',
+        'access arguments' => array('view', $id_count),
+        'type' => MENU_LOCAL_TASK,
+        'context' => MENU_CONTEXT_INLINE,
+        'weight' => -11,
+    );
     $items['agents/' . $wildcard] = array(
         'title callback' => 'drealty_agent_page_title',
         'title arguments' => array(1),
@@ -87,7 +96,7 @@ function drealty_agent_admin_overview($form, &$form_state, $arg) {
       'id' => array('data' => t('agent Id'), 'field' => 'id'),
       'agent_id' => array('data' => t('Agent MLS Id'), 'field' => 'agent_id'),
       'name' => array('data' => t('Name'), 'field' => 'last_name'),
-      'phone' => array('data' => t('Phone')),
+      'email' => array('data' => t('Email')),
       'operations' => array('data' => t('Operations')),
   );
 
@@ -108,12 +117,13 @@ function drealty_agent_admin_overview($form, &$form_state, $arg) {
   $options = array();
 
   foreach ($agents as $agent) {
-    $links = menu_contextual_links('drealty', 'admin/content/drealty_agents', array($agent->agent_id));
+
+    $links = menu_contextual_links('drealty', 'admin/content/drealty_agents', array("{$agent->first_name}_{$agent->last_name}"));
     $options[$agent->id] = array(
         'id' => $agent->id,
-        'agent_id' => array('data' => array('#type' => 'link', '#title' => $agent->agent_id, '#href' => 'agents/' . $agent->agent_id)),
+        'agent_id' => $agent->agent_id,
         'name' => "{$agent->first_name} {$agent->last_name}",
-        'phone' => $agent->phone,
+        'email' => !empty($agent->email) ? l($agent->email, "mailto:$agent->email", array('absolute' => TRUE)) : "n/a",
         'operations' => theme('links', array('links' => $links, 'attributes' => array('class' => array('links', 'inline', 'operations')))),
     );
   }
@@ -128,23 +138,21 @@ function drealty_agent_admin_overview($form, &$form_state, $arg) {
   return $form;
 }
 
-function drealty_agent_form_wrapper($agent) {
-  return drupal_get_form('drealty_agent_edit_form', $agent);
+function drealty_agent_form_wrapper($op, $agent) {
+  return drupal_get_form('drealty_agent_edit_form', $op, $agent);
 }
 
-function drealty_agent_edit_form($form, &$form_state, $agent) {
+function drealty_agent_edit_form($form, &$form_state, $op, $agent) {
 
   $form_state['agent'] = $agent;
 
 
-  if ($agent->rets_imported) {
+  if ($agent->hash) {
     $form['name'] = array('#markup' => "<div><strong>Name: </strong>{$agent->first_name} {$agent->last_name}</div>");
     $form['mlsid'] = array('#markup' => "<div><strong>MSL Id: </strong> {$agent->agent_id}</div>");
     $form['phone'] = array('#markup' => "<div><strong>Office Phone: </strong> {$agent->phone_office} {$agent->phone_office_ext}</div>");
     $form['cell'] = array('#markup' => "<div><strong>Cell: </strong> {$agent->phone_cell}</div>");
   }
-
-
 
   field_attach_form('drealty_agent', $agent, $form, $form_state);
 

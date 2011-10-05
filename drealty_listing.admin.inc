@@ -18,9 +18,9 @@ class DrealtyListingUIController extends EntityDefaultUIController {
     $items[$this->path . '/add'] = array(
         'title' => 'Add dRealty Listing',
         'page callback' => 'drealty_listing_form_wrapper',
-        'page arguments' => array(drealty_listing_create(array('rets_imported' => FALSE))),
+        'page arguments' => array('add', drealty_listing_create(array('rets_imported' => FALSE))),
         'access callback' => 'drealty_listing_access',
-        'access arguments' => array('add', $id_count + 1),
+        'access arguments' => array('add'),
         'file' => 'drealty_listing.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module']),
         'type' => MENU_LOCAL_ACTION,
@@ -29,16 +29,16 @@ class DrealtyListingUIController extends EntityDefaultUIController {
     $items[$this->path . '/' . $wildcard] = array(
         'title' => t('Edit Listing'),
         'page callback' => 'drealty_listing_form_wrapper',
-        'page arguments' => array('edit', $id_count + 1),
+        'page arguments' => array('edit', $id_count),
         'access callback' => 'drealty_listing_access',
-        'access arguments' => array('edit', $id_count + 1),
+        'access arguments' => array('edit', $id_count),
         'weight' => 0,
         'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
         'file' => 'drealty_listing.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module'])
     );
-    
-    
+
+
     $items[$this->path . '/' . $wildcard . '/edit'] = array(
         'title' => 'Edit',
         'type' => MENU_DEFAULT_LOCAL_TASK,
@@ -49,9 +49,9 @@ class DrealtyListingUIController extends EntityDefaultUIController {
     $items[$this->path . '/' . $wildcard . '/delete'] = array(
         'title' => 'Delete',
         'page callback' => 'drealty_listing_form_wrapper',
-        'page arguments' => array('delete', $id_count + 1),
+        'page arguments' => array('delete', $id_count),
         'access callback' => 'drealty_listing_access',
-        'access arguments' => array('delete', $id_count + 1),
+        'access arguments' => array('delete', $id_count),
         'type' => MENU_LOCAL_TASK,
         'context' => MENU_CONTEXT_INLINE,
         'weight' => 10,
@@ -141,15 +141,65 @@ function drealty_listing_edit_form($form, &$form_state, $op, $listing) {
 
 
   if ($listing->rets_imported) {
+
+    $path = drupal_get_path('module', 'drealty') . "/css/drealty.admin.css";
+    drupal_add_css($path, array('type' => 'file'));
+
     $address = "{$listing->street_number} {$listing->street_dir_prefix} {$listing->street_name} {$listing->street_dir_suffix} {$listing->street_suffix}, {$listing->city}, {$listing->state_or_province} {$listing->postal_code}";
     $address = str_replace("  ", " ", $address);
-    $form['address'] = array('#markup' => "<div><strong>Address: </strong>$address</div>");
+    $price = number_format($listing->list_price);
+    $form['address'] = array('#markup' => "<div><strong>Address: </strong>$address</div>", '#prefix' => '<div class="section">');
     $form['mlsid'] = array('#markup' => "<div><strong>MSL#: </strong> {$listing->listing_id}</div>");
     $form['mlskey'] = array('#markup' => "<div><strong>MLS Key: </strong> {$listing->listing_key}</div>");
-    $form['price'] = array('#markup' => "<div><strong>Price: </strong> {$listing->list_price}</div>");
+    $form['price'] = array('#markup' => "<div><strong>Price: </strong>$$price</div>", '#suffix' => '</div>');
+  } else {
+    $listing_info = entity_get_property_info('drealty_listing');
+    $props = $listing_info['properties'];
+
+    $pattern = '/(.*?[a-z]{1})([A-Z]{1}.*?)/';
+    $replace = '${1} ${2}';
+
+    foreach ($props as &$prop) {
+      $prop['label'] = preg_replace($pattern, $replace, $prop['label']);
+    }
+
+    $form['sections']['required'] = array('#type' => 'fieldset', '#title' => 'Required', '#collapsible' => TRUE, '#collapsed' => FALSE);
+    $form['sections']['general'] = array('#type' => 'fieldset', '#title' => 'General', '#collapsible' => TRUE, '#collapsed' => TRUE);
+    $form['sections']['Listing:Location:Address'] = array('#type' => 'fieldset', '#title' => 'Address', '#collapsible' => TRUE, '#collapsed' => TRUE);
+    $form['sections']['Listing:Location:School'] = array('#type' => 'fieldset', '#title' => 'School', '#collapsible' => TRUE, '#collapsed' => TRUE);
+    $form['sections']['Listing:Location:Area'] = array('#type' => 'fieldset', '#title' => 'Area', '#collapsible' => TRUE, '#collapsed' => TRUE);
+    $form['sections']['Listing:Location:GIS'] = array('#type' => 'fieldset', '#title' => 'GIS / Mapping', '#collapsible' => TRUE, '#collapsed' => TRUE);
+    $form['sections']['Listing:AgentOffice:ListAgent'] = array('#type' => 'fieldset', '#title' => 'Listing Agent', '#collapsible' => TRUE, '#collapsed' => TRUE);
+    $form['sections']['Listing:AgentOffice:ListOffice'] = array('#type' => 'fieldset', '#title' => 'Listing Office', '#collapsible' => TRUE, '#collapsed' => TRUE);
+    $form['sections']['Listing:AgentOffice:CoListAgent'] = array('#type' => 'fieldset', '#title' => 'Co-Listing Agent', '#collapsible' => TRUE, '#collapsed' => TRUE);
+    $form['sections']['Listing:AgentOffice:CoListOffice'] = array('#type' => 'fieldset', '#title' => 'Co-Listing Office', '#collapsible' => TRUE, '#collapsed' => TRUE);
+    $form['sections']['Listing:Property'] = array('#type' => 'fieldset', '#title' => 'Property Information', '#collapsible' => TRUE, '#collapsed' => TRUE);
+    $form['sections']['Listing:Property:Structure'] = array('#type' => 'fieldset', '#title' => 'Structure', '#collapsible' => TRUE, '#collapsed' => TRUE);
+    $form['sections']['Listing:Property:Rooms'] = array('#type' => 'fieldset', '#title' => 'Individual Rooms', '#collapsible' => TRUE, '#collapsed' => TRUE);
+
+
+    asort($props);
+    foreach ($props as $key => $property) {
+      if (isset($property['group']) && $property['group'] != 'hidden') {
+        
+        $type = 'textfield';
+        switch($property['schema_type']) {
+          case 'text':
+            $type = 'textarea';
+            break;
+          default:
+            $type = 'textfield';
+        }
+        
+        $form['sections'][$property['group']][$key] = array(
+            '#type' => $type,
+            '#title' => $property['label'],
+            '#description' => $property['description'],
+            '#default_value' => isset($listing->{$key})?$listing->{$key}:NULL,
+        );
+      }
+    }
   }
-
-
 
   field_attach_form('drealty_listing', $listing, $form, $form_state);
 
@@ -173,7 +223,7 @@ function drealty_listing_edit_form($form, &$form_state, $op, $listing) {
       '#submit' => $submit + array('drealty_listing_edit_form_submit'),
   );
 
-  if (!empty($listing->name)) {
+  if (!empty($listing->name) && !$listing->rets_imported) {
     $form['actions']['delete'] = array(
         '#type' => 'submit',
         '#value' => t('Delete listing'),

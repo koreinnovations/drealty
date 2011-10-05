@@ -555,7 +555,7 @@ function drealty_geocode($address) {
       $libraries = libraries_get_libraries();
     }
     if (array_key_exists("geoPHP", $libraries)) {
-      $geometry = geocode('google', $address);
+      $geometry = geocoder('google', $address);
       if (isset($geometry)) {
         $centroid = $geometry->getCentroid();
         $latlon->lat = $centroid->getY();

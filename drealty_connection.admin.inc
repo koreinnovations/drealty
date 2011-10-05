@@ -626,7 +626,7 @@ function drealty_configure_resource_fields_form_submit($form, &$form_state) {
 
   cache_clear_all("drealty_fields_", 'cache', TRUE);
   cache_clear_all('drealty_field_mapping_', 'cache', TRUE);
-  dsm('Configuration options have been saved.');
+  drupal_set_message('Configuration options have been saved.');
 }
 
 function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConnectionEntity $connection = NULL, $entity_type = NULL, $class = NULL) {

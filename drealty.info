@@ -6,7 +6,7 @@ version = 7.x-2.x
 dependencies[] = entity
 dependencies[] = views
 dependencies[] = libraries
-dependencies[] = geocode
+dependencies[] = geocoder
 
 files[] = drealty_connection.admin.inc
 files[] = drealty_listing.admin.inc

@@ -532,6 +532,7 @@ function drealty_word_limit($text, $limit=40) {
 
 function drealty_geocode($address) {
 
+  static $libraries = FALSE;
 
   $address = str_replace(" ", "+", $address);
   $url = "http://open.mapquestapi.com/nominatim/v1/search?format=json&exclude_place_ids=&accept-language=en-us,en;q=0.5&polygon=1&addressdetails=1&q=$address";
@@ -550,12 +551,17 @@ function drealty_geocode($address) {
     $latlon->lon = $result[0]->lon;
     $latlon->success = TRUE;
   } else {
-    $geometry = geocode('google', $address);
-    if (isset($geometry)) {
-      $centroid = $geometry->getCentroid();
-      $latlon->lat = $centroid->getY();
-      $latlon->lon = $centroid->getX();
-      $latlon->success = TRUE;
+    if (!$libraries) {
+      $libraries = libraries_get_libraries();
+    }
+    if (array_key_exists("geoPHP", $libraries)) {
+      $geometry = geocode('google', $address);
+      if (isset($geometry)) {
+        $centroid = $geometry->getCentroid();
+        $latlon->lat = $centroid->getY();
+        $latlon->lon = $centroid->getX();
+        $latlon->success = TRUE;
+      }
     }
   }
   return $latlon;
@@ -579,7 +585,7 @@ function drealty_types_form($form, &$form_state) {
 
   $path = drupal_get_path('module', 'drealty') . "/css/drealty.admin.css";
   drupal_add_css($path, array('type' => 'file'));
-  
+
   $content .= "<div class='section'>";
   $content .= "<h3>dRealty Entity Field Configuration</h3>";
   $content .= "<div class='description'>Use the adminstration sections below to manage fields for the various dRealty Entities.</div>";
@@ -708,7 +714,7 @@ function drealty_theme($existing, $type, $theme, $path) {
       'template' => 'templates/drealty-listing',
   );
 
-    $themes['drealty_agent'] = array(
+  $themes['drealty_agent'] = array(
       'render element' => 'elements',
       'template' => 'templates/drealty-agent',
   );
@@ -1012,7 +1018,7 @@ class DrealtyAgentController extends EntityAPIController {
   public function __construct($entityType) {
     parent::__construct($entityType);
   }
-  
+
   public function buildContent($entity, $view_mode = 'full', $langcode = NULL, $content = array()) {
     $content = parent::buildContent($entity, $view_mode, $langcode, $content);
 
@@ -1024,6 +1030,7 @@ class DrealtyAgentController extends EntityAPIController {
     }
     return $content;
   }
+
   public function attachLoad(&$queried_entities, $revision_id = FALSE) {
     parent::attachLoad($queried_entities, $revision_id);
 

@@ -355,7 +355,7 @@ class drealtyResources {
       return FALSE;
     }
   }
-
+    
   function RemoveFields($conid) {
 
     db_delete("drealty_fields")

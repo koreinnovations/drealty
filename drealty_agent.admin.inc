@@ -9,7 +9,8 @@ class DrealtyAgentUIController extends EntityDefaultUIController {
 
     $items[$this->path] = array(
         'title' => 'dRealty Agents',
-        'page callback' => 'drealty_agent_admin',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('drealty_agent_admin'),
         'access arguments' => array('access administration pages'),
         'type' => MENU_LOCAL_TASK | MENU_NORMAL_ITEM,
         'file' => 'drealty_agent.admin.inc',
@@ -82,16 +83,19 @@ class DrealtyAgentUIController extends EntityDefaultUIController {
 
 }
 
-function drealty_agent_admin($type = 'new') {
-  $edit = $_POST;
-  if (isset($edit['operation']) && ($edit['operation'] == 'delete') && isset($edit['agents']) && $edit['agents']) {
-    return drupal_get_form('drealty_agent_multiple_delete_confirm');
-  } else {
-    return drupal_get_form('drealty_agent_admin_overview', $type);
+function drealty_agent_admin($form, $form_state) {
+
+  if (isset($form_state['values']['operation']) && $form_state['values']['operation'] == 'delete') {
+    return node_multiple_delete_confirm($form, $form_state, array_filter($form_state['values']['nodes']));
   }
+  $form['filter'] = drealty_agent_filter_form();
+  $form['#submit'][] = 'drealty_agent_filter_form_submit';
+  $form['admin'] = drealty_agent_admin_overview();
+
+  return $form;
 }
 
-function drealty_agent_admin_overview($form, &$form_state, $arg) {
+function drealty_agent_admin_overview() {
   $header = array(
       'id' => array('data' => t('agent Id'), 'field' => 'id'),
       'agent_id' => array('data' => t('Agent MLS Id'), 'field' => 'agent_id'),
@@ -101,6 +105,9 @@ function drealty_agent_admin_overview($form, &$form_state, $arg) {
   );
 
   $query = db_select('drealty_agent', 'd')->extend('PagerDefault')->extend('TableSort');
+  
+  drealty_agent_build_filter_query($query);
+  
   $result = $query
     ->fields('d', array('id', 'agent_id'))
     ->limit(50)
@@ -188,6 +195,167 @@ function drealty_agent_edit_form($form, &$form_state, $op, $agent) {
 
   // We append the validate handler to #validate in case a form callback_wrapper
   // is used to add validate handlers earlier.
-  $form['#validate'][] = 'drealty_agent_edit_form_validate';
+  // $form['#validate'][] = 'drealty_agent_edit_form_validate';
   return $form;
+}
+
+function drealty_agent_edit_form_submit($form, &$form_state) {
+  // grab the agent object from the form state
+  $agent = $form_state['agent'];
+  // setup to save any fields from the field api
+  field_attach_submit('drealty_agent', $agent, $form, $form_state);
+  // save the agent
+  $agent->save();
+  // redirect back to the content list
+  $form_state['redirect'] = 'admin/content/drealty_agents';
+}
+
+function drealty_agent_operations() {
+  $operations = array(
+      'refresh' => array(
+          'label' => t('Refresh the selected agent'),
+          'callback' => 'drealty_refresh_agent',
+      ),
+      'delete' => array(
+          'label' => t('Delete the selected agent(s)'),
+          'callback' => NULL,
+      ),
+  );
+  return $operations;
+}
+
+/**
+ * List node administration filters that can be applied.
+ */
+function drealty_agent_filters() {
+  // Regular filters
+  $filters['status'] = array(
+      'title' => t('status'),
+      'options' => array(
+          '[any]' => t('any'),
+          'myoffice' => t('Belonging to my Office'),
+      ),
+  );
+  return $filters;
+}
+
+/**
+ * Apply filters for node administration filters based on session.
+ *
+ * @param $query
+ *   A SelectQuery to which the filters should be applied.
+ */
+function drealty_agent_build_filter_query(SelectQueryInterface $query) {
+  // Build query
+  $filter_data = isset($_SESSION['drealty_agent_overview_filter']) ? $_SESSION['drealty_agent_overview_filter'] : array();
+  foreach ($filter_data as $index => $filter) {
+    list($key, $value) = $filter;
+    switch ($key) {
+      case 'status':
+        // Note: no exploitable hole as $key/$value have already been checked when submitted
+        $query->condition('office_id', 6);
+        break;
+    }
+  }
+}
+
+/**
+ * Return form for node administration filters.
+ */
+function drealty_agent_filter_form() {
+  $session = isset($_SESSION['drealty_agent_overview_filter']) ? $_SESSION['drealty_agent_overview_filter'] : array();
+  $filters = drealty_agent_filters();
+
+  $i = 0;
+  $form['filters'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Show only items where'),
+      '#theme' => 'exposed_filters__node',
+  );
+  foreach ($session as $filter) {
+    list($type, $value) = $filter;
+    if ($type == 'term') {
+      // Load term name from DB rather than search and parse options array.
+      $value = module_invoke('taxonomy', 'term_load', $value);
+      $value = $value->name;
+    } elseif ($type == 'language') {
+      $value = $value == LANGUAGE_NONE ? t('Language neutral') : module_invoke('locale', 'language_name', $value);
+    } else {
+      $value = $filters[$type]['options'][$value];
+    }
+    $t_args = array('%property' => $filters[$type]['title'], '%value' => $value);
+    if ($i++) {
+      $form['filters']['current'][] = array('#markup' => t('and where %property is %value', $t_args));
+    } else {
+      $form['filters']['current'][] = array('#markup' => t('where %property is %value', $t_args));
+    }
+    if (in_array($type, array('type', 'language'))) {
+      // Remove the option if it is already being filtered on.
+      unset($filters[$type]);
+    }
+  }
+
+  $form['filters']['status'] = array(
+      '#type' => 'container',
+      '#attributes' => array('class' => array('clearfix')),
+      '#prefix' => ($i ? '<div class="additional-filters">' . t('and where') . '</div>' : ''),
+  );
+  $form['filters']['status']['filters'] = array(
+      '#type' => 'container',
+      '#attributes' => array('class' => array('filters')),
+  );
+  foreach ($filters as $key => $filter) {
+    $form['filters']['status']['filters'][$key] = array(
+        '#type' => 'select',
+        '#options' => $filter['options'],
+        '#title' => $filter['title'],
+        '#default_value' => '[any]',
+    );
+  }
+
+  $form['filters']['status']['actions'] = array(
+      '#type' => 'actions',
+      '#attributes' => array('class' => array('container-inline')),
+  );
+  $form['filters']['status']['actions']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => count($session) ? t('Refine') : t('Filter'),
+  );
+  if (count($session)) {
+    $form['filters']['status']['actions']['undo'] = array('#type' => 'submit', '#value' => t('Undo'));
+    $form['filters']['status']['actions']['reset'] = array('#type' => 'submit', '#value' => t('Reset'));
+  }
+
+  drupal_add_js('misc/form.js');
+
+  return $form;
+}
+
+/**
+ * Process result from node administration filter form.
+ */
+function drealty_agent_filter_form_submit($form, &$form_state) {
+  $filters = drealty_agent_filters();
+  switch ($form_state['values']['op']) {
+    case t('Filter'):
+    case t('Refine'):
+      // Apply every filter that has a choice selected other than 'any'.
+      foreach ($filters as $filter => $options) {
+        if (isset($form_state['values'][$filter]) && $form_state['values'][$filter] != '[any]') {
+          // Flatten the options array to accommodate hierarchical/nested options.
+          $flat_options = form_options_flatten($filters[$filter]['options']);
+          // Only accept valid selections offered on the dropdown, block bad input.
+          if (isset($flat_options[$form_state['values'][$filter]])) {
+            $_SESSION['drealty_agent_overview_filter'][] = array($filter, $form_state['values'][$filter]);
+          }
+        }
+      }
+      break;
+    case t('Undo'):
+      array_pop($_SESSION['drealty_agent_overview_filter']);
+      break;
+    case t('Reset'):
+      $_SESSION['drealty_agent_overview_filter'] = array();
+      break;
+  }
 }

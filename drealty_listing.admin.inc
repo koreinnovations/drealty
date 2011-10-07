@@ -233,8 +233,17 @@ function drealty_listing_edit_form($form, &$form_state, $op, $listing) {
     );
   }
 
-  // We append the validate handler to #validate in case a form callback_wrapper
-  // is used to add validate handlers earlier.
-  $form['#validate'][] = 'drealty_listing_edit_form_validate';
   return $form;
+}
+
+function drealty_listing_edit_form_submit($form, &$form_state) {
+  // grab the listing
+  $listing = $form_state['listing'];
+  // attach any fields from the field api
+  field_attach_submit('drealty_listing', $listing, $form, $form_state);
+  // save the listing
+  $listing->save();
+  // redirect back to the content list
+  $form_state['redirect'] = 'admin/content/drealty_listing';
+  
 }

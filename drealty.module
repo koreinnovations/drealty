@@ -69,6 +69,10 @@ function drealty_entity_info() {
               'label' => 'List View',
               'custom settings' => TRUE,
           ),
+          'block' => array(
+              'label' => 'Block View',
+              'custom settings' => TRUE,
+          ),
       ),
       'bundles' => array(
           'drealty_openhouse' => array(
@@ -111,6 +115,10 @@ function drealty_entity_info() {
           ),
           'list' => array(
               'label' => 'List View',
+              'custom settings' => TRUE,
+          ),
+          'block' => array(
+              'label' => 'Block View',
               'custom settings' => TRUE,
           ),
       ),
@@ -226,6 +234,10 @@ function drealty_token_info() {
   $listing['listing_id'] = array(
       'name' => t("Listing ID"),
       'description' => t('The Human ID of the Listing from the MLS.'),
+  );
+  $listing['public_remarks'] = array(
+      'name' => t('Public Remarks'),
+      'description' => t('The public remarks associated with the listing.')
   );
 
   return array(
@@ -910,6 +922,47 @@ class DrealtyListingController extends EntityAPIController {
           '#markup' => empty($value) ? NULL : "<div><div class='field-label'><strong>$key</strong></div><div class='field-value'>$value</div></div>",
       );
     }
+
+    $og_description = array(
+        '#tag' => 'meta',
+        '#attributes' => array(
+            'property' => 'og:description',
+            'content' => $entity->public_remarks,
+        ),
+    );
+
+    $meta_description = array(
+        '#tag' => 'meta',
+        '#attributes' => array(
+            'name' => 'description',
+            'content' => $entity->public_remarks,
+        ),
+    );
+
+    $title = "{$entity->street_number} {$entity->street_name} {$entity->street_suffix} - {$entity->city}, {$entity->state_or_province} {$entity->postal_code}";
+
+    drupal_set_title($title);
+
+    $og_title = array(
+        '#tag' => 'meta',
+        '#attributes' => array(
+            'property' => 'og:title',
+            'content' => $title,
+        ),
+    );
+
+    $og_image = array(
+        '#tag' => 'meta',
+        '#attributes' => array(
+            'property' => 'og:image',
+            'content' => file_create_url(array_shift($entity->mls_images)->uri),
+        ),
+    );
+
+    drupal_add_html_head($meta_description, 'meta_description');
+    drupal_add_html_head($og_description, 'og_description');
+    drupal_add_html_head($og_title, 'og_title');
+    drupal_add_html_head($og_image, 'og_image');
     return $content;
   }
 
@@ -920,6 +973,7 @@ class DrealtyListingController extends EntityAPIController {
       $fids = db_select('file_usage', 'f')
         ->fields('f', array('fid'))
         ->condition('id', $entity->id)
+        ->condition('type', 'drealty_listing')
         ->execute()
         ->fetchAllAssoc('fid');
       if ($fids) {
@@ -1017,18 +1071,6 @@ class DrealtyAgentController extends EntityAPIController {
 
   public function __construct($entityType) {
     parent::__construct($entityType);
-  }
-
-  public function buildContent($entity, $view_mode = 'full', $langcode = NULL, $content = array()) {
-    $content = parent::buildContent($entity, $view_mode, $langcode, $content);
-
-    foreach ($entity as $key => $value) {
-      $content[$key] = array(
-          '#value' => $value,
-          '#markup' => empty($value) ? NULL : "<div><div class='field-label'><strong>$key</strong></div><div class='field-value'>$value</div></div>",
-      );
-    }
-    return $content;
   }
 
   public function attachLoad(&$queried_entities, $revision_id = FALSE) {

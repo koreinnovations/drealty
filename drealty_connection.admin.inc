@@ -671,6 +671,7 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
 
   $is_active = '';
   $opts = array();
+  $opts_object_types = array();
 
   $tables = unserialize($fields[$fieldmappings[$query_field]->systemname]->lookupname);
   $lookup_table = $tables[$class->systemname];
@@ -687,6 +688,12 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
     $values = $rets->get_phrets()->GetLookupValues($resource, $lookup_table);
     foreach ($values as $val) {
       $opts[$val['Value']] = check_plain($val['LongValue']);
+    }
+
+    $object_types = $rets->get_phrets()->GetMetadataObjects($resource);
+
+    foreach ($object_types as $type) {
+      $opts_object_types[$type['ObjectType']] = $type['ObjectType'] . ' - ' . $type['Description'];
     }
   }
 
@@ -723,6 +730,23 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
       try decreasing this value. However, decreasing this value increases the amount of time it will take to update listings. The RETS server may override this value (MAXROWS).'),
   );
 
+  $form['images'] = array('#type' => 'fieldset', '#title' => 'Images', '#collapsed' => FALSE);
+  $form['images']['process_images'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Process Images?'),
+      '#description' => t('Process images/metadata objects for this resource type?'),
+      '#default_value' => $class->process_images,
+  );
+
+  $form['images']['object_type'] = array(
+      '#type' => 'select',
+      '#multiple' => FALSE,
+      '#title' => t('Object types to download'),
+      '#description' => t('Each MLS provides zero or more object types (photos) to download for each listing. Select the object type you would like to download.'),
+      '#options' => $opts_object_types,
+      '#default_value' => $class->object_type,
+  );
+
   $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Save Configuration'),
@@ -752,6 +776,10 @@ function drealty_configure_resource_limits_form_submit($form, &$form_state) {
   $class->chunk_size = $form_state['values']['chunk'];
   $class->override_status_query = $form_state['values']['status_override'];
   $class->override_status_query_text = $form_state['values']['status_override_query'];
+
+    $class->process_images = $form_state['values']['process_images'];
+    $class->object_type =$form_state['values']['object_type'];
+
   $class->configured = TRUE;
   drupal_write_record('drealty_classes', $class, 'cid');
 

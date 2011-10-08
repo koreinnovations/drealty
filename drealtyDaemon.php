@@ -133,8 +133,8 @@ class drealtyDaemon {
       drush_log(dt("process_results( connection: @connection_name, resource: @resource, class: @class, chunks: @chunks)", array("@connection_name" => $connection->name, "@resource" => $resource,
             "@class" => $class->systemname, "@chunks" => $chunks)));
       $this->process_results($connection, $resource, $class, $entity_type, $chunks);
-      if ($entity_type == 'drealty_listing') {
-        $this->process_images($connection, $resource);
+      if ($entity_type == 'drealty_listing' && $class->process_images) {
+        $this->process_images($connection, $resource, $class);
       }
     } else {
       $error = $this->dc->get_phrets()->Error();
@@ -333,7 +333,7 @@ class drealtyDaemon {
     return md5($tmp);
   }
 
-  public function process_images($conid, $resource) {
+  public function process_images($conid, $resource, $class) {
     $entity_type = 'drealty_listing';
     $chunk_size = 25;
 
@@ -380,7 +380,7 @@ class drealtyDaemon {
           $id_string = implode(',', $ids);
           drush_log("id string: " . $id_string);
 
-          $photos = $this->dc->get_phrets()->GetObject($resource, "Photo", $id_string, '*');
+          $photos = $this->dc->get_phrets()->GetObject($resource, $class->object_type, $id_string, '*');
 
           if ($this->dc->get_phrets()->Error()) {
             $error = $this->dc->get_phrets()->Error();

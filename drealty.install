@@ -97,6 +97,8 @@ function drealty_schema() {
           'configured' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
           'lastupdate' => array('type' => 'int', 'not null' > TRUE),
           'status_values' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
+          'process_images' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE, 'default' => 0),
+          'object_type' => array('type' => 'varchar', 'size' => 255, 'not null' => FALSE),
           'chunk_size' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE, 'default' => 500),
           'override_status_query' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
           'override_status_query_text' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => ''),

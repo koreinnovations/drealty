@@ -365,7 +365,7 @@ function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionE
 
       $form['classes'][$key]['lifetime'] = array('#type' => 'select', '#options' => $life_opts, '#default_value' => isset($class->lifetime) ? $class->lifetime : 28000, '#disabled' => $class->configured ? FALSE : TRUE,);
       $configure_fields_link = l("configure fields", "admin/drealty/connections/manage/{$connection->name}/resource/{$entity_type}/{$class->cid}/fields");
-      $configure_limits_link = l("configure limits", "admin/drealty/connections/manage/{$connection->name}/resource/{$entity_type}/{$class->cid}/limits");
+      $configure_limits_link = l("configure options", "admin/drealty/connections/manage/{$connection->name}/resource/{$entity_type}/{$class->cid}/limits");
       $form['classes'][$key]['actions'] = array('#markup' => "$configure_fields_link | $configure_limits_link");
       $form['classes'][$key]['rid'] = array('#type' => 'value', '#value' => $class->rid);
       $form['classes'][$key]['conid'] = array('#type' => 'value', '#value' => $class->conid);
@@ -672,6 +672,7 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
   $is_active = '';
   $opts = array();
   $opts_object_types = array();
+  $has_images = FALSE;
 
   $tables = unserialize($fields[$fieldmappings[$query_field]->systemname]->lookupname);
   $lookup_table = $tables[$class->systemname];
@@ -691,12 +692,15 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
     }
 
     $object_types = $rets->get_phrets()->GetMetadataObjects($resource);
-
-    foreach ($object_types as $type) {
-      $opts_object_types[$type['ObjectType']] = $type['ObjectType'] . ' - ' . $type['Description'];
+    if ($object_types) {
+      $has_images = TRUE;
+      foreach ($object_types as $type) {
+        $opts_object_types[$type['ObjectType']] = $type['ObjectType'] . ' - ' . $type['Description'];
+      }
     }
   }
 
+  $form_state['has_images'] = $has_images;
 
   $form['status'] = array(
       '#type' => 'select',
@@ -730,23 +734,24 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
       try decreasing this value. However, decreasing this value increases the amount of time it will take to update listings. The RETS server may override this value (MAXROWS).'),
   );
 
-  $form['images'] = array('#type' => 'fieldset', '#title' => 'Images', '#collapsed' => FALSE);
-  $form['images']['process_images'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Process Images?'),
-      '#description' => t('Process images/metadata objects for this resource type?'),
-      '#default_value' => $class->process_images,
-  );
+  if ($has_images) {
+    $form['images'] = array('#type' => 'fieldset', '#title' => 'Images', '#collapsed' => FALSE);
+    $form['images']['process_images'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Process Images?'),
+        '#description' => t('Process images/metadata objects for this resource type?'),
+        '#default_value' => $class->process_images,
+    );
 
-  $form['images']['object_type'] = array(
-      '#type' => 'select',
-      '#multiple' => FALSE,
-      '#title' => t('Object types to download'),
-      '#description' => t('Each MLS provides zero or more object types (photos) to download for each listing. Select the object type you would like to download.'),
-      '#options' => $opts_object_types,
-      '#default_value' => $class->object_type,
-  );
-
+    $form['images']['object_type'] = array(
+        '#type' => 'select',
+        '#multiple' => FALSE,
+        '#title' => t('Object types to download'),
+        '#description' => t('Each MLS provides zero or more object types (photos) to download for each listing. Select the object type you would like to download.'),
+        '#options' => $opts_object_types,
+        '#default_value' => $class->object_type,
+    );
+  }
   $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Save Configuration'),
@@ -777,9 +782,13 @@ function drealty_configure_resource_limits_form_submit($form, &$form_state) {
   $class->override_status_query = $form_state['values']['status_override'];
   $class->override_status_query_text = $form_state['values']['status_override_query'];
 
+  if ($form_state['has_images']) {
     $class->process_images = $form_state['values']['process_images'];
-    $class->object_type =$form_state['values']['object_type'];
-
+    $class->object_type = $form_state['values']['object_type'];
+  } else {
+    $class->process_images = FALSE;
+    $class->object_type = NULL;
+  }
   $class->configured = TRUE;
   drupal_write_record('drealty_classes', $class, 'cid');
 

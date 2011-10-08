@@ -371,7 +371,7 @@ function drealty_management_page() {
   $content = '';
   $content .= "<div class='section'>";
   $content .= "<h3>dRealty RETS Configuration</h3>";
-  $content .= "<div class='description'>Use the adminstration sections below to configure one or more RETS connections.</div>";
+  $content .= "<div class='description'>Use the adminstration sections below to configure one or more RETs connections.</div>";
   $content .= "<div>";
   $content .= l('dRealty Connections', 'admin/drealty/connections');
   $content .= "<div class='description'>Manage dRealty Connections</div>";
@@ -385,7 +385,7 @@ function drealty_management_page() {
 
   $content .= "<div class='section'>";
   $content .= "<h3>dRealty Entity Field Configuration</h3>";
-  $content .= "<div class='description'>Use the adminstration sections below to manage fields for the various dRealty Entities.</div>";
+  $content .= "<div class='description'>Use the adminstration sections below to add | remove | manage fields for the various dRealty Entities via Drupal's Core Field API.</div>";
   $content .= "<div><strong>dRealty Listings</strong></div>";
   $content .= "<div>" . l("Manage Fields", "admin/drealty/structure/drealty_listing/fields") . ' | ' . l("Manage Display", "admin/drealty/structure/drealty_listing/display") . '</div>';
   $content .= "<div><strong>dRealty Open Houses</strong></div>";

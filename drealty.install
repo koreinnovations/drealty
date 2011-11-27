@@ -513,8 +513,19 @@ function drealty_schema() {
         'picture_count' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => FALSE, 'default' => 0, 'description' => "The number of photographs / pictures associated with the property.", 'group' => 'Listing:Property'),
       ) + entity_exportable_schema_fields(),
       'primary key' => array('id'),
-      'unique keys' => array('name' => array('name')),
+      //'unique keys' => array('name' => array('name')),
   );
 
   return $schema;
+}
+
+/**
+ * Remove unique constraint on drealty_listing.name field
+ */
+function drealty_update_7000() {
+  $items = array();
+  
+  $items[] = db_query("ALTER TABLE {drealty_listing} DROP INDEX name");
+  
+  return $items;
 }

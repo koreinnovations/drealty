@@ -79,7 +79,8 @@ function drealty_listing_admin($type = 'new') {
   $edit = $_POST;
   if (isset($edit['operation']) && ($edit['operation'] == 'delete') && isset($edit['listings']) && $edit['listings']) {
     return drupal_get_form('drealty_listing_multiple_delete_confirm');
-  } else {
+  }
+  else {
     return drupal_get_form('drealty_listing_admin_overview', $type);
   }
 }
@@ -94,10 +95,10 @@ function drealty_listing_admin_overview($form, &$form_state, $arg) {
 
   $query = db_select('drealty_listing', 'd')->extend('PagerDefault')->extend('TableSort');
   $result = $query
-    ->fields('d', array('id', 'listing_id'))
-    ->limit(50)
-    ->orderByHeader($header)
-    ->execute();
+          ->fields('d', array('id', 'listing_id'))
+          ->limit(50)
+          ->orderByHeader($header)
+          ->execute();
 
   $lids = array();
   foreach ($result as $row) {
@@ -109,8 +110,7 @@ function drealty_listing_admin_overview($form, &$form_state, $arg) {
   $options = array();
 
   foreach ($listings as $listing) {
-    $address = "{$listing->street_number} {$listing->street_dir_prefix} {$listing->street_name} {$listing->street_dir_suffix} {$listing->street_suffix}, {$listing->city}, {$listing->state_or_province} {$listing->postal_code}";
-    $address = str_replace("  ", " ", $address);
+    $address = drealty_listing_address($listing);
     $links = menu_contextual_links('drealty', 'admin/content/drealty_listings', array($listing->listing_id));
 
     $options[$listing->id] = array(
@@ -152,7 +152,8 @@ function drealty_listing_edit_form($form, &$form_state, $op, $listing) {
     $form['mlsid'] = array('#markup' => "<div><strong>MSL#: </strong> {$listing->listing_id}</div>");
     $form['mlskey'] = array('#markup' => "<div><strong>MLS Key: </strong> {$listing->listing_key}</div>");
     $form['price'] = array('#markup' => "<div><strong>Price: </strong>$$price</div>", '#suffix' => '</div>');
-  } else {
+  }
+  else {
     $listing_info = entity_get_property_info('drealty_listing');
     $props = $listing_info['properties'];
 
@@ -181,21 +182,21 @@ function drealty_listing_edit_form($form, &$form_state, $op, $listing) {
     asort($props);
     foreach ($props as $key => $property) {
       if (isset($property['group']) && $property['group'] != 'hidden') {
-        
+
         $type = 'textfield';
-        switch($property['schema_type']) {
+        switch ($property['schema_type']) {
           case 'text':
             $type = 'textarea';
             break;
           default:
             $type = 'textfield';
         }
-        
+
         $form['sections'][$property['group']][$key] = array(
             '#type' => $type,
             '#title' => $property['label'],
             '#description' => $property['description'],
-            '#default_value' => isset($listing->{$key})?$listing->{$key}:NULL,
+            '#default_value' => isset($listing->{$key}) ? $listing->{$key} : NULL,
         );
       }
     }
@@ -245,5 +246,4 @@ function drealty_listing_edit_form_submit($form, &$form_state) {
   $listing->save();
   // redirect back to the content list
   $form_state['redirect'] = 'admin/content/drealty_listing';
-  
 }

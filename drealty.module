@@ -1138,3 +1138,25 @@ class DrealtyOfficeController extends EntityAPIController {
   }
 
 }
+
+
+
+function drealty_listing_address($listing) {
+  $parts = array();
+
+  // Street
+  $parts[] = "{$listing->street_number} {$listing->street_dir_prefix} {$listing->street_name} {$listing->street_dir_suffix} {$listing->street_suffix}";
+  // City
+  $parts[] = $listing->city;
+// State / Zip
+  $parts[] = "{$listing->state_or_province} {$listing->postal_code}";
+
+  for ($i = 0; $i < sizeof($parts); $i++) {
+    $parts[$i] = str_replace("  ", " ", $parts[$i]);
+    $parts[$i] = trim($parts[$i]);
+  }
+
+  $address = implode(', ', $parts);
+
+  return $address;
+}

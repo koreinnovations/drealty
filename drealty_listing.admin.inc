@@ -145,8 +145,7 @@ function drealty_listing_edit_form($form, &$form_state, $op, $listing) {
     $path = drupal_get_path('module', 'drealty') . "/css/drealty.admin.css";
     drupal_add_css($path, array('type' => 'file'));
 
-    $address = "{$listing->street_number} {$listing->street_dir_prefix} {$listing->street_name} {$listing->street_dir_suffix} {$listing->street_suffix}, {$listing->city}, {$listing->state_or_province} {$listing->postal_code}";
-    $address = str_replace("  ", " ", $address);
+    $address = drealty_listing_address($listing);
     $price = number_format($listing->list_price);
     $form['address'] = array('#markup' => "<div><strong>Address: </strong>$address</div>", '#prefix' => '<div class="section">');
     $form['mlsid'] = array('#markup' => "<div><strong>MSL#: </strong> {$listing->listing_id}</div>");

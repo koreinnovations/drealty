@@ -67,7 +67,8 @@ class drealtyDaemon {
 
       $query = array();
       $query[] = "{$fieldmappings[$query_field]->systemname}={$status_q}";
-    } else {
+    }
+    else {
       $query = array();
       drush_log(dt("using @var", array("@var" => $class->override_status_query_text)));
       $query[] = $class->override_status_query_text;
@@ -118,7 +119,8 @@ class drealtyDaemon {
         $offset += count($items) + 1;
         if ($limit == 'NONE') {
           $end = FALSE;
-        } else {
+        }
+        else {
           $end = $this->dc->get_phrets()->IsMaxrowsReached();
         }
         $this->dc->get_phrets()->FreeResult($search);
@@ -131,12 +133,13 @@ class drealtyDaemon {
       // at this point we have data waiting to be processed. Need to process the
       // data which will insert/update/delete the listing data as nodes
       drush_log(dt("process_results( connection: @connection_name, resource: @resource, class: @class, chunks: @chunks)", array("@connection_name" => $connection->name, "@resource" => $resource,
-            "@class" => $class->systemname, "@chunks" => $chunks)));
+                  "@class" => $class->systemname, "@chunks" => $chunks)));
       $this->process_results($connection, $resource, $class, $entity_type, $chunks);
       if ($entity_type == 'drealty_listing' && $class->process_images) {
         $this->process_images($connection, $resource, $class);
       }
-    } else {
+    }
+    else {
       $error = $this->dc->get_phrets()->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
       drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
@@ -175,8 +178,8 @@ class drealtyDaemon {
 
     $query = new EntityFieldQuery();
     $result = $query->entityCondition('entity_type', $entity_type, '=')
-      ->propertyCondition('conid', $connection->conid)
-      ->execute();
+            ->propertyCondition('conid', $connection->conid)
+            ->execute();
 
     $existing_items_tmp = array();
     if (!empty($result)) {
@@ -220,7 +223,7 @@ class drealtyDaemon {
         drush_log(dt("Item @idx of @total", array("@idx" => $j + 1, "@total" => $rets_results_count)));
         $rets_item = $rets_results->data[$j];
         $in_rets[] = $rets_item[$id];
-        
+
         $force = FALSE;
         if (!isset($existing_items[$rets_item[$id]]) || $existing_items[$rets_item[$id]]->hash != $rets_item['hash'] || $force) {
 
@@ -231,7 +234,8 @@ class drealtyDaemon {
           if (isset($existing_items[$rets_item[$id]])) {
             // this listing exists so we'll get a reference to it and set the values to what came to us in the RETS result
             $item = &$existing_items[$rets_item[$id]];
-          } else {
+          }
+          else {
             $item->created = time();
           }
 
@@ -245,6 +249,8 @@ class drealtyDaemon {
           if ($entity_type == 'drealty_listing') {
             $item->process_images = TRUE;
           }
+
+          //drush_log(dt('Field_mappings: !map', array('!map' => print_r($field_mappings, TRUE))));
 
           foreach ($field_mappings as $mapping) {
             if (isset($rets_item[$mapping->systemname])) {
@@ -262,16 +268,25 @@ class drealtyDaemon {
                 case 'numeric':
                 case 'int':
                   $string = $rets_item[$mapping->systemname];
-                  switch ($mapping->field_name) {
-                    case 'end_datetime':
-                    case 'start_datetime':
-                      drush_log($string);
-                      $value = strtotime($string);
-                      break;
-                    default:
-                      $val = preg_replace('/[^0-9\.]/Uis', '', $string);
-                      $value = is_numeric($val) ? $val : 0;
+                  if (preg_match('/date/', $mapping->field_name)) {
+                    drush_log($string);
+                    $value = strtotime($string);
+                    break;
                   }
+                  else {
+                    $val = preg_replace('/[^0-9\.]/Uis', '', $string);
+                    $value = is_numeric($val) ? $val : 0;
+                  }
+//                  switch ($mapping->field_name) {
+//                    case 'end_datetime':
+//                    case 'start_datetime':
+//                      drush_log($string);
+//                      $value = strtotime($string);
+//                      break;
+//                    default:
+//                      $val = preg_replace('/[^0-9\.]/Uis', '', $string);
+//                      $value = is_numeric($val) ? $val : 0;
+//                  }
                   break;
                 default:
                   $value = $rets_item[$mapping->systemname];
@@ -280,12 +295,14 @@ class drealtyDaemon {
             }
           }
 
-          if ($class->do_geocoding && !$force)  {
+          if ($class->do_geocoding && !$force) {
             $street_number = isset($item->street_number) ? $item->street_number : '';
             $street_name = isset($item->street_name) ? $item->street_name : '';
             $street_suffix = isset($item->street_suffix) ? $item->street_suffix : '';
 
-            $geoaddress = "{$street_number} {$street_name} {$street_suffix}, {$item->city}, {$item->state_or_province} {$item->postal_code}";
+            $street = trim("{$street_number} {$street_name} {$street_suffix}");
+
+            $geoaddress = "{$street}, {$item->city}, {$item->state_or_province} {$item->postal_code}";
             // remove any double spaces
             $geoaddress = str_replace("  ", "", $geoaddress);
 
@@ -294,11 +311,13 @@ class drealtyDaemon {
                 $item->latitude = $latlon->lat;
                 $item->longitude = $latlon->lon;
                 drush_log(dt('Geocoded: @address to (@lat, @lon)', array('@address' => $geoaddress, '@lat' => $item->latitude, '@lon' => $item->longitude)));
-              } else {
-                drush_log(dt('Failed to Geocode: @address)', array('@address' => $geoaddress)));
               }
-            } else {
-              drush_log(dt('Failed to Geocode: @address)', array('@address' => $geoaddress)));
+              else {
+                drush_log(dt('Failed to Geocode: @address', array('@address' => $geoaddress)));
+              }
+            }
+            else {
+              drush_log(dt('Failed to Geocode: @address', array('@address' => $geoaddress)));
             }
           }
 
@@ -309,7 +328,8 @@ class drealtyDaemon {
           }
           drush_log(dt('Saving item @name', array('@name' => $item->name)));
           unset($item);
-        } else {
+        }
+        else {
           // skipping this item
           drush_log(dt("Skipping item @name", array("@name" => $rets_item[$id])));
         }
@@ -339,13 +359,14 @@ class drealtyDaemon {
 
     $query = new EntityFieldQuery();
     $result = $query
-      ->entityCondition('entity_type', $entity_type)
-      ->propertyCondition('process_images', TRUE)
-      ->execute();
+            ->entityCondition('entity_type', $entity_type)
+            ->propertyCondition('process_images', TRUE)
+            ->execute();
 
     if (!empty($result[$entity_type])) {
       $items = entity_load($entity_type, array_keys($result[$entity_type]));
-    } else {
+    }
+    else {
       drush_log("No images to process.");
       return;
     }
@@ -353,12 +374,16 @@ class drealtyDaemon {
     //make sure we have something to process
     if (count($items) >= 1) {
       drush_log("process_images() - Starting.");
-      $img_dir = file_default_scheme() . '://drealty_image';
+      $img_dir_base = file_default_scheme() . '://drealty_image';
+      $img_dir = $img_dir_base . '/' . $conid;
+
+      file_prepare_directory($img_dir, FILE_MODIFY_PERMISSIONS | FILE_CREATE_DIRECTORY);
 
       if (!file_prepare_directory($img_dir, FILE_MODIFY_PERMISSIONS | FILE_CREATE_DIRECTORY)) {
         drush_log(dt("Failed to create %directory.", array('%directory' => $img_dir)), "error");
         return;
-      } else {
+      }
+      else {
         if (!is_dir($img_dir)) {
           drush_log(dt("Failed to locate %directory.", array('%directory' => $img_dir)), "error");
           return;
@@ -414,16 +439,16 @@ class drealtyDaemon {
             // load the entity that is associated with the image
             $query = new EntityFieldQuery();
             $result = $query
-              ->entityCondition('entity_type', 'drealty_listing')
-              ->propertyCondition('listing_key', $mlskey)
-              ->execute();
+                    ->entityCondition('entity_type', 'drealty_listing')
+                    ->propertyCondition('listing_key', $mlskey)
+                    ->propertyCondition('conid', $conid)
+                    ->execute();
             $listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
 
             file_usage_add($file, 'drealty', $entity_type, $listing->id);
 
             $listing->process_images = 0;
             $listing->save();
-            
           }
           unset($photos);
         }

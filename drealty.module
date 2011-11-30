@@ -254,7 +254,8 @@ function drealty_tokens($type, $tokens, array $data = array(), array $options = 
   if (isset($options['language'])) {
     $url_options['language'] = $options['language'];
     $language_code = $options['language']->language;
-  } else {
+  }
+  else {
     $language_code = NULL;
   }
   $sanitize = !empty($options['sanitize']);
@@ -415,10 +416,10 @@ function drealty_listing_map_get_listings() {
   $lon_condition = $bb['south_west']['lng'] . ' AND ' . $bb['north_east']['lng'];
 
   $markers = db_select('drealty_listing', 'l')
-    ->fields('l', array('latitude', 'longitude', 'id', 'listing_id'))
-    ->where("(latitude BETWEEN $lat_condition) AND (longitude BETWEEN $lon_condition)")
-    ->execute()
-    ->fetchAllAssoc('listing_id');
+          ->fields('l', array('latitude', 'longitude', 'id', 'listing_id'))
+          ->where("(latitude BETWEEN $lat_condition) AND (longitude BETWEEN $lon_condition)")
+          ->execute()
+          ->fetchAllAssoc('listing_id');
 
 
   $clustered = array();
@@ -441,7 +442,8 @@ function drealty_listing_map_get_listings() {
       $data['center']['lng'] = $marker->longitude;
       $data['markers'] = $cluster;
       $clustered[] = $data;
-    } else {
+    }
+    else {
       $cluster[] = $marker;
       $data['count'] = 1;
       $data['center']['lat'] = $marker->latitude;
@@ -461,8 +463,8 @@ function lonToX($lon) {
 
 function latToY($lat) {
   return round(OFFSET - RADIUS *
-      log((1 + sin($lat * pi() / 180)) /
-        (1 - sin($lat * pi() / 180))) / 2);
+                  log((1 + sin($lat * pi() / 180)) /
+                          (1 - sin($lat * pi() / 180))) / 2);
 }
 
 function pixelDistance($lat1, $lon1, $lat2, $lon2, $zoom) {
@@ -490,20 +492,20 @@ function _fields_autocomplete($conid, $class, $string) {
   //$result = db_query("SELECT fid, systemname, longname FROM {drealty_fields} WHERE LOWER(longname) LIKE LOWER(:pattern) AND conid = :conid", array('::pattern' => db_like($string), ':conid' => $conid));
   $ored = db_or();
   $ored
-    ->condition('systemname', '%' . strtolower($string) . '%', 'LIKE')
-    ->condition('longname', '%' . strtolower($string) . '%', 'LIKE');
+          ->condition('systemname', '%' . strtolower($string) . '%', 'LIKE')
+          ->condition('longname', '%' . strtolower($string) . '%', 'LIKE');
 
   $anded = db_and();
   $anded
-    ->condition('conid', $conid)
-    ->condition('classes', '%' . $class . '%', 'LIKE');
+          ->condition('conid', $conid)
+          ->condition('classes', '%' . $class . '%', 'LIKE');
 
   $results = db_select('drealty_fields', 'f')
-    ->fields('f')
-    ->condition($anded)
-    ->condition($ored)
-    ->execute()
-    ->fetchAll();
+          ->fields('f')
+          ->condition($anded)
+          ->condition($ored)
+          ->execute()
+          ->fetchAll();
 
   foreach ($results as $data) {
     $matches[$data->systemname . ' - ' . $data->longname] = $data->systemname . ' - ' . $data->longname;
@@ -518,8 +520,8 @@ function drealty_sentence_case($string) {
   $new_string = '';
   foreach ($sentences as $key => $sentence) {
     $new_string .= ($key & 1) == 0 ?
-      ucfirst(strtolower(trim($sentence))) :
-      $sentence . ' ';
+            ucfirst(strtolower(trim($sentence))) :
+            $sentence . ' ';
   }
   return trim($new_string);
 }
@@ -562,7 +564,8 @@ function drealty_geocode($address) {
     $latlon->lat = $result[0]->lat;
     $latlon->lon = $result[0]->lon;
     $latlon->success = TRUE;
-  } else {
+  }
+  else {
     if (!$libraries) {
       $libraries = libraries_get_libraries();
     }
@@ -755,9 +758,9 @@ function drealty_theme($existing, $type, $theme, $path) {
 function drealty_office_load($office_mlsid, $reset = FALSE) {
   $query = new EntityFieldQuery();
   $result = $query
-    ->entityCondition('entity_type', 'drealty_office')
-    ->propertyCondition('office_id', $office_mlsid)
-    ->execute();
+          ->entityCondition('entity_type', 'drealty_office')
+          ->propertyCondition('office_id', $office_mlsid)
+          ->execute();
 
   return reset(entity_load('drealty_office', array_keys($result['drealty_office']), array(), $reset));
 }
@@ -766,10 +769,10 @@ function drealty_agent_load($agent_name, $reset = FALSE) {
   $name = explode("_", $agent_name);
   $query = new EntityFieldQuery();
   $result = $query
-    ->entityCondition('entity_type', 'drealty_agent')
-    ->propertyCondition('first_name', $name[0])
-    ->propertyCondition('last_name', $name[1])
-    ->execute();
+          ->entityCondition('entity_type', 'drealty_agent')
+          ->propertyCondition('first_name', $name[0])
+          ->propertyCondition('last_name', $name[1])
+          ->execute();
 
   return reset(entity_load('drealty_agent', array_keys($result['drealty_agent']), array(), $reset));
 }
@@ -777,9 +780,9 @@ function drealty_agent_load($agent_name, $reset = FALSE) {
 function drealty_openhouse_load($listing_mlsid, $reset = FALSE) {
   $query = new EntityFieldQuery();
   $result = $query
-    ->entityCondition('entity_type', 'drealty_openhouse')
-    ->propertyCondition('listing_id', $listing_mlsid)
-    ->execute();
+          ->entityCondition('entity_type', 'drealty_openhouse')
+          ->propertyCondition('listing_id', $listing_mlsid)
+          ->execute();
 
   return reset(entity_load('drealty_openhouse', array_keys($result['drealty_openhouse']), array(), $reset));
 }
@@ -787,9 +790,9 @@ function drealty_openhouse_load($listing_mlsid, $reset = FALSE) {
 function drealty_listing_load($listing_mlsid, $reset = FALSE) {
   $query = new EntityFieldQuery();
   $result = $query
-    ->entityCondition('entity_type', 'drealty_listing')
-    ->propertyCondition('listing_id', $listing_mlsid)
-    ->execute();
+          ->entityCondition('entity_type', 'drealty_listing')
+          ->propertyCondition('listing_id', $listing_mlsid)
+          ->execute();
 
   return reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), $reset));
 }
@@ -965,17 +968,21 @@ class DrealtyListingController extends EntityAPIController {
     drupal_add_html_head($og_image, 'og_image');
     return $content;
   }
+  
+  public function addImage($file) {
+    
+  }
 
   public function attachLoad(&$queried_entities, $revision_id = FALSE) {
     parent::attachLoad($queried_entities, $revision_id);
 
     foreach ($queried_entities as $entity) {
       $fids = db_select('file_usage', 'f')
-        ->fields('f', array('fid'))
-        ->condition('id', $entity->id)
-        ->condition('type', 'drealty_listing')
-        ->execute()
-        ->fetchAllAssoc('fid');
+              ->fields('f', array('fid'))
+              ->condition('id', $entity->id)
+              ->condition('type', 'drealty_listing')
+              ->execute()
+              ->fetchAllAssoc('fid');
       if ($fids) {
         $fids = array_keys($fids);
         $files = file_load_multiple($fids);
@@ -997,8 +1004,10 @@ class DrealtyListingController extends EntityAPIController {
       return;
     }
     foreach ($entities as $entity) {
-      foreach ($entity->mls_images as $file) {
-        file_delete($file, TRUE);
+      if (is_array($entity->mls_images)) {
+        foreach ($entity->mls_images as $file) {
+          file_delete($file, TRUE);
+        }
       }
     }
 
@@ -1035,9 +1044,9 @@ class DrealtyOpenHouseController extends EntityAPIController {
     foreach ($queried_entities as $entity) {
       $query = new EntityFieldQuery();
       $result = $query
-        ->entityCondition('entity_type', 'drealty_listing')
-        ->propertyCondition('listing_key', $entity->listing_key)
-        ->execute();
+              ->entityCondition('entity_type', 'drealty_listing')
+              ->propertyCondition('listing_key', $entity->listing_key)
+              ->execute();
       if ($result) {
         $entity->listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
       }
@@ -1138,8 +1147,6 @@ class DrealtyOfficeController extends EntityAPIController {
   }
 
 }
-
-
 
 function drealty_listing_address($listing) {
   $parts = array();

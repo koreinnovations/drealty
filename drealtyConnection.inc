@@ -1,7 +1,6 @@
 <?php
 
 class dRealtyConnection {
-
   public function __construct() {
     drealty_load_phrets();
   }
@@ -12,7 +11,6 @@ class dRealtyConnection {
    * @return bool
    */
   public function connect($conid) {
-
     // check to see if we  are connected to a rets server. If there is a connection
     // do nothing.
 

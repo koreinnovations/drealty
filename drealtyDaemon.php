@@ -17,6 +17,7 @@ class drealtyDaemon {
       foreach ($mappings as $mapping) {
         $classes = $connection->FetchClasses($mapping->resource);
         foreach ($classes as $class) {
+//          drush_log(print_r($class, TRUE));
           if ($class->enabled && $class->lifetime <= time() - ($class->lastupdate + 60)) {
             $this->ProcessRetsClass($connection, $mapping->resource, $class, $mapping->entity_type);
             $class->lastupdate = time();
@@ -31,7 +32,6 @@ class drealtyDaemon {
   }
 
   private function ProcessRetsClass(dRealtyConnectionEntity $connection, $resource, $class, $entity_type) {
-
     $query_fields = array();
     $offset = 0;
     $props = array();
@@ -103,6 +103,9 @@ class drealtyDaemon {
         );
         // do the actual search
         $search = $this->dc->get_phrets()->SearchQuery($resource, $class->systemname, "($q)", $optional_params);
+        
+        drush_log(dt("Rows returned: " . $this->dc->get_phrets()->TotalRecordsFound()));
+        
         $items = array();
         // loop through the search results
         while ($item = $this->dc->get_phrets()->FetchRow($search)) {
@@ -375,7 +378,7 @@ class drealtyDaemon {
     if (count($items) >= 1) {
       drush_log("process_images() - Starting.");
       $img_dir_base = file_default_scheme() . '://drealty_image';
-      $img_dir = $img_dir_base . '/' . $conid;
+      $img_dir = $img_dir_base . '/' . $conid->conid;
 
       file_prepare_directory($img_dir, FILE_MODIFY_PERMISSIONS | FILE_CREATE_DIRECTORY);
 
@@ -438,10 +441,13 @@ class drealtyDaemon {
             $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
             // load the entity that is associated with the image
             $query = new EntityFieldQuery();
+            
+            drush_log(dt("CONNECTION ID: {$conid->conid}"));
+            
             $result = $query
                     ->entityCondition('entity_type', 'drealty_listing')
                     ->propertyCondition('listing_key', $mlskey)
-                    ->propertyCondition('conid', $conid)
+                    ->propertyCondition('conid', $conid->conid)
                     ->execute();
             $listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
 

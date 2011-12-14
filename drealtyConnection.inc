@@ -181,25 +181,6 @@ class dRealtyConnection {
 
 }
 
-class dRealtyListingEntity extends Entity {
-
-  public $id;
-  public $ListingId;
-  public $ListingKey;
-  public $ListPrice;
-  public $UnparsedAddress;
-  public $BathsFull;
-
-  public function __construct($values = array()) {
-    parent::__construct($values, 'drealty_listing');
-  }
-
-  protected function defaultLabel() {
-    return $this->ListingId;
-  }
-
-}
-
 class dRealtyConnectionEntity extends Entity {
 
   public $conid;

@@ -79,7 +79,54 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
 
     return $items;
   }
+    public function overviewTable($conditions = array()) {
+    $entities = entity_load($this->entityType, FALSE, $conditions);
+    ksort($entities);
 
+    $rows = array();
+    foreach ($entities as $entity) {
+      
+      $name = $entity->name;
+      $active = $entity->active;
+      
+     
+      $operation = '';
+      if ($active) {
+        $operation .=  l("Deactivate", "admin/drealty/connections/manage/$name/deactivate");
+        $operation .= ' <br /> ' . "Configure: " . l("Properties", "admin/drealty/connections/manage/$name/resource/drealty_listing");
+        $operation .= ' | ' . l("Open Houses", "admin/drealty/connections/manage/$name/resource/drealty_openhouse");
+        $operation .= ' | ' . l("Offices", "admin/drealty/connections/manage/$name/resource/drealty_office");
+        $operation .= ' | ' . l("Agents", "admin/drealty/connections/manage/$name/resource/drealty_agent");
+      } else {
+        $operation .= l("Activate", "admin/drealty/connections/manage/$name/activate");
+      }
+      $additional = array($operation);
+      
+      $rows[] = $this->overviewTableRow($conditions, entity_id($this->entityType, $entity), $entity, $additional);
+    }
+    // Assemble the right table header.
+    $header = array(t('Label'));
+    // Add in the RETS Operations
+    $header[] = t('dRealty Operations');
+    if (!empty($this->entityInfo['exportable'])) {
+      $header[] = t('Status');
+    }
+    // Add operations with the right colspan.
+    $field_ui = !empty($this->entityInfo['bundle of']) && module_exists('field_ui');
+    $exportable = !empty($this->entityInfo['exportable']);
+    $colspan = 3;
+    $colspan = $field_ui ? $colspan + 2 : $colspan;
+    $colspan = $exportable ? $colspan + 1 : $colspan;
+    $header[] = array('data' => t('Operations'), 'colspan' => $colspan);
+
+    $render = array(
+      '#theme' => 'table',
+      '#header' => $header,
+      '#rows' => $rows,
+      '#empty' => t('None.'),
+    );
+    return $render;
+  }
 }
 
 function drealty_connection_entity_edit_form($form, &$form_state, $connection) {
@@ -430,6 +477,10 @@ function drealty_configure_resource_fields_form($form, &$form_state, dRealtyConn
     white-space: normal;
     }", array('type' => 'inline'));
 
+  $path = drupal_get_path("module", "drealty");
+  
+  
+  drupal_add_css("$path/css/drealty.admin.css", array('type' => 'file'));
   $form_state['connection'] = $connection;
   $form_state['entity_type'] = $entity_type;
   $form_state['class'] = $class;

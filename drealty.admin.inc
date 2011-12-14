@@ -48,3 +48,10 @@ function theme_drealty_general_setting_form(&$variables) {
 
   return $output;
 }
+
+
+function drealty_list_entity_types() {
+  $info = drealty_entity_info();
+  
+  return "blah";
+}

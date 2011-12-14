@@ -8,3 +8,7 @@ div.section {
   padding: 10px;
   margin-bottom: 1.5em;
 }
+
+table td {
+  vertical-align: top;
+}

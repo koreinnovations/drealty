@@ -79,20 +79,21 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
 
     return $items;
   }
-    public function overviewTable($conditions = array()) {
+
+  public function overviewTable($conditions = array()) {
     $entities = entity_load($this->entityType, FALSE, $conditions);
     ksort($entities);
 
     $rows = array();
     foreach ($entities as $entity) {
-      
+
       $name = $entity->name;
       $active = $entity->active;
-      
-     
+
+
       $operation = '';
       if ($active) {
-        $operation .=  l("Deactivate", "admin/drealty/connections/manage/$name/deactivate");
+        $operation .= l("Deactivate", "admin/drealty/connections/manage/$name/deactivate");
         $operation .= ' <br /> ' . "Configure: " . l("Properties", "admin/drealty/connections/manage/$name/resource/drealty_listing");
         $operation .= ' | ' . l("Open Houses", "admin/drealty/connections/manage/$name/resource/drealty_openhouse");
         $operation .= ' | ' . l("Offices", "admin/drealty/connections/manage/$name/resource/drealty_office");
@@ -101,7 +102,7 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
         $operation .= l("Activate", "admin/drealty/connections/manage/$name/activate");
       }
       $additional = array($operation);
-      
+
       $rows[] = $this->overviewTableRow($conditions, entity_id($this->entityType, $entity), $entity, $additional);
     }
     // Assemble the right table header.
@@ -120,13 +121,14 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
     $header[] = array('data' => t('Operations'), 'colspan' => $colspan);
 
     $render = array(
-      '#theme' => 'table',
-      '#header' => $header,
-      '#rows' => $rows,
-      '#empty' => t('None.'),
+        '#theme' => 'table',
+        '#header' => $header,
+        '#rows' => $rows,
+        '#empty' => t('None.'),
     );
     return $render;
   }
+
 }
 
 function drealty_connection_entity_edit_form($form, &$form_state, $connection) {
@@ -337,6 +339,31 @@ function drealty_connection_delete_form_wrapper(dRealtyConnectionEntity $connect
   return drupal_get_form('drealty_connection_delete_form', $connection);
 }
 
+function drealty_select_resource_type($form, &$form_state) {
+  $connection = $form_state['connection'];
+
+  $entity_type = $form_state['entity_type'];
+
+// update the resource mapping for this connection
+  $mapping = array(
+      'mid' => isset($form_state['values']['mid']) ? $form_state['values']['mid'] : NULL,
+      'conid' => $connection->conid,
+      'resource' => $form_state['values']['prop_resource'],
+      'entity_type' => $entity_type,
+  );
+// update or insert
+  if (isset($mapping['mid'])) {
+    drupal_write_record('drealty_resource_mappings', $mapping, array('mid'));
+  } else {
+    unset($mapping['mid']);
+    drupal_write_record('drealty_resource_mappings', $mapping, array());
+  }
+  $conid = $connection->conid;
+  cache_clear_all("drealty_mappings_$conid", 'cache');
+  // set a succes message
+  drupal_set_message(t('The resource type selection has been saved.'));
+}
+
 function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionEntity $connection = NULL, $entity_type = NULL) {
 
 
@@ -367,9 +394,9 @@ function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionE
       '#options' => $resources,
   );
   $form['select_prop_resource'] = array(
-      '#type' => 'button',
-      '#value' => t('Select'),
-      '#submit' => array('drealty_connection_configure'),
+      '#type' => 'submit',
+      '#value' => isset($mappings[$entity_type]) ? 'change' : 'select',
+      '#submit' => array('drealty_select_resource_type'),
       '#suffix' => '<br /><br />',
   );
 
@@ -423,6 +450,7 @@ function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionE
 
     $form['save_changes'] = array(
         '#type' => 'submit',
+        '#submit' => array('drealty_configure_resource_form_submit'),
         '#value' => t('Save Changes'),
     );
   }
@@ -478,8 +506,8 @@ function drealty_configure_resource_fields_form($form, &$form_state, dRealtyConn
     }", array('type' => 'inline'));
 
   $path = drupal_get_path("module", "drealty");
-  
-  
+
+
   drupal_add_css("$path/css/drealty.admin.css", array('type' => 'file'));
   $form_state['connection'] = $connection;
   $form_state['entity_type'] = $entity_type;

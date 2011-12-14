@@ -46,6 +46,7 @@ function drealty_entity_info() {
       'access callback' => 'drealty_connection_entity_access',
   );
 
+  
   $entities['drealty_openhouse'] = array(
       'label' => t('dRealty OpenHouse'),
       'entity class' => 'DrealtyOpenHouse',

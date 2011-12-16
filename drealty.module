@@ -30,6 +30,9 @@ function drealty_entity_info() {
       'bundles' => array(
           'drealty_listing' => array(
               'label' => t('dRealty Listing'),
+              'admin' => array(
+                  'path' => 'admin/drealty/structure/drealty_listing',
+              ),
           ),
       ),
       'entity keys' => array(
@@ -46,7 +49,7 @@ function drealty_entity_info() {
       'access callback' => 'drealty_connection_entity_access',
   );
 
-  
+
   $entities['drealty_openhouse'] = array(
       'label' => t('dRealty OpenHouse'),
       'entity class' => 'DrealtyOpenHouse',
@@ -123,9 +126,6 @@ function drealty_entity_info() {
       'bundles' => array(
           'drealty_agent' => array(
               'label' => t('dRealty Agent'),
-              'admin' => array(
-                  'path' => 'admin/drealty/structure/drealty_agent',
-              ),
           ),
       ),
       'entity keys' => array(
@@ -165,9 +165,6 @@ function drealty_entity_info() {
       'bundles' => array(
           'drealty_office' => array(
               'label' => t('dRealty Office'),
-              'admin' => array(
-                  'path' => 'admin/drealty/structure/drealty_office',
-              ),
           ),
       ),
       'entity keys' => array(
@@ -301,15 +298,7 @@ function drealty_connection_entity_access($op, $type = NULL, $account = NULL) {
 }
 
 function drealty_menu_alter(&$items) {
-  $items['admin/drealty/structure/drealty_office/fields']['title'] = "Manage Office Fields";
-  $items['admin/drealty/structure/drealty_agent/fields']['title'] = "Manage Agent Fields";
-  $items['admin/drealty/structure/drealty_listing/fields']['title'] = "Manage Listing Fields";
-  $items['admin/drealty/structure/drealty_openhouse/fields']['title'] = "Manage Open House Fields";
 
-  $items['admin/drealty/structure/drealty_office/display']['title'] = "Manage Office Display";
-  $items['admin/drealty/structure/drealty_agent/display']['title'] = "Manage Agent Display";
-  $items['admin/drealty/structure/drealty_listing/display']['title'] = "Manage Listing Display";
-  $items['admin/drealty/structure/drealty_openhouse/display']['title'] = "Manage Open House Display";
 }
 
 function drealty_menu() {
@@ -321,7 +310,7 @@ function drealty_menu() {
       'access arguments' => array('access administration pages'),
       'type' => MENU_NORMAL_ITEM,
   );
-  
+
   $items['admin/drealty/settings'] = array(
       'title' => 'dRealty Settings',
       'description' => t('Configuration settings for dRealty'),
@@ -352,17 +341,18 @@ function drealty_menu() {
       'access callback' => TRUE,
       'type' => MENU_CALLBACK,
   );
+  
+  $items['admin/drealty/structure/drealty_openhouse'] = array(
+      'title' => t('dRealty Openhouse'),
+      'page callback' => 'blah',
+      'access callback' => TRUE,
+      'file' => 'drealty.admin.inc',
+      'type' => MENU_NORMAL_ITEM,
+  );
 
-    $items['admin/drealty/connections/manage/%/resource/%/configure_fields'] = array(
-        'title' => 'Manage Fields',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('field_ui_field_overview_form', 6, 6),
-        'access arguments' => array('access administration pages'),
-        'file' => 'field_ui.admin.inc',
-        'file path' => drupal_get_path('module', 'field_ui'),
-        'type' => MENU_LOCAL_TASK,
-
-    );
+    $items['admin/drealty/structure/drealty_listing'] = array(
+      'title' => t('dRealty Listings Fields'),
+  );
   return $items;
 }
 
@@ -545,7 +535,7 @@ function drealty_word_limit($text, $limit=40) {
 }
 
 function drealty_geocode($address) {
-  
+
   static $libraries = FALSE;
 
   $address = str_replace(" ", "+", $address);

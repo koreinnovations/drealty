@@ -22,13 +22,24 @@ function drealty_requirements($phase) {
 function drealty_uninstall() {
 
   global $conf;
+  
 
-  $listings = entity_load("drealty_listing", FALSE, array(), TRUE);
+    $listings = db_select('drealty_listing', 'dl')
+    ->fields('dl', array('id'))
+    ->execute()
+    ->fetchAllAssoc('id');
+
   // need to delete all the listings this way so that we can clean up the database and remove all the images properly
   foreach ($listings as $listing) {
-    $listing->delete();
+    entity_delete('drealty_listing', $id);
   }
 
+  field_attach_delete_bundle('drealty_listing', 'drealty_listing');
+  field_attach_delete_bundle('drealty_openhouse', 'drealty_openhouse');
+  field_attach_delete_bundle('drealty_agent', 'drealty_agent');
+  field_attach_delete_bundle('drealty_office', 'drealty_office');
+  
+  
   cache_clear_all('drealty_', 'cache', TRUE);
   field_purge_batch(1000);
 

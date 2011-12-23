@@ -22,9 +22,9 @@ function drealty_requirements($phase) {
 function drealty_uninstall() {
 
   global $conf;
-  
 
-    $listings = db_select('drealty_listing', 'dl')
+
+  $listings = db_select('drealty_listing', 'dl')
     ->fields('dl', array('id'))
     ->execute()
     ->fetchAllAssoc('id');
@@ -38,8 +38,8 @@ function drealty_uninstall() {
   field_attach_delete_bundle('drealty_openhouse', 'drealty_openhouse');
   field_attach_delete_bundle('drealty_agent', 'drealty_agent');
   field_attach_delete_bundle('drealty_office', 'drealty_office');
-  
-  
+
+
   cache_clear_all('drealty_', 'cache', TRUE);
   field_purge_batch(1000);
 
@@ -106,14 +106,17 @@ function drealty_schema() {
           'lifetime' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE, 'default' => 28800),
           'enabled' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
           'configured' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
-          'lastupdate' => array('type' => 'int', 'not null' > TRUE),
-          'status_values' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
+          'lastupdate' => array('type' => 'int', 'not null' => TRUE),
+          'status_values' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => ''),
           'process_images' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE, 'default' => 0),
           'object_type' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
+          'query_type' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'tiny', 'not null' => TRUE, 'default' => 0),
           'chunk_size' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE, 'default' => 500),
-          'override_status_query' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
           'override_status_query_text' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => ''),
           'do_geocoding' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+          'offset_field' => array('type' => 'varchar', 'length' => 50, 'not null' => FALSE),
+          'offset_amount' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+          'offset_max' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
       ),
       'primary key' => array('cid'),
   );
@@ -203,7 +206,7 @@ function drealty_schema() {
           'office_phone_area_code' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 6, 'description' => 'The office phone area code.', 'group' => 'office'),
           'office_phone' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The office phone.', 'group' => 'office'),
           'office_fax' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The office fax.', 'group' => 'office'),
-           'office_fax_area_code' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 6, 'description' => 'The office fax area code.', 'group' => 'office'),
+          'office_fax_area_code' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 6, 'description' => 'The office fax area code.', 'group' => 'office'),
           'office_email' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 128, 'description' => 'The office email address.', 'group' => 'office'),
           'office_web_address' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 255, 'description' => 'The office web address.', 'group' => 'office'),
       ),
@@ -283,7 +286,7 @@ function drealty_schema() {
         'listing_date' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => "The datetime of the agreement between the seller and the seller's agent. If no date is stated, it may be the date on which the agreement is actually signed, if this is recorded, or it may be the date established by the award The Contract Date is also known as Date of Agreement.", 'group' => 'general'),
         'status_changed_datetime' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => "The date of the listings contractual status change. This is not necessarily the time the agent made the change in the MLS system, but rather the date of the contractual change.", 'group' => 'general'),
         'days_on_market' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "Number calculated from the days elapsed when a listing was first put on the market until it was put under contract, or taken off the market.", 'group' => 'general'),
-        'listing_status' => array('type' => 'varchar', 'length' => 50, 'not null' => FALSE, 'default' => NULL, 'description' => "Local or regional status that are well known by business users. Each MlsStatus must map to a single RetsStatus. Multiple MlsStatus may map to a single RetsStatus.", 'group' => 'required', 'required' => TRUE),
+        'listing_status' => array('type' => 'varchar', 'length' => 50, 'not null' => FALSE, 'default' => NULL, 'description' => "Local or regional status that are well known by business users. Each MlsStatus must map to a single RetsStatus. Multiple MlsStatus may map to a single RetsStatus.", 'group' => 'required'),
         'list_price' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => "The current price of the home as determined by the seller and the contract seller's agent member. The list price is often negotiable. It is also known as the Asking Price. Formatting is specified by the currency attribute.", 'group' => 'general'),
         'view_on_web' => array('type' => 'varchar', 'length' => 10, 'not null' => FALSE, 'default' => NULL, 'description' => "A Y/N field indicating wether this listing can be viewed on the web.", 'group' => 'general'),
         'virtual_tour_url' => array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => "The branded virtual tour URI.", 'group' => 'general'),
@@ -528,4 +531,22 @@ function drealty_schema() {
   );
 
   return $schema;
+}
+
+function drealty_update_7200(&$sandbox) {
+
+  // add in the new fields to enable the support of servers with no offset support
+  db_add_field('drealty_classes', 'query_type', array('type' => 'int', 'unsigned' => TRUE, 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'initial' => 0));
+  db_add_field('drealty_classes', 'offset_field', array('type' => 'varchar', 'length' => 50, 'not null' => FALSE));
+  db_add_field('drealty_classes', 'offset_amount', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'initial' => 0));
+  db_add_field('drealty_classes', 'offset_max', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'initial' => 0));
+
+  // drop fields no longer used.
+  db_drop_field('drealty_classes', 'override_status_query');
+  
+  // modify fields
+  db_change_field('drealty_classes', 'status_values', 'status_values', array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => ''));
+
+  // clear drealty caches
+  cache_clear_all('drealty_', 'cache', TRUE);
 }

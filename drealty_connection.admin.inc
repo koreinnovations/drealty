@@ -67,7 +67,7 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
         'type' => MENU_NORMAL_ITEM,
     );
     $items[$this->path . '/manage/' . $wildcard . '/resource/%/%drealty_class/limits'] = array(
-        'title' => 'Configure Limits',
+        'title' => 'Configure Import Options',
         'page callback' => 'drupal_get_form',
         'page arguments' => array('drealty_configure_resource_limits_form', $id_count + 1, $id_count + 3, $id_count + 4),
         'access arguments' => array('access administration pages'),
@@ -676,6 +676,8 @@ function drealty_configure_resource_fields_form_validate($form, &$form_state) {
 
 function drealty_configure_resource_fields_form_submit($form, &$form_state) {
 
+  $clear_hash = FALSE;
+
   $entity_type = $form_state['entity_type'];
   $class = $form_state['class'];
 
@@ -694,10 +696,12 @@ function drealty_configure_resource_fields_form_submit($form, &$form_state) {
 
     if ($field['display']) {
       $connection->CreateFieldMapMapping($resource, $key, $systemname, $class->cid);
+      $clear_hash = TRUE;
     } else {
       $connection->RemoveFieldMapping($resource, $key, $class->cid);
     }
   }
+
 
 
   $class->do_geocoding = $form_state['values']['geocode'];
@@ -705,6 +709,19 @@ function drealty_configure_resource_fields_form_submit($form, &$form_state) {
 
   cache_clear_all("drealty_fields_", 'cache', TRUE);
   cache_clear_all('drealty_field_mapping_', 'cache', TRUE);
+
+  // since we have added some fields we need to clear the hash value on the affected listings so that when 
+  // an import is run again we get the new values inserted
+  if ($clear_hash) {
+    db_update("drealty_listing")
+      ->fields(array(
+          'hash' => '0',
+      ))
+      ->condition('conid', $connection->conid)
+      ->condition('class', $class->cid)
+      ->execute();
+  }
+
   drupal_set_message('Configuration options have been saved.');
 }
 
@@ -722,7 +739,8 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
   $resources = $connection->Resources();
 
   $form_state['connection'] = $connection;
-  $form_state['resource'] = $entity_type;
+  $form_state['entity_type'] = $entity_type;
+  $form_state['resource'] = $resource;
   $form_state['class'] = $class;
 
   $fieldmappings = $connection->FetchFieldMappings($resource, $class->cid);
@@ -739,13 +757,16 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
       $query_field = 'type';
       break;
     default:
-      drupal_set_message(t('Please configure the fields before you attempt to configure the limits.', array('@status' => $status)), 'error');
+      drupal_set_message(t('Please configure the fields before you attempt to configure the options.'), 'error');
       drupal_goto("admin/drealty/connections/manage/{$connection->name}/resource/$entity_type");
   }
 
+  $skip_status = FALSE;
+
   if (!isset($fieldmappings[$query_field])) {
-    drupal_set_message(t('Please configure the fields before you attempt to configure the limits.', array('@status' => $status)), 'warning');
-    drupal_goto("admin/drealty/connections/manage/{$connection->name}/resource/$entity_type");
+    drupal_set_message(t('** Need good message here to explain that if it is intended that you will be using the default query type, that the status field must be set otherwise kittens will die **.'), 'warning');
+    //drupal_goto("admin/drealty/connections/manage/{$connection->name}/resource/$entity_type");
+    $skip_status = TRUE;
   }
 
   $is_active = '';
@@ -753,23 +774,25 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
   $opts_object_types = array();
   $has_images = FALSE;
 
-  $tables = unserialize($fields[$fieldmappings[$query_field]->systemname]->lookupname);
-  $lookup_table = $tables[$class->systemname];
+  if (!$skip_status) {
+    $tables = unserialize($fields[$fieldmappings[$query_field]->systemname]->lookupname);
+    $lookup_table = $tables[$class->systemname];
 
-  if (empty($lookup_table)) {
-    drupal_set_message(t('There was an error in your selection of the status field. Please ensure you have selected the correct MLS field. The <strong>@fieldname</strong> is not a valid type for the status.', array("@fieldname" => $fieldmappings['listing_status']->systemname)), 'error');
-    drupal_goto("admin/drealty/connections/manage/{$connection->name}/resource/$entity_type");
+    if (empty($lookup_table)) {
+      drupal_set_message(t('There was an error in your selection of the status field. Please ensure you have selected the correct MLS field. The <strong>@fieldname</strong> is not a valid type for the status.', array("@fieldname" => $fieldmappings['listing_status']->systemname)), 'error');
+      drupal_goto("admin/drealty/connections/manage/{$connection->name}/resource/$entity_type");
+    }
   }
-
   $rets = new dRealtyConnection();
 
 
   if ($rets->connect($connection->conid)) {
-    $values = $rets->get_phrets()->GetLookupValues($resource, $lookup_table);
-    foreach ($values as $val) {
-      $opts[$val['Value']] = check_plain($val['LongValue']);
+    if (!$skip_status) {
+      $values = $rets->get_phrets()->GetLookupValues($resource, $lookup_table);
+      foreach ($values as $val) {
+        $opts[$val['Value']] = check_plain($val['LongValue']);
+      }
     }
-
     $object_types = $rets->get_phrets()->GetMetadataObjects($resource);
     if ($object_types) {
       $has_images = TRUE;
@@ -781,29 +804,101 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
 
   $form_state['has_images'] = $has_images;
 
-  $form['status'] = array(
-      '#type' => 'select',
-      '#title' => t('Status Field'),
-      '#required' => TRUE,
-      '#options' => $opts,
-      '#default_value' => explode(',', $class->status_values),
-      '#description' => t('Select the appropriate values to limit the search query.'),
-      '#multiple' => TRUE,
+  $form['query_options'] = array('#type' => 'fieldset', '#title' => 'Query Options', '#collapsed' => FALSE);
+
+  $query_types = array(0 => 'Default (Server must support offset)', 1 => 'Offset <strong>Not</strong> Supported (Query based on price field)',3 => 'Offset <strong>Not</strong> Supported (Query based on ListingKey)', 2 => 'Manually supplied Query (Server must support offset)');
+
+  $form['query_options']['query_type'] = array(
+      '#type' => 'radios',
+      '#title' => t('Query Type'),
+      '#default_value' => isset($class->query_type) ? $class->query_type : 0,
+      '#options' => $query_types,
+      '#description' => t('Please select the type of query operation to use.'),
   );
 
-  $form['status_override'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Override with the following query.'),
-      '#default_value' => $class->override_status_query,
-  );
-
-  $form['status_override_query'] = array(
+  if (!$skip_status) {
+    $form['query_options']['status'] = array(
+        '#type' => 'select',
+        '#title' => t('Status Field'),
+        '#options' => $opts,
+        '#default_value' => explode(',', $class->status_values),
+        '#description' => t('Select the appropriate values to limit the search query.'),
+        '#multiple' => TRUE,
+        '#states' => array(
+            'visible' => array(':input[name="query_type"]' => array('value' => '0')),
+            'required' => array(':input[name="query_type"]' => array('value' => '0')),
+        ),
+    );
+  } else {
+    $form_state['status_null'] = TRUE;
+//    $form['query_options']['no_status'] = array(
+//        '#markup' => '<div>You must configure the status field</div>',
+//        '#states' => array(
+//            'visible' => array(':input[name="query_type"]' => array('value' => '0')),
+//            'required' => array(':input[name="query_type"]' => array('value' => '0')),
+//        ),
+//    );
+  }
+  $form['query_options']['status_override_query'] = array(
       '#type' => 'textfield',
       '#title' => t('Query to use'),
+      '#size' => 100,
+      '#required' => TRUE,
+      '#description' => t('Must be a valid DMQL query. (specs found <a href="http://retsdoc.onconfluence.com/display/rets172/7.7+Query+language" target="_blank">here.</a> A good tutorial can be found <a href="http://www.flexmls.com/support/rets/tutorials/dmql/" target="_blank">here.</a> You may also find that <a href="http://www.retsmd.com" target="_blank">www.retsmd.com</a> is a valuable resource in helping write the query.'),
       '#default_value' => $class->override_status_query_text,
+      '#states' => array(
+          'invisible' => array(':input[name="query_type"]' => array('value' => '0', 'value' => '3')),
+      ),
   );
 
-  $form['chunk'] = array(
+  $form['query_options']['check_query'] = array(
+      '#type' => 'submit',
+      '#value' => t('Test DMQL Query'),
+      '#description' => t('This process my take several minutes.'),
+      '#submit' => array('drealty_test_manual_query'),
+      '#states' => array(
+          'invisible' => array(':input[name="query_type"]' => array('value' => '0'),  ':input[name="query_type"]' => array('value' => '3')),
+      ),
+  );
+
+  $form['query_options']['offset_field'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Price field to base the offset on'),
+      '#description' => t('This field must be a numeric price field. If you are unsure, visit <a href="http://www.retsmd.com" target="_blank">www.retsmd.com</a> to ensure that the field is numeric.'),
+      '#default_value' => $class->offset_field,
+      '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
+      '#states' => array(
+          'visible' => array(':input[name="query_type"]' => array('value' => '1')),
+          'required' => array(':input[name="query_type"]' => array('value' => '1')),
+      ),
+  );
+
+  $form['query_options']['offset_amount'] = array(
+      '#type' => 'select',
+      '#title' => t('The amount to offset by.'),
+      '#default_value' => $class->offset_amount,
+      '#options' => array(10000 => '$10,000', 25000 => '$25,000', 50000 => '$50,000', 75000 => '$75,000', 100000 => '$100,000', 200000 => '$200,000'),
+      '#states' => array(
+          'visible' => array(':input[name="query_type"]' => array('value' => '1')),
+          'required' => array(':input[name="query_type"]' => array('value' => '1')),
+      ),
+  );
+
+  $form['query_options']['offset_max'] = array(
+      '#type' => 'select',
+      '#title' => t('The maximum offset amount.'),
+      '#default_value' => $class->offset_max,
+      '#options' => array(1000000 => '$1m', 1500000 => '$1.5m', 2000000 => '$2m', 5000000 => '$5m', 7500000 => '$7.5m', 10000000 => '$10m', 999000000 => '$999m'),
+      '#states' => array(
+          'visible' => array(':input[name="query_type"]' => array('value' => '1')),
+          'required' => array(':input[name="query_type"]' => array('value' => '1')),
+      ),
+  );
+
+
+
+
+  $form['query_options']['chunk'] = array(
       '#title' => t('Record chunk size'),
       '#type' => 'select',
       '#options' => drupal_map_assoc(array(250, 500, 1000, 1500, 2000, 3000)) + array('0' => t('Unlimited')),
@@ -811,7 +906,14 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
       '#description' => t('When processing incoming records, the system will work with data structures containing this many records simultaneously,
       and cache the rest for later. If updating listings is often failing due to out of memory errors and increasing PHP&rsquo;s memory allocation is not an option,
       try decreasing this value. However, decreasing this value increases the amount of time it will take to update listings. The RETS server may override this value (MAXROWS).'),
+      '#states' => array(
+          'invisible' => array(':input[name="query_type"]' => array('value' => '1')),
+      ),
   );
+
+
+
+
 
   if ($has_images) {
     $form['images'] = array('#type' => 'fieldset', '#title' => 'Images', '#collapsed' => FALSE);
@@ -829,6 +931,9 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
         '#description' => t('Each MLS provides zero or more object types (photos) to download for each listing. Select the object type you would like to download.'),
         '#options' => $opts_object_types,
         '#default_value' => $class->object_type,
+        '#states' => array(
+            'visible' => array(':input[name="process_images"]' => array('checked' => TRUE)),
+        ),
     );
   }
   $form['submit'] = array(
@@ -842,7 +947,7 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
 function drealty_configure_resource_limits_form_submit($form, &$form_state) {
   $connection = new dRealtyConnectionEntity();
   $connection = $form_state['connection'];
-  $entity_type = $form_state['resource'];
+  $entity_type = $form_state['entity_type'];
   $class = $form_state['class'];
 
   // grab the mappings and see if we have one already
@@ -858,8 +963,17 @@ function drealty_configure_resource_limits_form_submit($form, &$form_state) {
 
   $class->status_values = implode(',', $form_state['values']['status']);
   $class->chunk_size = $form_state['values']['chunk'];
-  $class->override_status_query = $form_state['values']['status_override'];
+  $class->query_type = $form_state['values']['query_type'];
   $class->override_status_query_text = $form_state['values']['status_override_query'];
+
+  //split out the system name of the field
+  $tmp = explode(' - ', $form_state['values']['offset_field']);
+  $systemname = $tmp[0];
+
+  $class->offset_field = $systemname;
+  $class->offset_amount = (int) $form_state['values']['offset_amount'];
+  $class->offset_max = (int) $form_state['values']['offset_max'];
+
 
   if ($form_state['has_images']) {
     $class->process_images = $form_state['values']['process_images'];
@@ -874,7 +988,46 @@ function drealty_configure_resource_limits_form_submit($form, &$form_state) {
   cache_clear_all('drealty_classes_', 'cache', TRUE);
   cache_clear_all("drealty_resources_$connection->conid", 'cache');
   drupal_set_message(t("The configuration options have been saved."));
-  // set a variable that can be check to see if a particular 'type' has been configured.
+}
+
+function drealty_test_manual_query($form, &$form_state) {
+
+  drupal_set_message("Testing the DMQL Query.");
+
+  $connection = new dRealtyConnectionEntity();
+  $connection = $form_state['connection'];
+  $resource = $form_state['resource'];
+  $query = $form_state['values']['status_override_query'];
+  $class = $form_state['class'];
+
+  $dc = new dRealtyConnection();
+
+  if ($dc->connect($connection->conid)) {
+
+    $options = array(
+        'count' => 1,
+        'Format' => 'COMPACT-DECODED',
+    );
+
+    $search = $dc->get_phrets()->SearchQuery($resource, $class->systemname, $query);
+
+    if ($dc->get_phrets()->Error()) {
+      $error = $dc->get_phrets()->Error();
+      drupal_set_message("Rets Error: {$error['code']}: {$error['text']}.", 'error');
+    } else {
+      $num_rows_returned = $dc->get_phrets()->NumRows($search);
+      $total_records = $dc->get_phrets()->TotalRecordsFound($search);
+      drupal_set_message("Success. RETS server returned $num_rows_returned of $total_records results.");
+    }
+
+    $dc->get_phrets()->FreeResult($search);
+
+    $dc->disconnect();
+  }
+
+//  $class->override_status_query_text = $query;
+//  drupal_write_record('drealty_classes', $class, 'cid');
+//  cache_clear_all('drealty_classes_', 'cache', TRUE);
 }
 
 function theme_drealty_classes_form(&$variables) {

@@ -126,6 +126,9 @@ function drealty_entity_info() {
       'bundles' => array(
           'drealty_agent' => array(
               'label' => t('dRealty Agent'),
+              'admin' => array(
+                  'path' => 'admin/drealty/structure/drealty_agent',
+              ),
           ),
       ),
       'entity keys' => array(
@@ -165,6 +168,9 @@ function drealty_entity_info() {
       'bundles' => array(
           'drealty_office' => array(
               'label' => t('dRealty Office'),
+              'admin' => array(
+                  'path' => 'admin/drealty/structure/drealty_agent',
+              ),
           ),
       ),
       'entity keys' => array(
@@ -298,7 +304,7 @@ function drealty_connection_entity_access($op, $type = NULL, $account = NULL) {
 }
 
 function drealty_menu_alter(&$items) {
-
+  
 }
 
 function drealty_menu() {
@@ -341,7 +347,7 @@ function drealty_menu() {
       'access callback' => TRUE,
       'type' => MENU_CALLBACK,
   );
-  
+
   $items['admin/drealty/structure/drealty_openhouse'] = array(
       'title' => t('dRealty Openhouse'),
       'page callback' => 'blah',
@@ -350,7 +356,7 @@ function drealty_menu() {
       'type' => MENU_NORMAL_ITEM,
   );
 
-    $items['admin/drealty/structure/drealty_listing'] = array(
+  $items['admin/drealty/structure/drealty_listing'] = array(
       'title' => t('dRealty Listings Fields'),
   );
   return $items;
@@ -931,7 +937,11 @@ class DrealtyListingController extends EntityAPIController {
         ),
     );
 
-    $title = "{$entity->street_number} {$entity->street_name} {$entity->street_suffix} - {$entity->city}, {$entity->state_or_province} {$entity->postal_code}";
+    if (isset($entity->street_number) && isset($entity->street_name) && isset($entity->city) && isset($entity->state_or_province) && isset($entity->postal_code)) {
+      $title = "{$entity->street_number} {$entity->street_name} {$entity->street_suffix} - {$entity->city}, {$entity->state_or_province} {$entity->postal_code}";
+    } else {
+      $title = $entity->listing_id;
+    }
 
     drupal_set_title($title);
 
@@ -943,18 +953,21 @@ class DrealtyListingController extends EntityAPIController {
         ),
     );
 
-    $og_image = array(
-        '#tag' => 'meta',
-        '#attributes' => array(
-            'property' => 'og:image',
-            'content' => file_create_url(array_shift($entity->mls_images)->uri),
-        ),
-    );
+    if (isset($entity->mls_images)) {
+      $og_image = array(
+          '#tag' => 'meta',
+          '#attributes' => array(
+              'property' => 'og:image',
+              'content' => file_create_url(array_shift($entity->mls_images)->uri),
+          ),
+      );
+      drupal_add_html_head($og_image, 'og_image');
+    }
 
     drupal_add_html_head($meta_description, 'meta_description');
     drupal_add_html_head($og_description, 'og_description');
     drupal_add_html_head($og_title, 'og_title');
-    drupal_add_html_head($og_image, 'og_image');
+
     return $content;
   }
 
@@ -989,8 +1002,10 @@ class DrealtyListingController extends EntityAPIController {
       return;
     }
     foreach ($entities as $entity) {
-      foreach ($entity->mls_images as $file) {
-        file_delete($file, TRUE);
+      if (isset($entity->mls_images)) {
+        foreach ($entity->mls_images as $file) {
+          file_delete($file, TRUE);
+        }
       }
     }
 

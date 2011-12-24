@@ -48,7 +48,8 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
     );
 
     $items[$this->path . '/manage/' . $wildcard . '/resource/%'] = array(
-        'title' => 'Configure Resources',
+        'title callback' => 'drealty_configure_resource_title_callback',
+        'title arguments' => array($id_count + 3),
         'page callback' => 'drupal_get_form',
         'page arguments' => array('drealty_configure_resource_form', $id_count + 1, $id_count + 3),
         'access arguments' => array('access administration pages'),
@@ -58,7 +59,8 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
     );
 
     $items[$this->path . '/manage/' . $wildcard . '/resource/%/%drealty_class/fields'] = array(
-        'title' => 'Configure Fields',
+        'title callback' => 'drealty_configure_fields_title_callback',
+        'title arguments' => array($id_count+4),
         'page callback' => 'drupal_get_form',
         'page arguments' => array('drealty_configure_resource_fields_form', $id_count + 1, $id_count + 3, $id_count + 4),
         'access arguments' => array('access administration pages'),
@@ -75,8 +77,6 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
         'file path' => drupal_get_path('module', $this->entityInfo['module']),
         'type' => MENU_NORMAL_ITEM,
     );
-
-
     return $items;
   }
 
@@ -131,6 +131,29 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
 
 }
 
+function drealty_configure_fields_title_callback($class) {
+  return "Configure Fields for: {$class->standardname}";
+}
+
+function drealty_configure_resource_title_callback($type) {
+    switch ($type) {
+    case 'drealty_listing':
+      $title = "dRealty Listing Resource Managment";
+      break;
+    case 'drealty_agent':
+      $title = "dRealty Agent Resource Managment";
+      break;
+    case 'drealty_office':
+      $title = "dRealty Office Resource Managment";
+      break;
+    case 'drealty_openhouse':
+      $title = "dRealty Open House Resource Managment";
+      break;
+    default:
+      $title = 'dRealty Field Management';
+  }
+  return $title;
+}
 function drealty_connection_entity_edit_form($form, &$form_state, $connection) {
   $form['conid'] = array('#type' => 'value', '#value' => $connection->conid);
 
@@ -806,7 +829,7 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
 
   $form['query_options'] = array('#type' => 'fieldset', '#title' => 'Query Options', '#collapsed' => FALSE);
 
-  $query_types = array(0 => 'Default (Server must support offset)', 1 => 'Offset <strong>Not</strong> Supported (Query based on price field)',3 => 'Offset <strong>Not</strong> Supported (Query based on ListingKey)', 2 => 'Manually supplied Query (Server must support offset)');
+  $query_types = array(0 => 'Default (Server must support offset)', 1 => 'Offset <strong>Not</strong> Supported (Query based on price field)', 3 => 'Offset <strong>Not</strong> Supported (Query based on ListingKey)', 2 => 'Manually supplied Query (Server must support offset)');
 
   $form['query_options']['query_type'] = array(
       '#type' => 'radios',
@@ -843,21 +866,40 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
       '#type' => 'textfield',
       '#title' => t('Query to use'),
       '#size' => 100,
-      '#required' => TRUE,
       '#description' => t('Must be a valid DMQL query. (specs found <a href="http://retsdoc.onconfluence.com/display/rets172/7.7+Query+language" target="_blank">here.</a> A good tutorial can be found <a href="http://www.flexmls.com/support/rets/tutorials/dmql/" target="_blank">here.</a> You may also find that <a href="http://www.retsmd.com" target="_blank">www.retsmd.com</a> is a valuable resource in helping write the query.'),
       '#default_value' => $class->override_status_query_text,
       '#states' => array(
-          'invisible' => array(':input[name="query_type"]' => array('value' => '0', 'value' => '3')),
+          'visible' => array(':input[name="query_type"]' => array('value' => '2')),
+          'required' => array(':input[name="query_type"]' => array('value' => '2')),
       ),
   );
-
+  $form['query_options']['total_query'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Query to use'),
+      '#size' => 100,
+      '#description' => t('Must be a valid DMQL query. (specs found <a href="http://retsdoc.onconfluence.com/display/rets172/7.7+Query+language" target="_blank">here.</a> A good tutorial can be found <a href="http://www.flexmls.com/support/rets/tutorials/dmql/" target="_blank">here.</a> You may also find that <a href="http://www.retsmd.com" target="_blank">www.retsmd.com</a> is a valuable resource in helping write the query.'),
+      '#default_value' => $class->override_status_query_text,
+      '#states' => array(
+          'visible' => array(':input[name="query_type"]' => array('value' => '1')),
+          'required' => array(':input[name="query_type"]' => array('value' => '1')),
+      ),
+  );
+    $form['query_options']['check_query_1'] = array(
+      '#type' => 'submit',
+      '#value' => t('Test DMQL Query'),
+      '#description' => t('This process my take several minutes.'),
+      '#submit' => array('drealty_test_manual_query'),
+      '#states' => array(
+          'visible' => array(':input[name="query_type"]' => array('value' => '1')),
+      ),
+  );
   $form['query_options']['check_query'] = array(
       '#type' => 'submit',
       '#value' => t('Test DMQL Query'),
       '#description' => t('This process my take several minutes.'),
       '#submit' => array('drealty_test_manual_query'),
       '#states' => array(
-          'invisible' => array(':input[name="query_type"]' => array('value' => '0'),  ':input[name="query_type"]' => array('value' => '3')),
+          'visible' => array(':input[name="query_type"]' => array('value' => '2')),
       ),
   );
 
@@ -964,8 +1006,13 @@ function drealty_configure_resource_limits_form_submit($form, &$form_state) {
   $class->status_values = implode(',', $form_state['values']['status']);
   $class->chunk_size = $form_state['values']['chunk'];
   $class->query_type = $form_state['values']['query_type'];
-  $class->override_status_query_text = $form_state['values']['status_override_query'];
-
+  switch($class->query_type) {
+    case 1:
+      $class->override_status_query_text = $form_state['values']['total_query'];
+      break;
+    default:
+    $class->override_status_query_text = $form_state['values']['status_override_query'];
+  }
   //split out the system name of the field
   $tmp = explode(' - ', $form_state['values']['offset_field']);
   $systemname = $tmp[0];

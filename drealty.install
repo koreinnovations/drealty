@@ -176,7 +176,8 @@ function drealty_schema() {
           'class' => array('type' => 'int', 'not null' => FALSE, 'default' => 0, 'description' => 'The Resource Class from the MLS', 'group' => 'hidden'),
           'created' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Date the listing was created in the system.', 'group' => 'hidden'),
           'changed' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Last date the listing was changed/updated in the system', 'group' => 'hidden'),
-          'agent_id' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'Agent Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
+          'agent_id' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 50, 'description' => 'Agent Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
+          'agent_key' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'Agent Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
           'type' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The type of agent.', 'group' => 'required', 'required' => TRUE),
           'first_name' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 50, 'description' => 'First name of the Agent..', 'group' => 'general'),
           'last_name' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 50, 'description' => 'Last Name of the Agent.', 'group' => 'general'),
@@ -223,7 +224,8 @@ function drealty_schema() {
           'class' => array('type' => 'int', 'not null' => FALSE, 'default' => 0, 'description' => 'The Resource Class from the MLS', 'group' => 'hidden'),
           'created' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Date the listing was created in the system.', 'group' => 'hidden'),
           'changed' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Last date the listing was changed/updated in the system', 'group' => 'hidden'),
-          'office_id' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'Broker or Office Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
+          'office_id' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'Broker or Office Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
+           'office_key' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'Agent Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
           'type' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The type of office.', 'group' => 'required', 'required' => TRUE),
           'name' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 255, 'description' => 'The name of the Office..', 'group' => 'general'),
           'short_name' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 128, 'description' => 'The short name of the Office.', 'group' => 'general'),
@@ -543,10 +545,19 @@ function drealty_update_7200(&$sandbox) {
 
   // drop fields no longer used.
   db_drop_field('drealty_classes', 'override_status_query');
-  
+
   // modify fields
   db_change_field('drealty_classes', 'status_values', 'status_values', array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => ''));
 
   // clear drealty caches
   cache_clear_all('drealty_', 'cache', TRUE);
+}
+
+function drealty_update_7201(&$sandbox) {
+
+  db_add_field('drealty_agent', 'agent_key', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE));
+  db_change_field('drealty_agent', 'agent_id', 'agent_id', array('type' => 'varchar', 'not null' => FALSE, 'length' => 50));
+
+  db_add_field('drealty_office', 'office_key', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE));
+  db_change_field('drealty_office', 'office_id', 'office_id', array('type' => 'varchar', 'not null' => FALSE, 'length' => 50));
 }

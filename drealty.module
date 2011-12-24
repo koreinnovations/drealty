@@ -31,7 +31,7 @@ function drealty_entity_info() {
           'drealty_listing' => array(
               'label' => t('dRealty Listing'),
               'admin' => array(
-                  'path' => 'admin/drealty/structure/drealty_listing',
+                  'path' => 'admin/drealty/structure/%',
               ),
           ),
       ),
@@ -79,7 +79,7 @@ function drealty_entity_info() {
           'drealty_openhouse' => array(
               'label' => t('dRealty Open House'),
               'admin' => array(
-                  'path' => 'admin/drealty/structure/drealty_openhouse',
+                  'path' => 'admin/drealty/structure/%',
               ),
           ),
       ),
@@ -127,7 +127,7 @@ function drealty_entity_info() {
           'drealty_agent' => array(
               'label' => t('dRealty Agent'),
               'admin' => array(
-                  'path' => 'admin/drealty/structure/drealty_agent',
+                  'path' => 'admin/drealty/structure/%',
               ),
           ),
       ),
@@ -169,7 +169,7 @@ function drealty_entity_info() {
           'drealty_office' => array(
               'label' => t('dRealty Office'),
               'admin' => array(
-                  'path' => 'admin/drealty/structure/drealty_agent',
+                  'path' => 'admin/drealty/structure/%',
               ),
           ),
       ),
@@ -348,18 +348,41 @@ function drealty_menu() {
       'type' => MENU_CALLBACK,
   );
 
-  $items['admin/drealty/structure/drealty_openhouse'] = array(
-      'title' => t('dRealty Openhouse'),
-      'page callback' => 'blah',
+
+  $items['admin/drealty/structure/%'] = array(
+      'title callback' => 'drealty_field_ui_admin_title_callback',
+      'title arguments' => array(3),
       'access callback' => TRUE,
-      'file' => 'drealty.admin.inc',
+      'page callback' => 'drealty_some_func',
+      'page arguments' => array(3),
       'type' => MENU_NORMAL_ITEM,
   );
 
-  $items['admin/drealty/structure/drealty_listing'] = array(
-      'title' => t('dRealty Listings Fields'),
-  );
   return $items;
+}
+
+function drealty_field_ui_admin_title_callback($type) {
+  switch ($type) {
+    case 'drealty_listing':
+      $title = "dRealty Listing Field Managment";
+      break;
+    case 'drealty_agent':
+      $title = "dRealty Agent Field Managment";
+      break;
+    case 'drealty_office':
+      $title = "dRealty Office Field Managment";
+      break;
+    case 'drealty_openhouse':
+      $title = "dRealty Open House Field Managment";
+      break;
+    default:
+      $title = 'dRealty Field Management';
+  }
+  return $title;
+}
+
+function drealty_some_func($type) {
+  return $type;
 }
 
 function drealty_management_page() {

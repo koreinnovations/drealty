@@ -155,7 +155,6 @@ class drealtyDaemon {
           reset($listings);
 
           $id = $last[$key_field];
-          echo "  + id: $id \n";
           $id = (int) $id + 1;
 
           cache_set("drealty_chunk_{$resource}_{$class->systemname}_" . $chunks++, $listings);

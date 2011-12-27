@@ -60,7 +60,7 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
 
     $items[$this->path . '/manage/' . $wildcard . '/resource/%/%drealty_class/fields'] = array(
         'title callback' => 'drealty_configure_fields_title_callback',
-        'title arguments' => array($id_count+4),
+        'title arguments' => array($id_count + 4),
         'page callback' => 'drupal_get_form',
         'page arguments' => array('drealty_configure_resource_fields_form', $id_count + 1, $id_count + 3, $id_count + 4),
         'access arguments' => array('access administration pages'),
@@ -136,7 +136,7 @@ function drealty_configure_fields_title_callback($class) {
 }
 
 function drealty_configure_resource_title_callback($type) {
-    switch ($type) {
+  switch ($type) {
     case 'drealty_listing':
       $title = "dRealty Listing Resource Managment";
       break;
@@ -154,6 +154,7 @@ function drealty_configure_resource_title_callback($type) {
   }
   return $title;
 }
+
 function drealty_connection_entity_edit_form($form, &$form_state, $connection) {
   $form['conid'] = array('#type' => 'value', '#value' => $connection->conid);
 
@@ -545,7 +546,6 @@ function drealty_configure_resource_fields_form($form, &$form_state, dRealtyConn
   $pattern = '/(.*?[a-z]{1})([A-Z]{1}.*?)/';
   $replace = '${1} ${2}';
 
-  $properties = array();
   foreach ($props as &$prop) {
     $prop['label'] = preg_replace($pattern, $replace, $prop['label']);
   }
@@ -683,16 +683,13 @@ function drealty_configure_resource_fields_form_validate($form, &$form_state) {
   $field_mappings = $connection->FetchFieldMappings($mappings[$entity_type]->resource, $class->cid);
   $mls_fields = $connection->FetchFields($mappings[$entity_type]->resource);
 
-
   $fields = $form_state['values']['fields'];
 
   foreach ($fields as $key => $field) {
-
     $tmp = explode(' - ', $field['field_name']);
     $systemname = $tmp[0];
-
     if (!isset($mls_fields[$systemname]) && $field['display']) {
-      form_set_error("fields][$group][$key][field_name", "Mapping Error. The field named <strong>$systemname</strong> was not found.");
+      form_set_error("fields][$key][field_name", "Mapping Error. The field named <strong>$key</strong> was not configured correctly.");
     }
   }
 }
@@ -884,7 +881,7 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
           'required' => array(':input[name="query_type"]' => array('value' => '1')),
       ),
   );
-    $form['query_options']['check_query_1'] = array(
+  $form['query_options']['check_query_1'] = array(
       '#type' => 'submit',
       '#value' => t('Test DMQL Query'),
       '#description' => t('This process my take several minutes.'),
@@ -1006,12 +1003,12 @@ function drealty_configure_resource_limits_form_submit($form, &$form_state) {
   $class->status_values = implode(',', $form_state['values']['status']);
   $class->chunk_size = $form_state['values']['chunk'];
   $class->query_type = $form_state['values']['query_type'];
-  switch($class->query_type) {
+  switch ($class->query_type) {
     case 1:
       $class->override_status_query_text = $form_state['values']['total_query'];
       break;
     default:
-    $class->override_status_query_text = $form_state['values']['status_override_query'];
+      $class->override_status_query_text = $form_state['values']['status_override_query'];
   }
   //split out the system name of the field
   $tmp = explode(' - ', $form_state['values']['offset_field']);
@@ -1102,6 +1099,7 @@ function theme_drealty_fields_form(&$variables) {
 
   foreach (element_children($form) as $key) {
     $row = array();
+
     $row[] = array('data' => drupal_render($form[$key]['display']), 'style' => 'width: 60%;');
     $row[] = array('data' => drupal_render($form[$key]['field_name']), 'style' => 'width: 40%;');
     $rows[] = $row;

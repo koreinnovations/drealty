@@ -64,7 +64,7 @@ class drealtyDaemon {
         $query = array();
         drush_log(dt("using @var", array("@var" => $class->override_status_query_text)));
         $query[] = $class->override_status_query_text;
-        $chunks = $this->fetch_listings_offset_supported($connection, $resource, $class, $query);
+        $chunks = $this->fetch_listings_offset_supported_default($connection, $resource, $class, $query);
         break;
       case 3:
         $chunks = $this->fetch_listings_offset_not_supported_key($connection, $resource, $class, $key_field);
@@ -245,6 +245,7 @@ class drealtyDaemon {
   }
 
   function fetch_listings_offset_supported_default(dRealtyConnectionEntity $connection, $resource, $class, $query) {
+    $offset = 0;
     $rets = &$this->dc->get_phrets();
     $limit = $class->chunk_size;
     if ($limit == 0) {

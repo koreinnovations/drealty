@@ -178,7 +178,7 @@ function drealty_schema() {
           'changed' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Last date the listing was changed/updated in the system', 'group' => 'hidden'),
           'agent_id' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 50, 'description' => 'Agent Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
           'agent_key' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'Agent Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
-          'type' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The type of agent.', 'group' => 'required', 'required' => TRUE),
+          'type' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The type of agent.', 'group' => 'required', 'required' => FALSE),
           'first_name' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 50, 'description' => 'First name of the Agent..', 'group' => 'general'),
           'last_name' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 50, 'description' => 'Last Name of the Agent.', 'group' => 'general'),
           'address_number' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'Address number.', 'group' => 'address'),
@@ -226,8 +226,8 @@ function drealty_schema() {
           'changed' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Last date the listing was changed/updated in the system', 'group' => 'hidden'),
           'office_id' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'Broker or Office Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
            'office_key' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'Agent Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
-          'type' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The type of office.', 'group' => 'required', 'required' => TRUE),
-          'name' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 255, 'description' => 'The name of the Office..', 'group' => 'general'),
+          'type' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The type of office.', 'group' => 'required', 'required' => FALSE),
+          'office_name' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 255, 'description' => 'The name of the Office..', 'group' => 'general'),
           'short_name' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 128, 'description' => 'The short name of the Office.', 'group' => 'general'),
           'address_number' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'Address number.', 'group' => 'address'),
           'address_street' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 128, 'description' => 'Address street.', 'group' => 'address'),
@@ -262,7 +262,7 @@ function drealty_schema() {
           'openhouse_id' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => 'The unique Open House Id # used to look up an individual open house listing listing.', 'group' => 'required', 'required' => TRUE, 'weight' => 1),
           'listing_id' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => 'The unique MLS # used to look up an individual listing.', 'group' => 'required', 'required' => TRUE, 'weight' => 1),
           'listing_key' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => 'A unique identifier for this record from the source system. Typically this is the MLS #, however systems like Interealty use a sysid field. Select the apporpriate field.', 'group' => 'required', 'required' => TRUE, 'weight' => 0),
-          'listing_status' => array('type' => 'varchar', 'length' => 50, 'not null' => FALSE, 'default' => NULL, 'description' => "Local or regional status that are well known by business users. Each MlsStatus must map to a single RetsStatus. Multiple MlsStatus may map to a single RetsStatus.", 'group' => 'required', 'required' => TRUE),
+          'listing_status' => array('type' => 'varchar', 'length' => 50, 'not null' => FALSE, 'default' => NULL, 'description' => "Local or regional status that are well known by business users. Each MlsStatus must map to a single RetsStatus. Multiple MlsStatus may map to a single RetsStatus.", 'group' => 'required', 'required' => FALSE),
           'start_datetime' => array('type' => 'int', 'not null' => TRUE, 'description' => 'The Start Date Time.', 'group' => 'date', 'entity_property_type' => 'date'),
           'end_datetime' => array('type' => 'int', 'not null' => TRUE, 'description' => 'The End Date Time.', 'group' => 'date', 'entity_property_type' => 'date'),
           'comments' => array('type' => 'text', 'not null' => FALSE, 'default' => NULL, 'description' => "Text comments if any.", 'group' => 'general'),
@@ -560,4 +560,13 @@ function drealty_update_7201(&$sandbox) {
 
   db_add_field('drealty_office', 'office_key', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE));
   db_change_field('drealty_office', 'office_id', 'office_id', array('type' => 'varchar', 'not null' => FALSE, 'length' => 50));
+  cache_clear_all('drealty_', 'cache', TRUE);
+}
+
+function drealty_update_7202(&$sandbox) {
+
+
+  db_change_field('drealty_office', 'name', 'office_name', array('type' => 'varchar', 'not null' => FALSE, 'length' => 255));
+  db_change_field('drealty_office', 'office_key', 'office_key', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'size' => 'big'));
+  cache_clear_all('drealty_', 'cache', TRUE);
 }

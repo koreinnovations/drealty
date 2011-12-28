@@ -733,7 +733,7 @@ function drealty_configure_resource_fields_form_submit($form, &$form_state) {
   // since we have added some fields we need to clear the hash value on the affected listings so that when 
   // an import is run again we get the new values inserted
   if ($clear_hash) {
-    db_update("drealty_listing")
+    db_update($entity_type)
       ->fields(array(
           'hash' => '0',
       ))

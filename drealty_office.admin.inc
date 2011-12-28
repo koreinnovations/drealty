@@ -112,7 +112,7 @@ function drealty_office_admin_overview($form, &$form_state, $arg) {
     $options[$office->id] = array(
         'id' => $office->id,
         'office_id' => $office->office_id,
-        'name' => array('data' => array('#type' => 'link', '#title' => $office->name, '#href' => 'offices/' . $office->office_id)),
+        'name' => array('data' => array('#type' => 'link', '#title' => $office->office_name, '#href' => 'offices/' . $office->office_id)),
         'phone' => $office->phone,
         'operations' => theme('links', array('links' => $links, 'attributes' => array('class' => array('links', 'inline', 'operations')))),
     );

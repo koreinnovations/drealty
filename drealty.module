@@ -49,7 +49,6 @@ function drealty_entity_info() {
       ),
       'entity keys' => array(
           'id' => 'id',
-          'label' => 'name',
       ),
       'admin ui' => array(
           'path' => 'admin/content/drealty_listings',
@@ -97,7 +96,6 @@ function drealty_entity_info() {
       ),
       'entity keys' => array(
           'id' => 'id',
-          'label' => 'name',
       ),
       'admin ui' => array(
           'path' => 'admin/content/drealty_openhouses',

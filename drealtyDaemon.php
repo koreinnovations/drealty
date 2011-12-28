@@ -48,10 +48,10 @@ class drealtyDaemon {
         $key_field = $fieldmappings['listing_key']->systemname;
         break;
       case 'drealty_agent':
-        $key_field = $fieldmappings['agent_id']->systemname;
+        $key_field = $fieldmappings['agent_key']->systemname;
         break;
       case 'drealty_office':
-        $key_field = $fieldmappings['office_id']->systemname;
+        $key_field = $fieldmappings['office_key']->systemname;
         break;
     }
 
@@ -166,6 +166,7 @@ class drealtyDaemon {
 
         $query = "({$key_field}={$id}+)";
       }
+      $this->dc->disconnect();
     } else {
       $error = $rets->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
@@ -354,6 +355,9 @@ class drealtyDaemon {
     if (!empty($result)) {
       $existing_items_tmp = entity_load($entity_type, array_keys($result[$entity_type]));
     }
+
+    unset($query, $result);
+
     //re-key the array to use the ListingKey 
     switch ($entity_type) {
       case 'drealty_listing':
@@ -361,10 +365,10 @@ class drealtyDaemon {
         $key_field = 'listing_key';
         break;
       case 'drealty_agent':
-        $key_field = 'agent_id';
+        $key_field = 'agent_key';
         break;
       case 'drealty_office':
-        $key_field = 'office_id';
+        $key_field = 'office_key';
         break;
     }
 
@@ -408,7 +412,7 @@ class drealtyDaemon {
           }
 
           $item->conid = $connection->conid;
-          $item->name = $rets_item[$id];
+          //$item->name = $rets_item[$id];
           $item->hash = $rets_item['hash'];
           $item->changed = time();
           $item->class = $class->cid;

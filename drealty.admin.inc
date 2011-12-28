@@ -15,6 +15,52 @@ function drealty_settings_form($form, &$form_state) {
     $form['general_settings']['connections'][$key]['office_id'] = array('#type' => 'textfield', '#default_value' => $connection->office_id, '#title' => t('Office Id'));
   }
 
+
+  $form["seo"] = array('#type' => 'fieldset', '#title' => "SEO - Search Engine Optimizations", '#collapsible' => TRUE, '#collapsed' => TRUE);
+  $types = array("drealty_listing" => "dRealty Listing", "drealty_openhouse" => "dRealty Open House", "drealty_agent" => "dRealty Agent", "drealty_office" => "dRealty Office");
+
+
+  foreach ($types as $type => $name) {
+
+
+    $form["seo"]["{$type}_title"] = array('#type' => 'fieldset', '#title' => "{$name}s", '#collapsible' => TRUE, '#collapsed' => TRUE);
+
+
+    $default_title_pattern = strtoupper("{$type}_DEFAULT_TITLE_PATTERN");
+    $default_url_pattern = strtoupper("{$type}_DEFAULT_URL_PATTERN");
+    
+    $form["seo"]["{$type}_title"]['page_title'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Page Title Pattern'),
+        '#default_value' => ($title_patttern = variable_get("drealty_listing_title_pattern", FALSE)) ? $title_patttern : constant($default_title_pattern),
+        '#size' => 150,
+        '#description' => t('Pattern to use to create the page title.'),
+    );
+
+    $form["seo"]["{$type}_title"]['url_alias'] = array(
+        '#type' => 'textfield',
+        '#title' => t('URL Pattern'),
+        '#maxlength' => 255,
+        '#default_value' => ($url_patttern = variable_get("drealty_listing_url_pattern", FALSE)) ? $url_pattern : constant($default_url_pattern),
+        '#size' => 150,
+        '#description' => t('Pattern to use to create the url alias'),
+    );
+
+    
+    
+    $form["seo"]["{$type}_title"]['token_help'] = array(
+        '#title' => t('Replacement patterns'),
+        '#type' => 'fieldset',
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+    );
+    $form["seo"]["{$type}_title"]['token_help']['token_tree'] = array(
+        '#theme' => 'token_tree',
+        '#token_types' => array('drealty_listing'),
+    );
+  }
+
+
   $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Save Settings'),

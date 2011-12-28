@@ -286,7 +286,7 @@ function drealty_activate_connection_form($form, &$form_state, $connection = NUL
       foreach ($caps as $cap) {
         $capabilities .= $cap . ', ';
       }
-      $supported_caps = substr($capabilities, 0, strlen($capabilities) - 2);
+      $supported_caps = drupal_substr($capabilities, 0, drupal_strlen($capabilities) - 2);
       $auth_supported = $rets->get_phrets()->CheckAuthSupport('digest') ? "Digest Authentication is Supported" : "(unknown - assuming Basic)";
 
 
@@ -723,10 +723,10 @@ function drealty_configure_resource_fields_form_submit($form, &$form_state) {
   }
 
 
-
-  $class->do_geocoding = $form_state['values']['geocode'];
-  drupal_write_record('drealty_classes', $class, array('cid'));
-
+  if ($entity_type == 'drealty_listing') {
+    $class->do_geocoding = $form_state['values']['geocode'];
+    drupal_write_record('drealty_classes', $class, array('cid'));
+  }
   cache_clear_all("drealty_fields_", 'cache', TRUE);
   cache_clear_all('drealty_field_mapping_', 'cache', TRUE);
 

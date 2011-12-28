@@ -244,6 +244,6 @@ function drealty_listing_edit_form_submit($form, &$form_state) {
   // save the listing
   $listing->save();
   // redirect back to the content list
-  $form_state['redirect'] = 'admin/content/drealty_listing';
+  $form_state['redirect'] = 'admin/content/drealty_listings';
   
 }

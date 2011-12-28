@@ -425,7 +425,7 @@ class drealtyDaemon {
               switch ($schema_fields[$mapping->field_name]['type']) {
                 case 'varchar':
                 case 'char':
-                  $value = substr($rets_item[$mapping->systemname], 0, $schema_fields[$mapping->field_name]['length']);
+                  $value = drupal_substr($rets_item[$mapping->systemname], 0, $schema_fields[$mapping->field_name]['length']);
                   break;
                 case 'integer':
                 case 'float':
@@ -499,7 +499,7 @@ class drealtyDaemon {
   protected function calculate_hash(array $item) {
     $tmp = '';
     foreach ($item as $key => $value) {
-      $tmp .= strtolower(trim($value));
+      $tmp .= drupal_strtolower(trim($value));
     }
     return md5($tmp);
   }

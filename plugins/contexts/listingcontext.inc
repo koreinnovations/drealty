@@ -69,7 +69,7 @@ function drealty_context_create_listingcontext($empty, $data = NULL, $conf = FAL
     $context->title = $data;
     $context->argument = $data;
 
-    $context->arg_length = strlen($context->argument);
+    $context->arg_length = drupal_strlen($context->argument);
     return $context;
   }
 }

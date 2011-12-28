@@ -3,6 +3,18 @@
 define('OFFSET', 268435456);
 define('RADIUS', 85445659.4471); /* $offset / pi() */
 
+define('DREALTY_LISTING_DEFAULT_URL_PATTERN', "mls-[drealty_listing:listing-id]-[drealty_listing:street-number]_[drealty_listing:street-name]_[drealty_listing:street-suffix]_[drealty_listing:city]_[drealty_listing:state-or-province]_[drealty_listing:postal-code]", TRUE);
+define('DREALTY_LISTING_DEFAULT_TITLE_PATTERN', "[drealty_listing:street-number] [drealty_listing:street-name] [drealty_listing:street-suffix] - [drealty_listing:city], [drealty_listing:state-or-province] [drealty_listing:postal-code]", TRUE);
+
+define('DREALTY_OPENHOUSE_DEFAULT_URL_PATTERN', "openhouse/[drealty_openhouse:id]");
+define('DREALTY_OPENHOUSE_DEFAULT_TITLE_PATTERN', "open house title");
+
+define('DREALTY_AGENT_DEFAULT_URL_PATTERN', "agent url");
+define('DREALTY_AGENT_DEFAULT_TITLE_PATTERN', "agent title");
+
+define('DREALTY_OFFICE_DEFAULT_URL_PATTERN', "office url");
+define('DREALTY_OFFICE_DEFAULT_TITLE_PATTERN', "office title");
+
 function drealty_entity_info() {
   $entities = array();
   $entities['drealty_listing'] = array(
@@ -211,82 +223,6 @@ function drealty_entity_info() {
 }
 
 /**
- * Implements hook_token_info().
- */
-function drealty_token_info() {
-  $blah = entity_get_info();
-  $type = array(
-      'name' => t('dRealty Listing'),
-      'description' => t('Tokens related to individual content items, or "Listings".'),
-      'needs-data' => 'drealty_listing',
-  );
-
-  // Core tokens for nodes.
-  $listing['id'] = array(
-      'name' => t("ID"),
-      'description' => t('The unique ID of the Listing.'),
-  );
-
-  $listing['listing_key'] = array(
-      'name' => t("Listing Key"),
-      'description' => t('The unique ID of the Listing from the MLS.'),
-  );
-
-  $listing['listing_id'] = array(
-      'name' => t("Listing ID"),
-      'description' => t('The Human ID of the Listing from the MLS.'),
-  );
-  $listing['public_remarks'] = array(
-      'name' => t('Public Remarks'),
-      'description' => t('The public remarks associated with the listing.')
-  );
-
-  return array(
-      'types' => array('drealty_listing' => $type),
-      'tokens' => array('drealty_listing' => $listing),
-  );
-}
-
-/**
- * Implements hook_tokens().
- */
-function drealty_tokens($type, $tokens, array $data = array(), array $options = array()) {
-  $url_options = array('absolute' => TRUE);
-  if (isset($options['language'])) {
-    $url_options['language'] = $options['language'];
-    $language_code = $options['language']->language;
-  } else {
-    $language_code = NULL;
-  }
-  $sanitize = !empty($options['sanitize']);
-
-  $replacements = array();
-
-  if ($type == 'drealty_listing' && !empty($data['drealty_listing'])) {
-    $listing = $data['drealty_listing'];
-
-    foreach ($tokens as $name => $original) {
-      switch ($name) {
-        // Simple key values on the node.
-        case 'id':
-          $replacements[$original] = $listing->id;
-          break;
-
-        case 'listing_id':
-          $replacements[$original] = $listing->listing_id;
-          break;
-
-        case 'listing_key':
-          $replacements[$original] = $listing->listing_key;
-          break;
-      }
-    }
-  }
-
-  return $replacements;
-}
-
-/**
  * Implements hook_ctools_plugin_directory().
  *
  * It simply tells panels where to find the .inc files that define various
@@ -419,7 +355,15 @@ function drealty_management_page() {
 
   return $content;
 }
-
+/**
+ * Implements hook_rdf_namespaces().
+ */
+function drealty_rdf_namespaces() {
+  return array(
+    'og'      => 'http://ogp.me/ns#',
+    'fb'      => 'http://www.facebook.com/2008/fbml',
+  );
+}
 function drealty_listing_map() {
   $listings = entity_load('drealty_listing');
   drupal_add_js('http://maps.googleapis.com/maps/api/js?sensor=false', array('type' => 'external'));
@@ -511,8 +455,8 @@ function _fields_autocomplete($conid, $class, $string) {
   //$result = db_query("SELECT fid, systemname, longname FROM {drealty_fields} WHERE LOWER(longname) LIKE LOWER(:pattern) AND conid = :conid", array('::pattern' => db_like($string), ':conid' => $conid));
   $ored = db_or();
   $ored
-    ->condition('systemname', '%' . strtolower($string) . '%', 'LIKE')
-    ->condition('longname', '%' . strtolower($string) . '%', 'LIKE');
+    ->condition('systemname', '%' . drupal_strtolower($string) . '%', 'LIKE')
+    ->condition('longname', '%' . drupal_strtolower($string) . '%', 'LIKE');
 
   $anded = db_and();
   $anded
@@ -539,7 +483,7 @@ function drealty_sentence_case($string) {
   $new_string = '';
   foreach ($sentences as $key => $sentence) {
     $new_string .= ($key & 1) == 0 ?
-      ucfirst(strtolower(trim($sentence))) :
+      drupal_ucfirst(drupal_strtolower(trim($sentence))) :
       $sentence . ' ';
   }
   return trim($new_string);
@@ -557,7 +501,7 @@ function drealty_word_limit($text, $limit=40) {
     $string .= $explode[$i] . " ";
   }
   if ($dots) {
-    $string = substr($string, 0, strlen($string));
+    $string = drupal_substr($string, 0, drupal_strlen($string));
   }
 
   return "$string $dots";
@@ -944,6 +888,7 @@ class DrealtyListingController extends EntityAPIController {
       );
     }
 
+    
     $og_description = array(
         '#tag' => 'meta',
         '#attributes' => array(
@@ -960,11 +905,14 @@ class DrealtyListingController extends EntityAPIController {
         ),
     );
 
-    if (isset($entity->street_number) && isset($entity->street_name) && isset($entity->city) && isset($entity->state_or_province) && isset($entity->postal_code)) {
-      $title = "{$entity->street_number} {$entity->street_name} {$entity->street_suffix} - {$entity->city}, {$entity->state_or_province} {$entity->postal_code}";
+    $token_string = ($pattern = variable_get("drealty_listing_title_pattern", FALSE)) ? $pattern : DREALTY_LISTING_DEFAULT_TITLE_PATTERN;
+
+    if (extension_loaded("mbstring")) {
+      $title = mb_convert_case(token_replace($token_string, array('drealty_listing' => $entity)), MB_CASE_TITLE);
     } else {
-      $title = $entity->listing_id;
+      $title = ucwords(drupal_strtolower(token_replace($token_string, array('drealty_listing' => $entity))));
     }
+
 
     drupal_set_title($title);
 
@@ -990,6 +938,7 @@ class DrealtyListingController extends EntityAPIController {
     drupal_add_html_head($meta_description, 'meta_description');
     drupal_add_html_head($og_description, 'og_description');
     drupal_add_html_head($og_title, 'og_title');
+    
 
     return $content;
   }
@@ -1009,6 +958,9 @@ class DrealtyListingController extends EntityAPIController {
         $files = file_load_multiple($fids);
         $entity->mls_images = $files;
       }
+
+      // populate a path alias
+      $entity->drealty_path_alias = path_load("listings/$entity->listing_id");
     }
   }
 
@@ -1030,9 +982,32 @@ class DrealtyListingController extends EntityAPIController {
           file_delete($file, TRUE);
         }
       }
+      if (isset($entity->drealty_path_alias)) {
+        path_delete($entity->drealty_path_alias['pid']);
+      }
     }
 
+
     parent::delete($ids, $transaction);
+  }
+
+  public function save($entity, DatabaseTransaction $transaction = NULL) {
+    parent::save($entity, $transaction);
+
+    $path = array();
+    if (isset($entity->drealty_path_alias)) {
+      $path['pid'] = $entity->drealty_path_alias['pid'];
+    }
+
+    $token_string = ($pattern = variable_get("drealty_listing_url_pattern", FALSE)) ? $pattern : DREALTY_LISTING_DEFAULT_URL_PATTERN;
+
+    $alias = token_replace($token_string, array('drealty_listing' => $entity));
+
+    $path['source'] = "listings/$entity->listing_id";
+    $path['alias'] = drupal_strtolower(str_replace(" ", "_", $alias));
+
+
+    path_save($path);
   }
 
 }

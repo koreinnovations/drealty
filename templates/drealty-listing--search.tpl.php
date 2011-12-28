@@ -38,7 +38,7 @@ $street = "{$street_number} {$street_name} {$street_suffix}";
           | <?php print $drealty_listing->building_area_total; ?> Sq Ft
         <?php endif; ?>
       </div>
-      <div class="listing-property-type"><?php print ucwords(strtolower($drealty_listing->property_sub_type)); ?></div>
+      <div class="listing-property-type"><?php print ucwords(drupal_strtolower($drealty_listing->property_sub_type)); ?></div>
       <div class="listing-description">
         <?php print drealty_word_limit(drealty_sentence_case($drealty_listing->public_remarks)); ?>
       </div>

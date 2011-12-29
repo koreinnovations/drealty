@@ -82,23 +82,36 @@ function drush_drealty_rets_reprocess_images() {
 
     $listing->process_images = FALSE;
     $listing->save();
-    
+
     $fids = array_keys($result);
     $files = file_load_multiple($fids);
 
     foreach ($files as $file) {
       file_usage_add($file, 'drealty', 'drealty_listing', $listing->id);
       drush_log(dt("Adding usage for @filename to listing: @id", array("@filename" => $file->filename, "@id" => $listing->id)), 'success');
-    }    
+    }
     unset($fids, $result, $files, $file);
-      }
+  }
 }
 
 function drush_drealty_rets_flush() {
   set_time_limit(0);
-  $listings = entity_load("drealty_listing", FALSE, array(), TRUE);
-  foreach ($listings as $listing) {
-    drush_log(dt('Deleting listing @id', array('@id' => $listing->id)), 'success');
-    $listing->delete();
+
+  $entity_types = array('drealty_listing', 'drealty_office', 'drealty_agent', 'drealty_openhouse');
+
+  foreach ($entity_types as $entity_type) {
+
+    $existing_items = db_select($entity_type, "t")
+      ->fields("t", array("id"))
+      ->execute()
+      ->fetchAll();
+
+    foreach ($existing_items as $item) {
+      $entity = reset(entity_load($entity_type, array($item->id), array(), TRUE));
+      drush_log(dt('Deleting @type - @id', array('@id' => $item->id, '@type' => $entity_type)), 'success');
+      $entity->delete();
+      unset($entity);
+    }
+    unset($existing_items);
   }
 }

@@ -40,7 +40,7 @@ class drealtyDaemon {
     // build a list of fields we are going to request from the RETS server
     $fieldmappings = $connection->FetchFieldMappings($resource, $class->cid);
 
-    drush_log(dt("Processing @res", array("@res" => $resource)));
+    drush_log(dt("Processing Resource: @res for Connection: @con", array("@res" => $resource, "@con" => $connection->name)));
 
     switch ($entity_type) {
       case 'drealty_listing':
@@ -162,7 +162,7 @@ class drealtyDaemon {
         }
 
         $rets->FreeResult($search);
-        drush_log("Resource: $resource Class: {$class->systemname} Listings Downloaded: $count Query: $query  Chunks: $chunks");
+        drush_log("[connection: {$connection->name}][resource: $resource][class: {$class->systemname}][downloaded: $count][query: $query][chunks: $chunks]");
 
         $query = "({$key_field}={$id}+)";
       }
@@ -346,19 +346,6 @@ class drealtyDaemon {
     $in_rets = array();
 
 
-    $query = new EntityFieldQuery();
-    $result = $query->entityCondition('entity_type', $entity_type, '=')
-      ->propertyCondition('conid', $connection->conid)
-      ->execute();
-
-    $existing_items_tmp = array();
-    if (!empty($result)) {
-      $existing_items_tmp = entity_load($entity_type, array_keys($result[$entity_type]));
-    }
-
-    unset($query, $result);
-
-    //re-key the array to use the ListingKey 
     switch ($entity_type) {
       case 'drealty_listing':
       case 'drealty_openhouse':
@@ -372,11 +359,11 @@ class drealtyDaemon {
         break;
     }
 
-
-    $existing_items = array();
-    foreach ($existing_items_tmp as $existing_item_tmp) {
-      $existing_items[$existing_item_tmp->{$key_field}] = $existing_item_tmp;
-    }
+    $existing_items = db_select($entity_type, "t")
+      ->fields("t", array($key_field, "hash", "id"))
+      ->condition("conid", $connection->conid)
+      ->execute()
+      ->fetchAllAssoc($key_field);
 
     // get the fieldmappings
     $field_mappings = $connection->FetchFieldMappings($resource, $class->cid);
@@ -406,13 +393,16 @@ class drealtyDaemon {
           // determine if we need to update or create a new one.
           if (isset($existing_items[$rets_item[$id]])) {
             // this listing exists so we'll get a reference to it and set the values to what came to us in the RETS result
-            $item = &$existing_items[$rets_item[$id]];
+            drush_log("ID: {$existing_items[$rets_item[$id]]->id}");
+            $item = reset(entity_load($entity_type, array($existing_items[$rets_item[$id]]->id))); // &$existing_items[$rets_item[$id]];
           } else {
             $item->created = time();
           }
 
           $item->conid = $connection->conid;
-          //$item->name = $rets_item[$id];
+          if ($entity_type == 'drealty_listing') {
+            $item->name = $rets_item[$id];
+          }
           $item->hash = $rets_item['hash'];
           $item->changed = time();
           $item->class = $class->cid;
@@ -456,7 +446,7 @@ class drealtyDaemon {
             }
           }
 
-          if ($class->do_geocoding && !$force) {
+          if ($class->do_geocoding) {
             $street_number = isset($item->street_number) ? $item->street_number : '';
             $street_name = isset($item->street_name) ? $item->street_name : '';
             $street_suffix = isset($item->street_suffix) ? $item->street_suffix : '';
@@ -465,7 +455,7 @@ class drealtyDaemon {
             // remove any double spaces
             $geoaddress = str_replace("  ", "", $geoaddress);
 
-            if ($latlon = drealty_geocode($geoaddress)) {
+            if ($latlon = drealty_geocode($geoaddress, $class->geocoder_handler)) {
               if ($latlon->success) {
                 $item->latitude = $latlon->lat;
                 $item->longitude = $latlon->lon;
@@ -483,7 +473,7 @@ class drealtyDaemon {
           } catch (Exception $e) {
             drush_log($e->getMessage());
           }
-          drush_log(dt('Saving item @name', array('@name' => $item->name)));
+          drush_log(dt('Saving item @name', array('@name' => $rets_item[$id])));
           unset($item);
         } else {
           // skipping this item

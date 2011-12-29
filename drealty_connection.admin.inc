@@ -595,8 +595,27 @@ function drealty_configure_resource_fields_form($form, &$form_state, dRealtyConn
       $form['sections']['Listing:Location:GIS']['settings']['geocode'] = array(
           '#type' => 'checkbox',
           '#title' => t('Perform Geocoding'),
-          '#description' => t('Not all MLS systems provide geocoding for listings. If you would like dRealty to geocode the listing for you make sure to enable this setting.'),
+          '#description' => t('Not all MLS systems provide geocoding for listings. If you would like dRealty to attempt to geocode the listing for you, make sure to enable this setting and choose an appropriate geocoder handler.'),
           '#default_value' => $class->do_geocoding,
+      );
+      $geo_handlers = array();
+      module_load_include("inc", "ctools", "includes/plugins");
+
+      $handlers = ctools_get_plugins("geocoder", "geocoder_handler");
+      foreach ($handlers as $key => $handler) {
+        $geo_handlers[$key] = "{$handler['title']}   -    {$handler['description']}";
+      }
+
+      $form['sections']['Listing:Location:GIS']['settings']['ghandler'] = array(
+          '#type' => 'select',
+          '#title' => t('Geocoder Handler'),
+          '#description' => t('Select which <em>geocoder</em> handler to use.'),
+          '#options' => $geo_handlers,
+          '#default_value' => isset($class->geocoder_handler)?$class->geocoder_handler:'',
+          '#states' => array(
+              'visible' => array(':input[name="geocode"]' => array('checked' => TRUE)),
+              'required' => array(':input[name="geocode"]' => array('checked' => TRUE)),
+          ),
       );
       break;
     case 'drealty_openhouse':
@@ -725,6 +744,7 @@ function drealty_configure_resource_fields_form_submit($form, &$form_state) {
 
   if ($entity_type == 'drealty_listing') {
     $class->do_geocoding = $form_state['values']['geocode'];
+    $class->geocoder_handler = $form_state['values']['ghandler'];
     drupal_write_record('drealty_classes', $class, array('cid'));
   }
   cache_clear_all("drealty_fields_", 'cache', TRUE);
@@ -1000,7 +1020,9 @@ function drealty_configure_resource_limits_form_submit($form, &$form_state) {
   $record->configured = TRUE;
   drupal_write_record('drealty_resources', $record, array('rid'));
 
-  $class->status_values = implode(',', $form_state['values']['status']);
+  if (isset($form_state['values']['status'])) {
+    $class->status_values = implode(',', $form_state['values']['status']);
+  }
   $class->chunk_size = $form_state['values']['chunk'];
   $class->query_type = $form_state['values']['query_type'];
   switch ($class->query_type) {

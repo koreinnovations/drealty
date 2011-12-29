@@ -353,15 +353,17 @@ function drealty_management_page() {
 
   return $content;
 }
+
 /**
  * Implements hook_rdf_namespaces().
  */
 function drealty_rdf_namespaces() {
   return array(
-    'og'      => 'http://ogp.me/ns#',
-    'fb'      => 'http://www.facebook.com/2008/fbml',
+      'og' => 'http://ogp.me/ns#',
+      'fb' => 'http://www.facebook.com/2008/fbml',
   );
 }
+
 function drealty_listing_map() {
   $listings = entity_load('drealty_listing');
   drupal_add_js('http://maps.googleapis.com/maps/api/js?sensor=false', array('type' => 'external'));
@@ -505,46 +507,34 @@ function drealty_word_limit($text, $limit=40) {
   return "$string $dots";
 }
 
-function drealty_geocode($address) {
+function drealty_geocode($address, $geocoder_handler) {
 
-  static $libraries = FALSE;
+  $libraries = &drupal_static(__FUNCTION__);
 
-  $address = str_replace(" ", "+", $address);
-  $url = "http://open.mapquestapi.com/nominatim/v1/search?format=json&exclude_place_ids=&accept-language=en-us,en;q=0.5&polygon=1&addressdetails=1&q=$address";
-  $ch = curl_init();
-  curl_setopt($ch, CURLOPT_URL, $url);
-  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-  $buffer = curl_exec($ch);
-  curl_close($ch);
-  $result = json_decode($buffer);
+  if (!isset($libraries)) {
+    $libraries = libraries_get_libraries();
+  }
 
   $latlon = new stdClass();
   $latlon->success = FALSE;
 
-  if (isset($result[0])) {
-    $latlon->lat = $result[0]->lat;
-    $latlon->lon = $result[0]->lon;
-    $latlon->success = TRUE;
-  } else {
-    if (!$libraries) {
-      $libraries = libraries_get_libraries();
-    }
-    if (array_key_exists("geoPHP", $libraries)) {
-      $geometry = geocoder('google', $address);
-      if (isset($geometry)) {
-        $centroid = $geometry->getCentroid();
-        $latlon->lat = $centroid->getY();
-        $latlon->lon = $centroid->getX();
-        $latlon->success = TRUE;
-      }
+
+  if (array_key_exists("geoPHP", $libraries)) {
+    $geometry = geocoder($geocoder_handler, $address);
+    if (isset($geometry)) {
+      $latlon->lat = $geometry->y();
+      $latlon->lon = $geometry->x();
+      $latlon->success = TRUE;
     }
   }
+
   return $latlon;
 }
 
 function drealty_load_phrets() {
-  static $static_cache = FALSE;
-  if (!$static_cache) {
+  $static_cache = &drupal_static(__FUNCTION__);
+
+  if (!isset($static_cache)) {
     $path = libraries_get_path('phRets');
     $file = $path . '/phRets.php';
     if (file_exists($file)) {
@@ -882,11 +872,51 @@ class DrealtyListingController extends EntityAPIController {
     foreach ($entity as $key => $value) {
       $content[$key] = array(
           '#value' => $value,
-          '#markup' => empty($value) ? NULL : "<div><div class='field-label'><strong>$key</strong></div><div class='field-value'>$value</div></div>",
+          '#markup' => empty($value) ? NULL : "<div class='field-value'>$value</div>",
+          '#prefix' => empty($value) ? NULL : "<div>\n<div class='field-label'>$key</div>",
+          '#suffix' => empty($value) ? NULL : "</div>",
       );
     }
 
-    
+
+
+    $fids = db_select('file_usage', 'f')
+      ->fields('f', array('fid'))
+      ->condition('id', $entity->id)
+      ->condition('type', 'drealty_listing')
+      ->execute()
+      ->fetchAllAssoc('fid');
+
+    if ($fids) {
+      $fids = array_keys($fids);
+      $images = file_load_multiple($fids);
+
+      $entity->mls_images = array();
+      
+      $content['mls_images'] = array();
+      $content['mls_images']['#prefix'] = "<div class='field-label'>MLS Images</div>";
+      
+      foreach ($images as $key => $image) {
+        $entity->mls_images[] = $image;
+
+        $uri = array(
+            'path' => file_create_url($image->uri),
+            'options' => array(),
+        );
+        
+        $image->title = $entity->listing_id;
+        $image->alt = $entity->listing_id;
+        
+        $content['mls_images'][$key] = array(
+            '#theme' => 'image_formatter',
+            '#item' => (array)$image,
+            '#path' => '',
+        );
+      }
+    }
+
+    $entity->drealty_path_alias = path_load("listings/$entity->listing_id");
+
     $og_description = array(
         '#tag' => 'meta',
         '#attributes' => array(
@@ -922,44 +952,28 @@ class DrealtyListingController extends EntityAPIController {
         ),
     );
 
-    if (isset($entity->mls_images)) {
-      $og_image = array(
-          '#tag' => 'meta',
-          '#attributes' => array(
-              'property' => 'og:image',
-              'content' => file_create_url(array_shift($entity->mls_images)->uri),
-          ),
-      );
-      drupal_add_html_head($og_image, 'og_image');
-    }
+//    if (isset($entity->mls_images)) {
+//      $og_image = array(
+//          '#tag' => 'meta',
+//          '#attributes' => array(
+//              'property' => 'og:image',
+//              'content' => file_create_url(array_shift($entity->mls_images)->uri),
+//          ),
+//      );
+//      drupal_add_html_head($og_image, 'og_image');
+//    }
 
     drupal_add_html_head($meta_description, 'meta_description');
     drupal_add_html_head($og_description, 'og_description');
     drupal_add_html_head($og_title, 'og_title');
-    
+
 
     return $content;
   }
 
   public function attachLoad(&$queried_entities, $revision_id = FALSE) {
     parent::attachLoad($queried_entities, $revision_id);
-
-    foreach ($queried_entities as $entity) {
-      $fids = db_select('file_usage', 'f')
-        ->fields('f', array('fid'))
-        ->condition('id', $entity->id)
-        ->condition('type', 'drealty_listing')
-        ->execute()
-        ->fetchAllAssoc('fid');
-      if ($fids) {
-        $fids = array_keys($fids);
-        $files = file_load_multiple($fids);
-        $entity->mls_images = $files;
-      }
-
-      // populate a path alias
-      $entity->drealty_path_alias = path_load("listings/$entity->listing_id");
-    }
+// populate a path alias
   }
 
   public function create(array $values = array()) {

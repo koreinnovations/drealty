@@ -11,52 +11,56 @@ function drealty_settings_form($form, &$form_state) {
   $form['general_settings']['connections']['#tree'] = TRUE;
 
   foreach ($connections as $key => $connection) {
+
     $form['general_settings']['connections'][$key]['name'] = array('#markup' => $connection->name);
     $form['general_settings']['connections'][$key]['office_id'] = array('#type' => 'textfield', '#default_value' => $connection->office_id, '#title' => t('Office Id'));
   }
 
 
-  $form["seo"] = array('#type' => 'fieldset', '#title' => "SEO - Search Engine Optimizations", '#collapsible' => TRUE, '#collapsed' => TRUE);
+  $form["seo"] = array('#type' => 'fieldset', '#title' => "SEO - Search Engine Optimizations", '#collapsible' => TRUE, '#collapsed' => TRUE, '#tree' => TRUE);
   $types = array("drealty_listing" => "dRealty Listing", "drealty_openhouse" => "dRealty Open House", "drealty_agent" => "dRealty Agent", "drealty_office" => "dRealty Office");
 
 
   foreach ($types as $type => $name) {
 
 
-    $form["seo"]["{$type}_title"] = array('#type' => 'fieldset', '#title' => "{$name}s", '#collapsible' => TRUE, '#collapsed' => TRUE);
+    $form["seo"]["{$type}"] = array('#type' => 'fieldset', '#title' => "{$name}s", '#collapsible' => TRUE, '#collapsed' => TRUE);
 
 
     $default_title_pattern = strtoupper("{$type}_DEFAULT_TITLE_PATTERN");
     $default_url_pattern = strtoupper("{$type}_DEFAULT_URL_PATTERN");
-    
-    $form["seo"]["{$type}_title"]['page_title'] = array(
+
+
+    $form["seo"]["{$type}"]['page_title'] = array(
         '#type' => 'textfield',
         '#title' => t('Page Title Pattern'),
-        '#default_value' => ($title_patttern = variable_get("drealty_listing_title_pattern", FALSE)) ? $title_patttern : constant($default_title_pattern),
+        '#maxlength' => 255,
+        '#default_value' => ($title_pattern = variable_get("{$type}_title_pattern", FALSE)) ? $title_pattern : constant($default_title_pattern),
         '#size' => 150,
         '#description' => t('Pattern to use to create the page title.'),
     );
 
-    $form["seo"]["{$type}_title"]['url_alias'] = array(
+
+    $form["seo"]["{$type}"]['url_alias'] = array(
         '#type' => 'textfield',
         '#title' => t('URL Pattern'),
         '#maxlength' => 255,
-        '#default_value' => ($url_patttern = variable_get("drealty_listing_url_pattern", FALSE)) ? $url_pattern : constant($default_url_pattern),
+        '#default_value' => ($url_pattern = variable_get("{$type}_url_pattern", FALSE)) ? $url_pattern : constant($default_url_pattern),
         '#size' => 150,
         '#description' => t('Pattern to use to create the url alias'),
     );
 
-    
-    
-    $form["seo"]["{$type}_title"]['token_help'] = array(
+
+
+    $form["seo"]["{$type}"]['token_help'] = array(
         '#title' => t('Replacement patterns'),
         '#type' => 'fieldset',
         '#collapsible' => TRUE,
         '#collapsed' => TRUE,
     );
-    $form["seo"]["{$type}_title"]['token_help']['token_tree'] = array(
+    $form["seo"]["{$type}"]['token_help']['token_tree'] = array(
         '#theme' => 'token_tree',
-        '#token_types' => array('drealty_listing'),
+        '#token_types' => array($type),
     );
   }
 
@@ -78,6 +82,12 @@ function drealty_settings_form_submit($form, &$form_state) {
     $connection->office_id = $value['office_id'];
     $connection->save();
   }
+
+  foreach ($form_state['values']['seo'] as $key => $value) {
+    variable_set("{$key}_title_pattern", $value['page_title']);
+    variable_set("{$key}_url_pattern", $value['url_alias']);
+  }
+  drupal_set_message("The configuration options have been saved.");
 }
 
 function theme_drealty_general_setting_form(&$variables) {

@@ -6,7 +6,6 @@ class drealtyResources {
 
   function __construct() {
     drealty_load_phrets();
-    $defaultCache = 'cache';
   }
 
   function GetActiveFields($conid, $resource) {

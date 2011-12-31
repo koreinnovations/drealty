@@ -258,7 +258,7 @@ function drealty_menu() {
 
   $items['admin/drealty/fields_autocomplete/%/%/%'] = array(
       'title' => 'Autocomplete for fields',
-      'page callback' => '_fields_autocomplete',
+      'page callback' => 'drealty_fields_autocomplete',
       'page arguments' => array(3, 4, 5),
       'access callback' => TRUE,
       'type' => MENU_CALLBACK
@@ -364,7 +364,7 @@ function drealty_class_load($cid) {
   return $dr->FetchClass($cid);
 }
 
-function _fields_autocomplete($conid, $class, $string) {
+function drealty_fields_autocomplete($conid, $class, $string) {
   if ($conid == NULL) {
     exit();
   }

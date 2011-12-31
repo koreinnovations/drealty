@@ -59,22 +59,22 @@ function drealty_listing_map_get_listings() {
   exit();
 }
 
-function lonToX($lon) {
+function drealty_lonToX($lon) {
   return round(OFFSET + RADIUS * $lon * pi() / 180);
 }
 
-function latToY($lat) {
+function drealty_latToY($lat) {
   return round(OFFSET - RADIUS *
       log((1 + sin($lat * pi() / 180)) /
         (1 - sin($lat * pi() / 180))) / 2);
 }
 
 function pixelDistance($lat1, $lon1, $lat2, $lon2, $zoom) {
-  $x1 = lonToX($lon1);
-  $y1 = latToY($lat1);
+  $x1 = drealty_lonToX($lon1);
+  $y1 = drealty_latToY($lat1);
 
-  $x2 = lonToX($lon2);
-  $y2 = latToY($lat2);
+  $x2 = drealty_lonToX($lon2);
+  $y2 = drealty_latToY($lat2);
 
   return sqrt(pow(($x1 - $x2), 2) + pow(($y1 - $y2), 2)) >> (21 - $zoom);
 }

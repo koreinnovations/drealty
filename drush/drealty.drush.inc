@@ -1,32 +1,27 @@
 <?php
 
-// $Id$
 /**
  *
- * @file realpro.drush.inc
+ * @file drealty.drush.inc
  *
  */
 function drealty_drush_command() {
   $items = array();
 
   $items['rets-import'] = array(
+      'aliases' => array('ri'),
       'description' => 'Import RETS Listings.',
+      'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
   );
 
   $items['rets-flush'] = array(
-      'description' => 'Flush ALL RETS Listings.',
-  );
-
-  $items['rets-list'] = array(
-      'description' => 'List all available connections.',
-  );
-
-  $items['rets-status'] = array(
-      'description' => 'Prints status information about dRealty imports.',
+      'description' => 'Flush ALL RETS items.',
+      'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
   );
 
   $items['rets-reprocess-images'] = array(
-      'description' => "Redownload Property Images"
+      'description' => "Force the (re)downloading of images.",
+      'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
   );
   return $items;
 }

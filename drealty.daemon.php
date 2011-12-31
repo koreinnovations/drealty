@@ -483,6 +483,21 @@ class drealtyDaemon {
           // skipping this item
           drush_log(dt("Skipping item @name", array("@name" => $rets_item[$id])));
         }
+
+        /*
+         *  TODO: sold or removed listings.
+         * 
+         *  deal with items that are no longer returned from the rets feed but are still in the db. we can either
+         *  delete them, archive/unpublish them, or come up with a status field. should be some sort of option
+         *  as each realtor association will have a different rule concerning if a listing can be displayed after it 
+         *  has been sold or removed from the feed.
+         * 
+         *  
+         * 
+         */
+        
+        
+        
       }
       cache_clear_all($chunk_name, 'cache');
     } // endfor $chunk_count

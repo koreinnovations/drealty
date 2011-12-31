@@ -1,6 +1,7 @@
 <?php
 
 function drealty_views_data_alter(&$data) {
+  $blah = $data;
   $data['drealty_connections']['edit_connection'] = array(
       'field' => array(
           'title' => t('Edit Connection Link'),
@@ -36,7 +37,11 @@ function drealty_views_data_alter(&$data) {
           'handler' => 'drealty_listing_handler_mls_address_field',
       ),
   );
-
+  $data['drealty_listing']['office_id'] = array(
+      'title' => t('Office Id'),
+      'field' => array('real field' => 'list_office_mls_id'),
+      'filter' => array('handler' => 'drealty_listing_filter_office_id'),
+  );
   $data['drealty_openhouse']['listing_id']['relationship'] = array(
       'handler' => 'views_handler_relationship',
       'base' => 'drealty_listing',

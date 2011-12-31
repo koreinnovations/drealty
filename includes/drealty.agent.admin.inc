@@ -229,7 +229,7 @@ function drealty_agent_operations() {
 function drealty_agent_filters() {
   // Regular filters
   $filters['status'] = array(
-      'title' => t('status'),
+      'title' => t('Office'),
       'options' => array(
           '[any]' => t('any'),
           'myoffice' => t('Belonging to my Office'),
@@ -251,8 +251,20 @@ function drealty_agent_build_filter_query(SelectQueryInterface $query) {
     list($key, $value) = $filter;
     switch ($key) {
       case 'status':
+        
         // Note: no exploitable hole as $key/$value have already been checked when submitted
-        $query->condition('office_id', 6);
+        $dc = new dRealtyConnection();
+        $connections = $dc->FetchConnections();
+        $ored = db_or();
+        
+        foreach ($connections as $connection) {
+          $and = db_and()
+            ->condition('conid', $connection->conid)
+            ->condition('office_id', $connection->office_id);
+          
+          $ored->condition($and);
+        }
+        $query->condition($ored);
         break;
     }
   }

@@ -162,16 +162,15 @@ function drealty_office_autocomplete_callback($conid, $string) {
     ->condition('conid', $conid);
 
   $results = db_select('drealty_office', 'f')
-    ->fields('f')
+    ->fields('f', array('office_id', 'office_name'))
     ->condition($anded)
     ->condition($ored)
     ->execute()
     ->fetchAll();
 
   foreach ($results as $data) {
-    $matches[$data->office_key] = $data->office_name;
+    $matches[$data->office_id] = $data->office_name;
   }
   print drupal_json_encode($matches);
-  //print drupal_to_js($matches);
   exit();
 }

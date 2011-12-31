@@ -5,17 +5,41 @@ function drealty_install() {
 }
 
 function drealty_requirements($phase) {
-  $requirements = array();
-  // Ensure translations don't break at install time
-  $t = get_t();
 
-  if (!extension_loaded('curl')) {
-    $requirements['drealty'] = array(
-        'title' => $t('PHP Curl'),
-        'description' => $t('dRealty requiresthat the PHP:cURL extension is installed and enabled. For more information and how to install PHP:cURL refer to the PHP:cURL manual: <a href="http://php.net/manual/en/book.curl.php" >http://php.net/manual/en/book.curl.php</a>'),
-        'severity' => REQUIREMENT_ERROR,
-    );
+
+
+
+  $requirements = array();
+
+  switch ($phase) {
+    case 'install':
+      // Ensure translations don't break at install time
+      $t = get_t();
+
+      if (!extension_loaded('curl')) {
+        $requirements['drealty'] = array(
+            'title' => $t('PHP Curl not installed.'),
+            'description' => $t('dRealty requiresthat the PHP:cURL extension is installed and enabled. For more information and how to install PHP:cURL refer to the PHP:cURL manual: <a href="http://php.net/manual/en/book.curl.php" >http://php.net/manual/en/book.curl.php</a>'),
+            'severity' => REQUIREMENT_ERROR,
+        );
+      }
+      break;
+    case 'runtime':
+      $file_exists = file_exists(libraries_get_path('phRets') . '/phRets.php');
+      $requirements['drealty'] = array(
+          'title' => t('phRets library'),
+          'value' => t('!msg', array(
+              '!msg' => $file_exists ? 'Installed' : 'The ' . l('phRets', 'http://troda.com/projects/phrets') . ' was not found. Please ' . l('download', 'http://troda.com/projects/phrets/index.php?title=Download') . ' it into the Libraries folder.',
+            )
+          ),
+          'severity' => $file_exists ? REQUIREMENT_OK : REQUIREMENT_ERROR,
+      );
   }
+
+
+
+
+
   return $requirements;
 }
 
@@ -110,6 +134,7 @@ function drealty_schema() {
           'status_values' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => ''),
           'process_images' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE, 'default' => 0),
           'object_type' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
+          'image_chunk_size' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE, 'default' => 25),
           'query_type' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'tiny', 'not null' => TRUE, 'default' => 0),
           'chunk_size' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE, 'default' => 500),
           'override_status_query_text' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => ''),
@@ -178,7 +203,7 @@ function drealty_schema() {
           'created' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Date the listing was created in the system.', 'group' => 'hidden'),
           'changed' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Last date the listing was changed/updated in the system', 'group' => 'hidden'),
           'agent_id' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 50, 'description' => 'Agent Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
-          'agent_key' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'big',  'not null' => TRUE, 'description' => 'Agent Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
+          'agent_key' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'big', 'not null' => TRUE, 'description' => 'Agent Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
           'type' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The type of agent.', 'group' => 'required', 'required' => FALSE),
           'first_name' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 50, 'description' => 'First name of the Agent..', 'group' => 'general'),
           'last_name' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 50, 'description' => 'Last Name of the Agent.', 'group' => 'general'),
@@ -226,7 +251,7 @@ function drealty_schema() {
           'created' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Date the listing was created in the system.', 'group' => 'hidden'),
           'changed' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Last date the listing was changed/updated in the system', 'group' => 'hidden'),
           'office_id' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'Broker or Office Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
-           'office_key' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'big', 'not null' => TRUE, 'description' => 'Agent Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
+          'office_key' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'big', 'not null' => TRUE, 'description' => 'Agent Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
           'type' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The type of office.', 'group' => 'required', 'required' => FALSE),
           'office_name' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 255, 'description' => 'The name of the Office..', 'group' => 'general'),
           'short_name' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 128, 'description' => 'The short name of the Office.', 'group' => 'general'),
@@ -534,7 +559,7 @@ function drealty_schema() {
   );
 
   $schema['cache_drealty'] = drupal_get_schema_unprocessed('system', 'cache');
-  
+
   return $schema;
 }
 
@@ -578,6 +603,11 @@ function drealty_update_7203(&$sandbox) {
 }
 
 function drealty_update_7204(&$sandbox) {
-  db_add_field('drealty_classes', 'geocoder_handler',  array('type' => 'varchar', 'length' => 50, 'not null' => FALSE));
+  db_add_field('drealty_classes', 'geocoder_handler', array('type' => 'varchar', 'length' => 50, 'not null' => FALSE));
+  cache_clear_all('drealty', 'cache', TRUE);
+}
+
+function drealty_update_7205(&$sandbox) {
+  db_add_field('drealty_classes', 'image_chunk_size', array('type' => 'int', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE, 'default' => 25));
   cache_clear_all('drealty', 'cache', TRUE);
 }

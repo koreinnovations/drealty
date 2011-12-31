@@ -95,9 +95,9 @@ class drealty_listing_handler_mls_images_field extends views_handler_field {
 
     for ($i = 0; $i < $limit; $i++) {
       if ($style_name == 'original') {
-        $img = theme_image(array('path' => $images[$i]->uri, 'alt' => ''));        
+        $img = theme_image(array('path' => $images[$i]->uri, 'alt' => '', 'width' => '', 'height' => ''));        
       } else {
-        $img = theme_image_style(array('style_name' => $style_name, 'path' => $images[$i]->uri, 'alt' => ''));
+        $img = theme_image_style(array('style_name' => $style_name, 'path' => $images[$i]->uri, 'alt' => '', 'width' => '', 'height' => ''));
       }      
       
       $output .= ($link)?l($img, "listings/{$listing_id}", array('html' => TRUE)):$img;

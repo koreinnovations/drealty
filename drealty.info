@@ -8,14 +8,23 @@ dependencies[] = views
 dependencies[] = libraries
 dependencies[] = geocoder
 
-files[] = drealty_connection.admin.inc
-files[] = drealty_listing.admin.inc
-files[] = drealty_openhouse.admin.inc
-files[] = drealty_agent.admin.inc
-files[] = drealty_office.admin.inc
-files[] = drealtyConnection.inc
-files[] = drealtyResources.inc
-files[] = drealtyDaemon.php
+
+files[] = includes/drealty.listing.inc
+files[] = includes/drealty.openhouse.inc
+files[] = includes/drealty.agent.inc
+files[] = includes/drealty.office.inc
+
+files[] = includes/drealty.connection.admin.inc
+files[] = includes/drealty.listing.admin.inc
+files[] = includes/drealty.openhouse.admin.inc
+files[] = includes/drealty.agent.admin.inc
+files[] = includes/drealty.office.admin.inc
+files[] = includes/drealty.connection.inc
+files[] = includes/drealty.resources.inc
+
+
+
+files[] = drealty.daemon.php
 files[] = drealty.info.inc
 files[] = views/drealty.views.inc
 files[] = views/drealty_connection_handler_edit_link_field.inc

@@ -64,12 +64,10 @@ function drealty_settings_form($form, &$form_state) {
     );
   }
 
-
   $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Save Settings'),
   );
-
   return $form;
 }
 
@@ -103,8 +101,4 @@ function theme_drealty_general_setting_form(&$variables) {
   $output = theme('table', array('header' => $header, 'rows' => $rows));
 
   return $output;
-}
-
-function blah() {
-  return "Blah!";
 }

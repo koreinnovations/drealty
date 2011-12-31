@@ -31,7 +31,7 @@ function drealty_listing_map_get_listings() {
     $marker = array_pop($markers);
     $cluster = array();
     foreach ($markers as $key => $target) {
-      $pixels = pixelDistance($marker->latitude, $marker->longitude, $target->latitude, $target->longitude, $bb['zoom']);
+      $pixels = drealty_pixelDistance($marker->latitude, $marker->longitude, $target->latitude, $target->longitude, $bb['zoom']);
       if ($bb['distance'] > $pixels) {
         unset($markers[$key]);
         $cluster[] = $target;
@@ -69,7 +69,7 @@ function drealty_latToY($lat) {
         (1 - sin($lat * pi() / 180))) / 2);
 }
 
-function pixelDistance($lat1, $lon1, $lat2, $lon2, $zoom) {
+function drealty_pixelDistance($lat1, $lon1, $lat2, $lon2, $zoom) {
   $x1 = drealty_lonToX($lon1);
   $y1 = drealty_latToY($lat1);
 

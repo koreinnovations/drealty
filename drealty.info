@@ -1,6 +1,7 @@
 name = dRealty
 description = Provides an implementation of the RETS standard to facilitate the importing of Real Estate listing information into Drupal as entities.
 core = 7.x
+configure = admin/drealty
 
 dependencies[] = entity
 dependencies[] = views

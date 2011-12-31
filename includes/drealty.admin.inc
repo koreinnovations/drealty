@@ -3,17 +3,57 @@
 function drealty_settings_form($form, &$form_state) {
 
   $form['general_settings'] = array('#type' => 'fieldset', '#title' => 'General Settings', '#collapsible' => TRUE, '#collapsed' => FALSE);
-  $dr = new dRealtyConnection();
-  $connections = $dr->FetchConnections();
+
+
+  $dc = new dRealtyConnection();
+  $connections = $dc->FetchConnections();
+
+  $dr = new drealtyResources();
+
 
   $form['general_settings']['connections'] = array();
   $form['general_settings']['connections']['#theme'] = 'drealty_general_setting_form';
   $form['general_settings']['connections']['#tree'] = TRUE;
 
+
+
   foreach ($connections as $key => $connection) {
 
     $form['general_settings']['connections'][$key]['name'] = array('#markup' => $connection->name);
-    $form['general_settings']['connections'][$key]['office_id'] = array('#type' => 'textfield', '#default_value' => $connection->office_id, '#title' => t('Office Id'));
+
+    $resource_mappings = $dr->GetResourceMappings($connection->conid);
+
+    //check to see if we actually have the office resource type setup, if not then this config option won't have any effect.
+    if (isset($resource_mappings['drealty_office'])) {
+
+      // next check to see if we have actually imported any offices
+      $count = db_select('drealty_office', 'do')
+        ->fields('do', array('id'))
+        ->condition('conid', $connection->conid)
+        ->execute()
+        ->fetchAll();
+
+      // check the count
+      if (count($count) > 0) {
+
+        // add the config field        
+        $form['general_settings']['connections'][$key]['office_id'] = array(
+            '#type' => 'textfield',
+            '#default_value' => $connection->office_id,
+            '#autocomplete_path' => "admin/drealty/office_autocomplete/$connection->conid",
+            '#description' => t('Begin typing the name of the agency and select if from the autocmplete list. The office id will then be populated for you.'),
+            '#title' => t('Office Id')
+        );
+      } else {
+        $form['general_settings']['connections'][$key]['office_id'] = array(
+            '#markup' => t("This connection does not appear to have any Office Resource Types imported. Please ensure you have it configured correctly !here and run the rets-import command from drush.", array("!here" => l('here', "admin/drealty/connections/manage/{$connection->name}/resource/drealty_office")))
+        );
+      }
+    } else {
+      $form['general_settings']['connections'][$key]['office_id'] = array(
+          '#markup' => t("This connection does not appear to have the Office Resource Type configured. Configure it !here.", array("!here" => l('here', "admin/drealty/connections/manage/{$connection->name}/resource/drealty_office")))
+      );
+    }
   }
 
 
@@ -85,7 +125,9 @@ function drealty_settings_form_submit($form, &$form_state) {
     variable_set("{$key}_title_pattern", $value['page_title']);
     variable_set("{$key}_url_pattern", $value['url_alias']);
   }
+  cache_clear_all('drealty', 'cache', TRUE);
   drupal_set_message("The configuration options have been saved.");
+  
 }
 
 function theme_drealty_general_setting_form(&$variables) {
@@ -101,4 +143,35 @@ function theme_drealty_general_setting_form(&$variables) {
   $output = theme('table', array('header' => $header, 'rows' => $rows));
 
   return $output;
+}
+
+function drealty_office_autocomplete_callback($conid, $string) {
+  if ($conid == NULL) {
+    exit();
+  }
+
+  $matches = array();
+
+  $ored = db_or();
+  $ored
+    ->condition('office_name', '%' . drupal_strtolower($string) . '%', 'LIKE')
+    ->condition('short_name', '%' . drupal_strtolower($string) . '%', 'LIKE');
+
+  $anded = db_and();
+  $anded
+    ->condition('conid', $conid);
+
+  $results = db_select('drealty_office', 'f')
+    ->fields('f')
+    ->condition($anded)
+    ->condition($ored)
+    ->execute()
+    ->fetchAll();
+
+  foreach ($results as $data) {
+    $matches[$data->office_key] = $data->office_name;
+  }
+  print drupal_json_encode($matches);
+  //print drupal_to_js($matches);
+  exit();
 }

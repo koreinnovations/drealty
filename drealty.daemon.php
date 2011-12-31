@@ -451,6 +451,7 @@ class drealtyDaemon {
           }
 
           if ($class->do_geocoding) {
+            
             $street_number = isset($item->street_number) ? $item->street_number : '';
             $street_name = isset($item->street_name) ? $item->street_name : '';
             $street_suffix = isset($item->street_suffix) ? $item->street_suffix : '';

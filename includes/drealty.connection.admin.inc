@@ -1004,7 +1004,7 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
           is set to 10 a total of 100 images would potentially be downloaded at one time. This setting is meant to <em>adjust</em> the number of images that are downloaded in a single round trip to the RETS server. The more images downloaded the more 
           memory that is used by the system to process them. <strong>If you are experiencing out of memory errors while the system is processing images try decreasing the size.</strong> Default is 25'),
         '#options' => $chunk_opts,
-        '#default_value' => isset($class->image_chunk_size)?$class->image_chunk_size:'25',
+        '#default_value' => isset($class->image_chunk_size) ? $class->image_chunk_size : '25',
         '#states' => array(
             'visible' => array(':input[name="process_images"]' => array('checked' => TRUE)),
         ),

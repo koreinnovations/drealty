@@ -12,7 +12,6 @@ define('DREALTY_AGENT_DEFAULT_TITLE_PATTERN', "agent title");
 define('DREALTY_OFFICE_DEFAULT_URL_PATTERN', "office url");
 define('DREALTY_OFFICE_DEFAULT_TITLE_PATTERN', "office title");
 
-
 function drealty_entity_info() {
   $entities = array();
   $entities['drealty_listing'] = array(
@@ -97,7 +96,7 @@ function drealty_entity_info() {
       ),
       'admin ui' => array(
           'path' => 'admin/content/drealty_openhouses',
-          'file' => 'drealty.openhouse.admin.inc',
+          'file' => 'includes/drealty.openhouse.admin.inc',
           'controller class' => 'DrealtyOpenHouseUIController',
           'menu wildcard' => '%drealty_openhouse',
       ),
@@ -144,7 +143,7 @@ function drealty_entity_info() {
       ),
       'admin ui' => array(
           'path' => 'admin/content/drealty_agents',
-          'file' => 'drealty.agent.admin.inc',
+          'file' => 'includes/drealty.agent.admin.inc',
           'controller class' => 'DrealtyAgentUIController',
           'menu wildcard' => '%drealty_agent',
       ),
@@ -186,7 +185,7 @@ function drealty_entity_info() {
       ),
       'admin ui' => array(
           'path' => 'admin/content/drealty_offices',
-          'file' => 'drealty.office.admin.inc',
+          'file' => 'includes/drealty.office.admin.inc',
           'controller class' => 'DrealtyOfficeUIController',
           'menu wildcard' => '%drealty_office',
       ),
@@ -210,7 +209,7 @@ function drealty_entity_info() {
       'access callback' => 'drealty_connection_entity_access',
       'admin ui' => array(
           'path' => 'admin/drealty/connections',
-          'file' => 'drealty.connection.admin.inc',
+          'file' => 'includes/drealty.connection.admin.inc',
           'controller class' => 'DrealtyConnectionUIController',
       ),
   );
@@ -235,7 +234,6 @@ function drealty_connection_entity_access($op, $type = NULL, $account = NULL) {
   return TRUE;
 }
 
-
 function drealty_menu() {
   $items = array();
   $items['admin/drealty'] = array(
@@ -253,6 +251,7 @@ function drealty_menu() {
       'page callback' => 'drupal_get_form',
       'page arguments' => array('drealty_settings_form'),
       'file' => 'drealty.admin.inc',
+      'file path' => drupal_get_path('module', 'drealty') . '/includes',
       'type' => MENU_NORMAL_ITEM,
   );
 
@@ -263,6 +262,18 @@ function drealty_menu() {
       'access callback' => TRUE,
       'type' => MENU_CALLBACK
   );
+
+  $items['admin/drealty/office_autocomplete/%/%'] = array(
+      'title' => 'Autocomplete for fields',
+      'page callback' => 'drealty_office_autocomplete_callback',
+      'file' => 'drealty.admin.inc',
+      'file path' => drupal_get_path('module', 'drealty') . '/includes',
+      'page arguments' => array(3, 4),
+      'access callback' => TRUE,
+      'type' => MENU_CALLBACK
+  );
+
+
 
   $items['listings/map'] = array(
       'title' => 'Search Map',
@@ -656,6 +667,7 @@ function drealty_listing_load($listing_mlsid, $reset = FALSE) {
 function drealty_listing_load_multiple($listing_mlsids = array(), $conditions = array(), $reset = FALSE) {
   
 }
+
 /**
  *
  * @param DrealtyListing $listing
@@ -721,7 +733,6 @@ function drealty_office_create($values = array()) {
   return entity_get_controller('drealty_office')->create($values);
 }
 
-
 // ***********************************************************************************************************  //
 // Open House Functions
 // ***********************************************************************************************************  //
@@ -754,8 +765,6 @@ function drealty_openhouse_access($op, $openhouse = NULL, $account = NULL) {
 function drealty_openhouse_create($values = array()) {
   return entity_get_controller('drealty_openhouse')->create($values);
 }
-
-
 
 // ***********************************************************************************************************  //
 // Agent Functions

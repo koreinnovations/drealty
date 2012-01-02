@@ -4,6 +4,7 @@ core = 7.x
 configure = admin/drealty
 
 dependencies[] = entity
+dependencies[] = entity_token
 dependencies[] = views
 dependencies[] = libraries
 dependencies[] = geocoder

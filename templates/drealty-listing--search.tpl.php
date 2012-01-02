@@ -10,7 +10,7 @@ $street = "{$street_number} {$street_name} {$street_suffix}";
   <div class="listing clearfix">
     <div class="listing-image">
       <?php $image = array_shift($drealty_listing->mls_images); ?>
-      <?php $img = theme_image_style(array('style_name' => 'listing_search_thumb', 'path' => $image->uri, 'alt' => '')); ?>
+      <?php $img = theme_image_style(array('style_name' => 'listing_search_thumb', 'path' => $image->uri, 'alt' => '', 'width'=>'', 'height' => '')); ?>
       <?php print l($img, "listings/{$drealty_listing->listing_id}", array('html' => TRUE)); ?>
     </div>
     <div class="listing-data">

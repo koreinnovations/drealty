@@ -27,6 +27,7 @@ function drealty_views_data_alter(&$data) {
       'field' => array(
           'title' => t('MLS Images'),
           'help' => t('Display images pulled from the MLS.'),
+          'real field' => 'mls_images',
           'handler' => 'drealty_listing_handler_mls_images_field',
       ),
   );
@@ -41,6 +42,7 @@ function drealty_views_data_alter(&$data) {
       'title' => t('Office Id'),
       'field' => array('real field' => 'list_office_mls_id'),
       'filter' => array('handler' => 'drealty_listing_filter_office_id'),
+      'help' => t('Field to filter listing by the configured Office Id in dRealty settings.')
   );
   $data['drealty_openhouse']['listing_id']['relationship'] = array(
       'handler' => 'views_handler_relationship',

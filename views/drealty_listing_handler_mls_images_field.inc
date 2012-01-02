@@ -11,7 +11,6 @@ class drealty_listing_handler_mls_images_field extends views_handler_field {
 
     $this->additional_fields['property_id'] = array('table' => 'drealty_listing', 'field' => 'id');
     $this->additional_fields['property_listing_id'] = array('table' => 'drealty_listing', 'field' => 'listing_id');
-    
   }
 
   function query() {
@@ -61,9 +60,18 @@ class drealty_listing_handler_mls_images_field extends views_handler_field {
 
   public function option_definition() {
     $options = parent::option_definition();
-    $options['mls_image_style'] = 'original';
-    $options['mls_images_to_display'] = 1;
-    $options['mls_images_link_to_property'] = TRUE;
+    $options['mls_image_style'] = array(
+        'default' => 'original',
+        'translatable' => FALSE,
+    );
+    $options['mls_images_to_display'] = array(
+        'default' => 1,
+        'translatable' => FALSE,
+    );
+    $options['mls_images_link_to_property'] = array(
+        'default' => TRUE,
+        'translatable' => FALSE,
+    );
     return $options;
   }
 
@@ -95,13 +103,12 @@ class drealty_listing_handler_mls_images_field extends views_handler_field {
 
     for ($i = 0; $i < $limit; $i++) {
       if ($style_name == 'original') {
-        $img = theme_image(array('path' => $images[$i]->uri, 'alt' => '', 'width' => '', 'height' => ''));        
+        $img = theme_image(array('path' => $images[$i]->uri, 'alt' => '', 'width' => '', 'height' => ''));
       } else {
         $img = theme_image_style(array('style_name' => $style_name, 'path' => $images[$i]->uri, 'alt' => '', 'width' => '', 'height' => ''));
-      }      
-      
-      $output .= ($link)?l($img, "listings/{$listing_id}", array('html' => TRUE)):$img;
-      
+      }
+
+      $output .= ($link) ? l($img, "listings/{$listing_id}", array('html' => TRUE)) : $img;
     }
 
 

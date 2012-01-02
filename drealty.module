@@ -278,12 +278,16 @@ function drealty_menu() {
   $items['listings/map'] = array(
       'title' => 'Search Map',
       'page callback' => 'drealty_listing_map',
+      'file' => 'drealty.map.inc',
+      'file path' => drupal_get_path('module', 'drealty') . '/includes',
       'access callback' => TRUE,
       'type' => MENU_NORMAL_ITEM,
   );
 
   $items['drealty/js/map'] = array(
       'page callback' => 'drealty_listing_map_get_listings',
+      'file' => 'drealty.map.inc',
+      'file path' => drupal_get_path('module', 'drealty') . '/includes',
       'access callback' => TRUE,
       'type' => MENU_CALLBACK,
   );
@@ -420,16 +424,24 @@ function drealty_sentence_case($string) {
 }
 
 function drealty_word_limit($text, $limit=40) {
+
   $explode = explode(' ', $text);
+
+  if(count($explode) < $limit) {
+    return $text;
+  }
+  
   $string = '';
 
   $dots = '...';
   if (count($explode) <= $limit) {
     $dots = '';
   }
+  
   for ($i = 0; $i < $limit; $i++) {
     $string .= $explode[$i] . " ";
   }
+  
   if ($dots) {
     $string = drupal_substr($string, 0, drupal_strlen($string));
   }

@@ -592,8 +592,8 @@ function drealty_update_7201(&$sandbox) {
 }
 
 function drealty_update_7202(&$sandbox) {
-  db_change_field('drealtyoffice', 'name', 'office_name', array('type' => 'varchar', 'not null' => FALSE, 'length' => 255));
-  db_change_field('drealtyoffice', 'office_key', 'office_key', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'size' => 'big'));
+  db_change_field('drealty_office', 'name', 'office_name', array('type' => 'varchar', 'not null' => FALSE, 'length' => 255));
+  db_change_field('drealty_office', 'office_key', 'office_key', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'size' => 'big'));
   cache_clear_all('drealty', 'cache', TRUE);
 }
 

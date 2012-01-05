@@ -529,10 +529,8 @@ function drealty_configure_resource_fields_form($form, &$form_state, dRealtyConn
     white-space: normal;
     }", array('type' => 'inline'));
 
-  $path = drupal_get_path("module", "drealty");
+  ctools_add_css('drealty.admin', 'drealty');
 
-
-  drupal_add_css("$path/css/drealty.admin.css", array('type' => 'file'));
   $form_state['connection'] = $connection;
   $form_state['entity_type'] = $entity_type;
   $form_state['class'] = $class;

@@ -70,3 +70,4 @@ function drealty_views_data_alter(&$data) {
       'help' => t('List all the listings for the listing agent'),
   );
 }
+

@@ -273,26 +273,6 @@ function drealty_menu() {
       'type' => MENU_CALLBACK
   );
 
-
-
-  $items['listings/map'] = array(
-      'title' => 'Search Map',
-      'page callback' => 'drealty_listing_map',
-      'file' => 'drealty.map.inc',
-      'file path' => drupal_get_path('module', 'drealty') . '/includes',
-      'access callback' => TRUE,
-      'type' => MENU_NORMAL_ITEM,
-  );
-
-  $items['drealty/js/map'] = array(
-      'page callback' => 'drealty_listing_map_get_listings',
-      'file' => 'drealty.map.inc',
-      'file path' => drupal_get_path('module', 'drealty') . '/includes',
-      'access callback' => TRUE,
-      'type' => MENU_CALLBACK,
-  );
-
-
   $items['admin/drealty/structure/%'] = array(
       'title callback' => 'drealty_field_ui_admin_title_callback',
       'title arguments' => array(3),
@@ -330,8 +310,8 @@ function drealty_some_func($type) {
 }
 
 function drealty_management_page() {
-  $path = drupal_get_path('module', 'drealty') . "/css/drealty.admin.css";
-  drupal_add_css($path, array('type' => 'file'));
+
+  ctools_add_css('drealty.admin', 'drealty');
 
   $content = '';
   $content .= "<div class='section'>";
@@ -427,21 +407,21 @@ function drealty_word_limit($text, $limit=40) {
 
   $explode = explode(' ', $text);
 
-  if(count($explode) < $limit) {
+  if (count($explode) < $limit) {
     return $text;
   }
-  
+
   $string = '';
 
   $dots = '...';
   if (count($explode) <= $limit) {
     $dots = '';
   }
-  
+
   for ($i = 0; $i < $limit; $i++) {
     $string .= $explode[$i] . " ";
   }
-  
+
   if ($dots) {
     $string = drupal_substr($string, 0, drupal_strlen($string));
   }
@@ -490,8 +470,7 @@ function drealty_load_phrets() {
 
 function drealty_types_form($form, &$form_state) {
 
-  $path = drupal_get_path('module', 'drealty') . "/css/drealty.admin.css";
-  drupal_add_css($path, array('type' => 'file'));
+  ctools_add_css('drealty.admin', 'drealty');
 
   $content .= "<div class='section'>";
   $content .= "<h3>dRealty Entity Field Configuration</h3>";
@@ -640,12 +619,10 @@ function drealty_views_api() {
 
 function drealty_preprocess_entity(&$variables) {
   if ($variables['entity_type'] == 'drealty_listing') {
-
-    $path = drupal_get_path('module', 'drealty');
-    drupal_add_css($path . '/css/drealty.base.css', array('type' => 'file', 'group' => CSS_DEFAULT, 'every_page' => FALSE, 'media' => 'all'));
+    ctools_add_css('drealty.base', 'drealty');
     switch ($variables['view_mode']) {
       case 'search':
-        drupal_add_css($path . '/css/drealty.search.css', array('type' => 'file', 'group' => CSS_DEFAULT, 'every_page' => FALSE, 'media' => 'all'));
+        ctools_add_css('drealty.search', 'drealty');
         break;
       default:
     }
@@ -811,3 +788,4 @@ function drealty_agent_page_view($agent, $view_mode = 'full', $langcode = NULL, 
 function drealty_agent_create($values = array()) {
   return entity_get_controller('drealty_agent')->create($values);
 }
+

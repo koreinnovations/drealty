@@ -32,6 +32,7 @@ files[] = views/drealty_listing_handler_operations_field.inc
 files[] = views/drealty_listing_handler_mls_images_field.inc
 files[] = views/drealty_listing_handler_mls_address_field.inc
 files[] = views/drealty_listing_filter_office_id.inc
+files[] = views/views_plugin_style_drealty_property_map.inc
 
 package = Real Estate
 

@@ -503,33 +503,21 @@ function drealty_permission() {
   // We set up permisssions to manage entity types, manage all entities and the
   // permissions for each individual entity
   $permissions = array(
-      'administer connections' => array(
-          'title' => t('Administer model types'),
-          'description' => t('Create and delete fields for model types, and set their permissions.'),
+      'administer drealty connections' => array(
+          'title' => t('Administer dRealty Connections'),
       ),
-      'administer listings' => array(
-          'title' => t('Administer models'),
-          'description' => t('Edit and delete all models'),
+      'administer drealty listings' => array(
+          'title' => t('Administer dRealty Listings'),
       ),
+      'view drealty listings' => array(
+        'title' => t('View dRealty Listings'),
+      ),
+      'edit any drealty listings'
   );
 
   return $permissions;
 }
 
-/**
- * Determines whether the given user has access to a model.
- *
- * @param $op
- *   The operation being performed. One of 'view', 'update', 'create', 'delete'
- *   or just 'edit' (being the same as 'create' or 'update').
- * @param $model
- *   Optionally a model or a model type to check access for. If nothing is
- *   given, access for all models is determined.
- * @param $account
- *   The user to check for. Leave it to NULL to check for the global user.
- * @return boolean
- *   Whether access is allowed or not.
- */
 
 /**
  * Implements hook_title_callback().

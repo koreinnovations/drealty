@@ -68,23 +68,23 @@ class drealtyResources {
     $cached = cache_get($cache_name, $this->defaultCache);
 
     if (!$cached) {
-    
+
       $query = db_select('drealty_field_mappings', 'dfm')
         ->fields('dfm')
         ->condition('conid', $conid);
 
-      if(isset($resource)) {
+      if (isset($resource)) {
         $ra = db_and();
         $ra->condition('resource', $resource);
         $query->condition($ra);
       }
-      if(isset($class)) {
+      if (isset($class)) {
         $ca = db_and();
         $ca->where('cid = :cid', array(':cid' => $class));
         $query->condition($ca);
       }
 
-     $results = $query->execute()->fetchAll();
+      $results = $query->execute()->fetchAll();
 
       $mappings = array();
       foreach ($results as $result) {
@@ -98,6 +98,8 @@ class drealtyResources {
       return $cached->data;
     }
   }
+  
+  
 
   function FetchFields($conid, $resource, $flush = FALSE) {
     $cache_name = "drealty_fields_{$resource}_{$conid}";
@@ -189,6 +191,7 @@ class drealtyResources {
     }
     return $fields;
   }
+
 
   function FetchClass($cid) {
     $result = db_query('SELECT * FROM {drealty_classes} WHERE cid = :id', array(':id' => $cid));
@@ -354,7 +357,7 @@ class drealtyResources {
       return FALSE;
     }
   }
-    
+
   function RemoveFields($conid) {
 
     db_delete("drealty_fields")

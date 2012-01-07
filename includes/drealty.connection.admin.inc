@@ -349,8 +349,11 @@ function drealty_connection_delete_form($form, &$form_state, dRealtyConnectionEn
 }
 
 function drealty_connection_delete_form_submit($form, &$form_state) {
+  
+  $connection = new dRealtyConnectionEntity();
   $connection = $form_state['connection'];
-
+  
+  // this will also clear out the resources, classes, fieldmappings, and resourcemappings
   $connection->delete();
 
   drupal_set_message(t('The %name connection has been deleted.', array('%name' => $connection->name)));

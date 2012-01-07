@@ -44,7 +44,7 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
         'context' => MENU_CONTEXT_INLINE,
         'weight' => 10,
         'file' => 'drealty.connection.admin.inc',
-        'file path' => drupal_get_path('module', $this->entityInfo['module'] . '/includes')
+        'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
     );
 
     $items[$this->path . '/manage/' . $wildcard . '/resource/%'] = array(

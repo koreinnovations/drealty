@@ -335,9 +335,6 @@ class dRealtyConnectionEntity extends Entity {
 
 }
 
-/**
- * The Controller for Model entities
- */
 class dRealtyConnectionEntityContoller extends EntityAPIControllerExportable {
 
   public function __construct($entityType) {

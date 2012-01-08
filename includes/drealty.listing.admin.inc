@@ -10,7 +10,7 @@ class DrealtyListingUIController extends EntityDefaultUIController {
     $items[$this->path] = array(
         'title' => 'dRealty Listings',
         'page callback' => 'drealty_listing_admin',
-        'access arguments' => array('access administration pages'),
+        'access arguments' => array('access drealty admin'),
         'type' => MENU_LOCAL_TASK | MENU_NORMAL_ITEM,
         'file' => 'drealty.listing.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
@@ -19,8 +19,8 @@ class DrealtyListingUIController extends EntityDefaultUIController {
         'title' => 'Add dRealty Listing',
         'page callback' => 'drealty_listing_form_wrapper',
         'page arguments' => array('add', drealty_listing_create(array('rets_imported' => FALSE))),
-        'access callback' => 'drealty_listing_access',
-        'access arguments' => array('add'),
+        'access callback' => 'drealty_access',
+        'access arguments' => array('create', $id_count),
         'file' => 'drealty.listing.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
         'type' => MENU_LOCAL_ACTION,
@@ -30,7 +30,7 @@ class DrealtyListingUIController extends EntityDefaultUIController {
         'title' => t('Edit Listing'),
         'page callback' => 'drealty_listing_form_wrapper',
         'page arguments' => array('edit', $id_count),
-        'access callback' => 'drealty_listing_access',
+        'access callback' => 'drealty_access',
         'access arguments' => array('edit', $id_count),
         'weight' => 0,
         'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
@@ -50,7 +50,7 @@ class DrealtyListingUIController extends EntityDefaultUIController {
         'title' => 'Delete',
         'page callback' => 'drealty_listing_form_wrapper',
         'page arguments' => array('delete', $id_count),
-        'access callback' => 'drealty_listing_access',
+        'access callback' => 'drealty_access',
         'access arguments' => array('delete', $id_count),
         'type' => MENU_LOCAL_TASK,
         'context' => MENU_CONTEXT_INLINE,
@@ -65,7 +65,7 @@ class DrealtyListingUIController extends EntityDefaultUIController {
         'title arguments' => array(1),
         'page callback' => 'drealty_listing_page_view',
         'page arguments' => array(1),
-        'access callback' => 'drealty_listing_access',
+        'access callback' => 'drealty_access',
         'access arguments' => array('view', 1),
         'type' => MENU_CALLBACK,
     );
@@ -143,7 +143,7 @@ function drealty_listing_edit_form($form, &$form_state, $op, $listing) {
   if ($listing->rets_imported) {
 
     ctools_add_css('drealty.admin', 'drealty');
-    
+
     $address = "{$listing->street_number} {$listing->street_dir_prefix} {$listing->street_name} {$listing->street_dir_suffix} {$listing->street_suffix}, {$listing->city}, {$listing->state_or_province} {$listing->postal_code}";
     $address = str_replace("  ", " ", $address);
     $price = number_format($listing->list_price);
@@ -180,21 +180,21 @@ function drealty_listing_edit_form($form, &$form_state, $op, $listing) {
     asort($props);
     foreach ($props as $key => $property) {
       if (isset($property['group']) && $property['group'] != 'hidden') {
-        
+
         $type = 'textfield';
-        switch($property['schema_type']) {
+        switch ($property['schema_type']) {
           case 'text':
             $type = 'textarea';
             break;
           default:
             $type = 'textfield';
         }
-        
+
         $form['sections'][$property['group']][$key] = array(
             '#type' => $type,
             '#title' => $property['label'],
             '#description' => $property['description'],
-            '#default_value' => isset($listing->{$key})?$listing->{$key}:NULL,
+            '#default_value' => isset($listing->{$key}) ? $listing->{$key} : NULL,
         );
       }
     }
@@ -244,5 +244,4 @@ function drealty_listing_edit_form_submit($form, &$form_state) {
   $listing->save();
   // redirect back to the content list
   $form_state['redirect'] = 'admin/content/drealty_listings';
-  
 }

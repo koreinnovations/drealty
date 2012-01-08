@@ -97,9 +97,7 @@ class drealtyResources {
     } else {
       return $cached->data;
     }
-  }
-  
-  
+  }  
 
   function FetchFields($conid, $resource, $flush = FALSE) {
     $cache_name = "drealty_fields_{$resource}_{$conid}";
@@ -191,7 +189,6 @@ class drealtyResources {
     }
     return $fields;
   }
-
 
   function FetchClass($cid) {
     $result = db_query('SELECT * FROM {drealty_classes} WHERE cid = :id', array(':id' => $cid));

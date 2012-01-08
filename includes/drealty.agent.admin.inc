@@ -19,8 +19,7 @@ class DrealtyAgentUIController extends EntityDefaultUIController {
         'title' => 'Add dRealty agent',
         'page callback' => 'drealty_agent_form_wrapper',
         'page arguments' => array(drealty_agent_create()),
-        'access callback' => 'drealty_access',
-        'access arguments' => array('create', $id_count),
+        'access arguments' => array('create drealty agent'),
         'file' => 'drealty.agent.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
         'type' => MENU_LOCAL_ACTION,
@@ -251,17 +250,17 @@ function drealty_agent_build_filter_query(SelectQueryInterface $query) {
     list($key, $value) = $filter;
     switch ($key) {
       case 'status':
-        
+
         // Note: no exploitable hole as $key/$value have already been checked when submitted
         $dc = new dRealtyConnection();
         $connections = $dc->FetchConnections();
         $ored = db_or();
-        
+
         foreach ($connections as $connection) {
           $and = db_and()
             ->condition('conid', $connection->conid)
             ->condition('office_id', $connection->office_id);
-          
+
           $ored->condition($and);
         }
         $query->condition($ored);

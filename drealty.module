@@ -40,7 +40,7 @@ function drealty_entity_info() {
           'drealty_listing' => array(
               'label' => t('dRealty Listing'),
               'admin' => array(
-                  'path' => 'admin/drealty/structure/%',
+                  'path' => 'admin/drealty/structure/drealty_listing',
               ),
           ),
       ),
@@ -87,7 +87,7 @@ function drealty_entity_info() {
           'drealty_openhouse' => array(
               'label' => t('dRealty Open House'),
               'admin' => array(
-                  'path' => 'admin/drealty/structure/%',
+                  'path' => 'admin/drealty/structure/drealty_openhouse',
               ),
           ),
       ),
@@ -134,7 +134,7 @@ function drealty_entity_info() {
           'drealty_agent' => array(
               'label' => t('dRealty Agent'),
               'admin' => array(
-                  'path' => 'admin/drealty/structure/%',
+                  'path' => 'admin/drealty/structure/drealty_agent',
               ),
           ),
       ),
@@ -176,7 +176,7 @@ function drealty_entity_info() {
           'drealty_office' => array(
               'label' => t('dRealty Office'),
               'admin' => array(
-                  'path' => 'admin/drealty/structure/%',
+                  'path' => 'admin/drealty/structure/drealty_office',
               ),
           ),
       ),
@@ -273,7 +273,31 @@ function drealty_menu() {
       'type' => MENU_CALLBACK
   );
 
-  $items['admin/drealty/structure/%'] = array(
+  $items['admin/drealty/structure/drealty_listing'] = array(
+      'title callback' => 'drealty_field_ui_admin_title_callback',
+      'title arguments' => array(3),
+      'access callback' => TRUE,
+      'page callback' => 'drealty_some_func',
+      'page arguments' => array(3),
+      'type' => MENU_NORMAL_ITEM,
+  );
+    $items['admin/drealty/structure/drealty_openhouse'] = array(
+      'title callback' => 'drealty_field_ui_admin_title_callback',
+      'title arguments' => array(3),
+      'access callback' => TRUE,
+      'page callback' => 'drealty_some_func',
+      'page arguments' => array(3),
+      'type' => MENU_NORMAL_ITEM,
+  );
+      $items['admin/drealty/structure/drealty_agent'] = array(
+      'title callback' => 'drealty_field_ui_admin_title_callback',
+      'title arguments' => array(3),
+      'access callback' => TRUE,
+      'page callback' => 'drealty_some_func',
+      'page arguments' => array(3),
+      'type' => MENU_NORMAL_ITEM,
+  );
+        $items['admin/drealty/structure/drealty_office'] = array(
       'title callback' => 'drealty_field_ui_admin_title_callback',
       'title arguments' => array(3),
       'access callback' => TRUE,
@@ -640,7 +664,7 @@ function drealty_access($op, $entity = NULL, $type = NULL, $account = NULL) {
 
   $type_name = str_replace('_', ' ', $entity->entityType());
 
-  if (!$entity || !in_array($op, array('view', 'update', 'delete', 'create'), TRUE)) {
+  if (!$entity || !in_array($op, array('view', 'delete', 'create', 'edit'), TRUE)) {
     // If there was no listing to check against, or the $op was not one of the
     // supported ones, we return access denied.
     return FALSE;
@@ -703,13 +727,13 @@ function drealty_listing_load($listing_mlsid, $reset = FALSE) {
 }
 
 function drealty_listing_load_multiple($listing_mlsids = array(), $conditions = array(), $reset = FALSE) {
-  
+
 }
 
 /**
  *
  * @param DrealtyListing $listing
- * @return type 
+ * @return type
  */
 function drealty_listing_page_title(DrealtyListing $listing) {
   return $listing->name;
@@ -721,7 +745,7 @@ function drealty_listing_page_title(DrealtyListing $listing) {
  * @param type $view_mode
  * @param type $langcode
  * @param type $page
- * @return type 
+ * @return type
  */
 function drealty_listing_page_view($listing, $view_mode = 'full', $langcode = NULL, $page = NULL) {
   $controller = entity_get_controller('drealty_listing');

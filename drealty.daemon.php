@@ -435,6 +435,8 @@ class drealtyDaemon {
                   switch ($mapping->field_name) {
                     case 'end_datetime':
                     case 'start_datetime':
+                    case 'listing_date':
+                    case 'status_changed_datetime':
                       drush_log($string);
                       $value = strtotime($string);
                       break;
@@ -451,7 +453,7 @@ class drealtyDaemon {
           }
 
           if ($class->do_geocoding) {
-            
+
             $street_number = isset($item->street_number) ? $item->street_number : '';
             $street_name = isset($item->street_name) ? $item->street_name : '';
             $street_suffix = isset($item->street_suffix) ? $item->street_suffix : '';
@@ -474,7 +476,9 @@ class drealtyDaemon {
           }
 
           try {
+            module_invoke_all('drealty_entity_presave', $item);
             $item->save();
+            module_invoke_all('drealty_entity_save', $item);
           } catch (Exception $e) {
             drush_log($e->getMessage());
           }
@@ -496,9 +500,6 @@ class drealtyDaemon {
          *  
          * 
          */
-        
-        
-        
       }
       cache_clear_all($chunk_name, 'cache');
     } // endfor $chunk_count

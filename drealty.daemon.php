@@ -250,6 +250,7 @@ class drealtyDaemon {
     unset($listings);
     return $chunks;
   }
+  
 
   function fetch_listings_offset_supported_default(dRealtyConnectionEntity $connection, $resource, $class, $query) {
     $offset = 0;

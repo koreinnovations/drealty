@@ -25,8 +25,10 @@ class drealtyDaemon {
         }
       }
     }
+    
     unset($connections, $mappings, $classes);
     cache_clear_all();
+    module_invoke_all('drealty_rets_import_complete');
     return TRUE;
   }
 
@@ -238,7 +240,8 @@ class drealtyDaemon {
         } else {
           $offset_query = "$query,({$class->offset_field}={$offset_max}+)";
         }
-      }
+      }      
+      $this->dc->disconnect();
     } else {
       $error = $rets->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
@@ -476,9 +479,9 @@ class drealtyDaemon {
           }
 
           try {
-            module_invoke_all('drealty_entity_presave', $item);
+            drupal_alter('drealty_import_presave', $item);
             $item->save();
-            module_invoke_all('drealty_entity_save', $item);
+            module_invoke_all('drealty_entity_save', array(&$item));
           } catch (Exception $e) {
             drush_log($e->getMessage());
           }
@@ -490,7 +493,7 @@ class drealtyDaemon {
         }
 
         /*
-         *  TODO: sold or removed listings.
+         *  TODO: sold or removed listings. || removed agents || removed offices
          * 
          *  deal with items that are no longer returned from the rets feed but are still in the db. we can either
          *  delete them, archive/unpublish them, or come up with a status field. should be some sort of option

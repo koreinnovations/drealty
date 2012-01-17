@@ -1,16 +1,16 @@
 <?php
 
-define('DREALTY_LISTING_DEFAULT_URL_PATTERN', "mls-[drealty_listing:listing-id]-[drealty_listing:street-number]_[drealty_listing:street-name]_[drealty_listing:street-suffix]_[drealty_listing:city]_[drealty_listing:state-or-province]_[drealty_listing:postal-code]", TRUE);
+define('DREALTY_LISTING_DEFAULT_URL_PATTERN', "[drealty_listing:listing-id]-[drealty_listing:street-number]-[drealty_listing:street-name]-[drealty_listing:street-suffix]-[drealty_listing:city]-[drealty_listing:state-or-province]-[drealty_listing:postal-code]", TRUE);
 define('DREALTY_LISTING_DEFAULT_TITLE_PATTERN', "[drealty_listing:street-number] [drealty_listing:street-name] [drealty_listing:street-suffix] - [drealty_listing:city], [drealty_listing:state-or-province] [drealty_listing:postal-code]", TRUE);
 
 define('DREALTY_OPENHOUSE_DEFAULT_URL_PATTERN', "openhouse/[drealty_openhouse:id]");
 define('DREALTY_OPENHOUSE_DEFAULT_TITLE_PATTERN', "open house title");
 
-define('DREALTY_AGENT_DEFAULT_URL_PATTERN', "agent url");
-define('DREALTY_AGENT_DEFAULT_TITLE_PATTERN', "agent title");
+define('DREALTY_AGENT_DEFAULT_URL_PATTERN', "agent/[drealty_agent:first_name]-[drealty_agent:last_name]");
+define('DREALTY_AGENT_DEFAULT_TITLE_PATTERN', "[drealty_agent:first_name] [drealty_agent:last_name]");
 
-define('DREALTY_OFFICE_DEFAULT_URL_PATTERN', "office url");
-define('DREALTY_OFFICE_DEFAULT_TITLE_PATTERN', "office title");
+define('DREALTY_OFFICE_DEFAULT_URL_PATTERN', "office/[drealty_office:office_name]");
+define('DREALTY_OFFICE_DEFAULT_TITLE_PATTERN', "[drealty_office:office_name]");
 
 function drealty_entity_info() {
   $entities = array();

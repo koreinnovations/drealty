@@ -94,7 +94,7 @@ function drealty_listing_admin_overview($form, &$form_state, $arg) {
   $query = db_select('drealty_listing', 'd')->extend('PagerDefault')->extend('TableSort');
   $result = $query
     ->fields('d', array('id', 'listing_id'))
-    ->limit(50)
+    ->limit(10)
     ->orderByHeader($header)
     ->execute();
 

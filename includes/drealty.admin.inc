@@ -115,10 +115,12 @@ function drealty_settings_form_submit($form, &$form_state) {
 
   $dc = new dRealtyConnection();
 
-  foreach ($form_state['values']['connections'] as $key => $value) {
-    $connection = $dc->FetchConnection($key);
-    $connection->office_id = $value['office_id'];
-    $connection->save();
+  if (isset($form_state['values']['connections'])) {
+    foreach ($form_state['values']['connections'] as $key => $value) {
+      $connection = $dc->FetchConnection($key);
+      $connection->office_id = $value['office_id'];
+      $connection->save();
+    }
   }
 
   foreach ($form_state['values']['seo'] as $key => $value) {
@@ -127,7 +129,6 @@ function drealty_settings_form_submit($form, &$form_state) {
   }
   cache_clear_all('drealty', 'cache', TRUE);
   drupal_set_message("The configuration options have been saved.");
-  
 }
 
 function theme_drealty_general_setting_form(&$variables) {

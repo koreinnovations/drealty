@@ -102,7 +102,7 @@ function drush_drealty_rets_flush() {
       ->fetchAll();
 
     foreach ($existing_items as $item) {
-      $entity = reset(entity_load($entity_type, array($item->id), array(), TRUE));
+      $entity = reset(entity_load($entity_type, array($item->id)));
       drush_log(dt('Deleting @type - @id', array('@id' => $item->id, '@type' => $entity_type)), 'success');
       $entity->delete();
       unset($entity);

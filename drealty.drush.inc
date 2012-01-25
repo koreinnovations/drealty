@@ -61,11 +61,13 @@ function drush_drealty_rets_import() {
 
   $max_before = db_query("SELECT MAX(created) as max_created, MAX(changed) as max_changed FROM drealty_listing")->fetchObject();  
   $start_time = time();
+  watchdog('message', 'RETS Import Starts at !start.', array('!start' => $start_time));
   module_load_include('php', 'drealty', 'drealtyDaemon');
   $daemon = new drealtyDaemon();
   $daemon->run();
   $max_after = db_query("SELECT MAX(created) as max_created, MAX(changed) as max_changed FROM drealty_listing")->fetchObject();  
   $end_time = time();
+  watchdog('message', 'RETS Import Ends at !end.', array('!end' => $end_time));
   module_load_include('inc', 'reman', 'includes/pages');
   realtsoft_listing_import_manipulation($start_time, $end_time, $max_before, $max_after);
   

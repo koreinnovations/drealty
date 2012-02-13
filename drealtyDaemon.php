@@ -102,10 +102,15 @@ class drealtyDaemon {
             'Count' => '1',
         );
         // do the actual search
+
+        drush_log(dt('Class dump: !dump', array('!dump' => print_r($class, TRUE))));
+        drush_log(dt('Query dump: !dump', array('!dump' => print_r("($q)", TRUE))));
+        drush_log(dt('Params dump: !dump', array('!dump' => print_r($optional_params, TRUE))));
+
         $search = $this->dc->get_phrets()->SearchQuery($resource, $class->systemname, "($q)", $optional_params);
-        
+
         drush_log(dt("Rows returned: " . $this->dc->get_phrets()->TotalRecordsFound()));
-        
+
         $items = array();
         // loop through the search results
         while ($item = $this->dc->get_phrets()->FetchRow($search)) {
@@ -115,6 +120,8 @@ class drealtyDaemon {
         }
         if ($error = $this->dc->get_phrets()->Error()) {
           drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
+
+          drush_log(dt('Error dump: !dump', array('!dump' => print_r($error, TRUE))));
         }
         drush_log(dt("caching @count items for resource: @resource | class: @class", array("@count" => count($items), "@resource" => $resource, "@class" => $class->systemname)));
         cache_set("drealty_chunk_{$resource}_{$class->systemname}_" . $chunks++, $items);
@@ -425,7 +432,7 @@ class drealtyDaemon {
           foreach ($photos as $photo) {
             $mlskey = $photo['Content-ID'];
             $number = $photo['Object-ID'];
-            $filename = "{$mlskey}-{$number}.jpg";
+            $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', "{$mlskey}-{$number}.jpg");
             $filepath = "{$img_dir}/{$filename}";
 
 
@@ -438,23 +445,32 @@ class drealtyDaemon {
 
             drush_log(dt("Saving @filename", array("@filename" => $filepath)));
 
-            $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
-            // load the entity that is associated with the image
-            $query = new EntityFieldQuery();
-            
-            drush_log(dt("CONNECTION ID: {$conid->conid}"));
-            
-            $result = $query
-                    ->entityCondition('entity_type', 'drealty_listing')
-                    ->propertyCondition('listing_key', $mlskey)
-                    ->propertyCondition('conid', $conid->conid)
-                    ->execute();
-            $listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
+            try {
+              $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
+              // load the entity that is associated with the image
+              $query = new EntityFieldQuery();
 
-            file_usage_add($file, 'drealty', $entity_type, $listing->id);
+              $result = $query
+                      ->entityCondition('entity_type', 'drealty_listing')
+                      ->propertyCondition('listing_key', $mlskey)
+                      ->propertyCondition('conid', $conid->conid)
+                      ->execute();
 
-            $listing->process_images = 0;
-            $listing->save();
+
+
+              $listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
+
+              file_usage_add($file, 'drealty', $entity_type, $listing->id);
+
+              $listing->process_images = 0;
+              $listing->save();
+            } catch (Exception $ex) {
+              drush_log(dt('EXCEPTION SAVING FILE: !ex', array('!ex' => $ex->getMessage())));
+              drush_log(dt('MLS Key: !m', array('!m' => $mlskey)));
+              drush_log(dt('Connection ID: !m', array('!m' => $conid->conid)));
+              drush_log(dt('Photo: !m', array('!m' => print_r($photo, TRUE))));
+              
+            }
           }
           unset($photos);
         }

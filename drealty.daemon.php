@@ -571,8 +571,10 @@ class drealtyDaemon {
           $id_string = implode(',', $ids);
           drush_log("id string: " . $id_string);
 
-          $photos = $rets->GetObject($resource, $class->object_type, $id_string, '*');
+          $rets_result = $rets->GetObject($resource, $class->object_type, $id_string, '*');
 
+          
+          
           if ($rets->Error()) {
             $error = $rets->Error();
             drush_log($error['text']);
@@ -581,6 +583,14 @@ class drealtyDaemon {
 
           $this->dc->disconnect();
 
+          
+          $photos = array();
+          foreach($rets_result as $photo) {
+            $photos[$photo['Object-ID']] = $photo;
+          }
+          
+          ksort($photos);
+          
           unset($ids);
           $id_string = "";
           $counter = 0;

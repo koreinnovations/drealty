@@ -441,7 +441,6 @@ class drealtyDaemon {
                     case 'start_datetime':
                     case 'listing_date':
                     case 'status_changed_datetime':
-                      drush_log($string);
                       $value = strtotime($string);
                       break;
                     default:
@@ -472,17 +471,17 @@ class drealtyDaemon {
                 $item->longitude = $latlon->lon;
                 drush_log(dt('Geocoded: @address to (@lat, @lon)', array('@address' => $geoaddress, '@lat' => $item->latitude, '@lon' => $item->longitude)));
               } else {
-                drush_log(dt('Failed to Geocode: @address)', array('@address' => $geoaddress)));
+                drush_log(dt('Failed to Geocode: @address', array('@address' => $geoaddress)));
               }
             } else {
-              drush_log(dt('Failed to Geocode: @address)', array('@address' => $geoaddress)));
+              drush_log(dt('There was a failure with the Geocoder. Please check the configuration for the handler: @handler', array('@handler' => $class->geocoder_handler)));
             }
           }
 
           try {
-            drupal_alter('drealty_import_presave', $item);
+            $item = module_invoke_all('drealty_import_presave', $item);
             $item->save();
-            module_invoke_all('drealty_entity_save', array(&$item));
+            $item = module_invoke_all('drealty_import_save', $item);
           } catch (Exception $e) {
             drush_log($e->getMessage());
           }

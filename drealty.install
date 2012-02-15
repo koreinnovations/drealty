@@ -55,7 +55,7 @@ function drealty_uninstall() {
 
   // need to delete all the listings this way so that we can clean up the database and remove all the images properly
   foreach ($listings as $listing) {
-    entity_delete('drealty_listing', $id);
+    entity_delete('drealty_listing', $listing->id);
   }
 
   field_attach_delete_bundle('drealty_listing', 'drealty_listing');
@@ -344,6 +344,7 @@ function drealty_schema() {
         'subdivision_name' => array('type' => 'varchar', 'length' => 50, 'not null' => FALSE, 'default' => NULL, 'description' => "A neighborhood, community, complex or builder tract.", 'group' => 'Listing:Location:Area'),
         'subdivision_code' => array('type' => 'varchar', 'length' => 50, 'not null' => FALSE, 'default' => NULL, 'description' => "The code for a neighborhood, community, complex or builder tract.", 'group' => 'Listing:Location:Area'),
         //Listing:Location:GIS
+        'geo' => array('type' => 'text', 'mysql_type' => 'GEOMETRY', 'description' => 'MySql Geometry type for GIS operations', 'group' => 'hidden'),
         'latitude' => array('type' => 'float', 'scale' => 6, 'precision' => 10, 'not null' => FALSE, 'default' => NULL, 'description' => "The geographic latitude of some reference point on the property, specified in degrees and decimal parts.", 'group' => 'Listing:Location:GIS'),
         'longitude' => array('type' => 'float', 'scale' => 6, 'precision' => 10, 'not null' => FALSE, 'default' => NULL, 'description' => "The geographic longitude of some reference point on the property, specified in degrees and decimal parts.", 'group' => 'Listing:Location:GIS'),
         'directions' => array('type' => 'text', 'not null' => FALSE, 'default' => NULL, 'description' => "Driving directions to a property or location.", 'group' => 'Listing:Location:GIS'),
@@ -553,13 +554,17 @@ function drealty_schema() {
         //misc
         'idx_include' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "A descriptor indicating if this property is allowed to be displayed in an IDX.", 'group' => 'Listing:Property'),
         'picture_count' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => FALSE, 'default' => 0, 'description' => "The number of photographs / pictures associated with the property.", 'group' => 'Listing:Property'),
-      ) + entity_exportable_schema_fields(),
+      ),
       'primary key' => array('id'),
       'unique keys' => array('name' => array('name')),
   );
 
-  $schema['cache_drealty'] = drupal_get_schema_unprocessed('system', 'cache');
-
+  $schema['cache_entity_drealty_listing'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_entity_drealty_openhouse'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_entity_drealty_agent'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_entity_drealty_office'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_drealty_rets'] = drupal_get_schema_unprocessed('system', 'cache');
+  
   return $schema;
 }
 

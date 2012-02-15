@@ -8,11 +8,11 @@ $street = "{$street_number} {$street_name} {$street_suffix}";
 
 <div class="search-result clearfix">
   <div class="listing clearfix">
-    <div class="listing-image">
+    <!-- <div class="listing-image">
       <?php $image = array_shift($drealty_listing->mls_images); ?>
       <?php $img = theme_image_style(array('style_name' => 'listing_search_thumb', 'path' => $image->uri, 'alt' => '', 'width'=>'', 'height' => '')); ?>
       <?php print l($img, "listings/{$drealty_listing->listing_id}", array('html' => TRUE)); ?>
-    </div>
+    </div> -->
     <div class="listing-data">
       <div class="listing-header clearfix">
         <div class="title-link"> <?php print l("{$street} {$drealty_listing->city}, {$drealty_listing->state_or_province} {$drealty_listing->postal_code}", "listings/{$drealty_listing->listing_id}", array('html' => TRUE)); ?></div>
@@ -29,10 +29,10 @@ $street = "{$street_number} {$street_name} {$street_suffix}";
       </div>
       <div class="listing-feature-line">
         <?php if ($drealty_listing->beds_total): ?>
-          <?php print $drealty_listing->beds_total; ?> Bed
+          <?php print $drealty_listing->beds_total; ?> Beds
         <?php endif; ?>
-        <?php if ($drealty_listing->baths_total): ?>
-          , <?php print $drealty_listing->baths_total; ?> Bath
+        <?php if ($drealty_listing->baths_full): ?>
+          , <?php print $drealty_listing->baths_full; ?> Bath
         <?php endif; ?>
         <?php if ($drealty_listing->building_area_total): ?>
           | <?php print $drealty_listing->building_area_total; ?> Sq Ft

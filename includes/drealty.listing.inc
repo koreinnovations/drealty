@@ -21,6 +21,7 @@ class DrealtyListing extends Entity {
   }
 
 }
+
 /**
  * 
  */
@@ -44,24 +45,30 @@ class DrealtyListingController extends EntityAPIController {
    */
   public function buildContent($entity, $view_mode = 'full', $langcode = NULL, $content = array()) {
     $content = parent::buildContent($entity, $view_mode, $langcode, $content);
-
-    foreach ($entity as $key => $value) {
-      $content[$key] = array(
-          '#value' => $value,
-          '#markup' => empty($value) ? NULL : "<div class='field-value'>$value</div>",
-          '#prefix' => empty($value) ? NULL : "<div>\n<div class='field-label'>$key</div>",
-          '#suffix' => empty($value) ? NULL : "</div>",
-      );
-    }
-
-
-
+    
+    $content['#theme'] = 'entity';
+    $content['#element'] = $entity;
+    $content['#view_mode'] = $view_mode;
+    
+//
+//  
+//    foreach ($entity as $key => $value) {
+//      $content[$key] = array(
+//          '#value' => $value,
+//          '#markup' => empty($value) ? NULL : "<div class='field-value'>$value</div>",
+//          '#prefix' => empty($value) ? NULL : "<div>\n<div class='field-label'>$key</div>",
+//          '#suffix' => empty($value) ? NULL : "</div>",
+//      );
+//    }
+//
+//
+//
     $fids = db_select('file_usage', 'f')
-      ->fields('f', array('fid'))
-      ->condition('id', $entity->id)
-      ->condition('type', 'drealty_listing')
-      ->execute()
-      ->fetchAllAssoc('fid');
+            ->fields('f', array('fid'))
+            ->condition('id', $entity->id)
+            ->condition('type', 'drealty_listing')
+            ->execute()
+            ->fetchAllAssoc('fid');
 
     if ($fids) {
       $fids = array_keys($fids);
@@ -98,40 +105,40 @@ class DrealtyListingController extends EntityAPIController {
 
     $entity->drealty_path_alias = path_load("listings/$entity->listing_id");
 
-    $og_description = array(
-        '#tag' => 'meta',
-        '#attributes' => array(
-            'property' => 'og:description',
-            'content' => $entity->public_remarks,
-        ),
-    );
-
-    $meta_description = array(
-        '#tag' => 'meta',
-        '#attributes' => array(
-            'name' => 'description',
-            'content' => $entity->public_remarks,
-        ),
-    );
-
-    $token_string = ($pattern = variable_get("drealty_listing_title_pattern", FALSE)) ? $pattern : DREALTY_LISTING_DEFAULT_TITLE_PATTERN;
-
-    if (extension_loaded("mbstring")) {
-      $title = mb_convert_case(token_replace($token_string, array('drealty_listing' => $entity)), MB_CASE_TITLE);
-    } else {
-      $title = ucwords(drupal_strtolower(token_replace($token_string, array('drealty_listing' => $entity))));
-    }
-
-
-    drupal_set_title($title);
-
-    $og_title = array(
-        '#tag' => 'meta',
-        '#attributes' => array(
-            'property' => 'og:title',
-            'content' => $title,
-        ),
-    );
+//    $og_description = array(
+//        '#tag' => 'meta',
+//        '#attributes' => array(
+//            'property' => 'og:description',
+//            'content' => $entity->public_remarks,
+//        ),
+//    );
+//
+//    $meta_description = array(
+//        '#tag' => 'meta',
+//        '#attributes' => array(
+//            'name' => 'description',
+//            'content' => $entity->public_remarks,
+//        ),
+//    );
+//
+//    $token_string = ($pattern = variable_get("drealty_listing_title_pattern", FALSE)) ? $pattern : DREALTY_LISTING_DEFAULT_TITLE_PATTERN;
+//
+//    if (extension_loaded("mbstring")) {
+//      $title = mb_convert_case(token_replace($token_string, array('drealty_listing' => $entity)), MB_CASE_TITLE);
+//    } else {
+//      $title = ucwords(drupal_strtolower(token_replace($token_string, array('drealty_listing' => $entity))));
+//    }
+//
+//
+//    drupal_set_title($title);
+//
+//    $og_title = array(
+//        '#tag' => 'meta',
+//        '#attributes' => array(
+//            'property' => 'og:title',
+//            'content' => $title,
+//        ),
+//    );
 
 //    if (isset($entity->mls_images)) {
 //      $og_image = array(
@@ -144,9 +151,9 @@ class DrealtyListingController extends EntityAPIController {
 //      drupal_add_html_head($og_image, 'og_image');
 //    }
 
-    drupal_add_html_head($meta_description, 'meta_description');
-    drupal_add_html_head($og_description, 'og_description');
-    drupal_add_html_head($og_title, 'og_title');
+//    drupal_add_html_head($meta_description, 'meta_description');
+//    drupal_add_html_head($og_description, 'og_description');
+//    drupal_add_html_head($og_title, 'og_title');
 
 
     return $content;
@@ -184,23 +191,29 @@ class DrealtyListingController extends EntityAPIController {
     parent::delete($ids, $transaction);
   }
 
-  public function save($entity, DatabaseTransaction $transaction = NULL) {
+  public function save($entity, DatabaseTransaction $transaction = NULL, $reset = FALSE) {
     parent::save($entity, $transaction);
 
-    $path = array();
-    if (isset($entity->drealty_path_alias)) {
-      $path['pid'] = $entity->drealty_path_alias['pid'];
+    if ((isset($entity->is_new) && $entity->is_new) || $reset) {
+//      if (isset($entity->latitude) && isset($entity->longitude)) {
+//        db_query("UPDATE {drealty_listing} SET geo = GeomFromText('POINT({$entity->latitude} {$entity->longitude})') WHERE id = {$entity->id}", array());
+//      }
+
+      $path = array();
+      if (isset($entity->drealty_path_alias)) {
+        $path['pid'] = $entity->drealty_path_alias['pid'];
+      }
+
+      $token_string = ($pattern = variable_get("drealty_listing_url_pattern", FALSE)) ? $pattern : DREALTY_LISTING_DEFAULT_URL_PATTERN;
+
+      $alias = token_replace($token_string, array('drealty_listing' => $entity));
+
+      $path['source'] = "listings/$entity->listing_id";
+      $path['alias'] = drupal_strtolower(str_replace(" ", "_", $alias));
+
+
+      path_save($path);
     }
-
-    $token_string = ($pattern = variable_get("drealty_listing_url_pattern", FALSE)) ? $pattern : DREALTY_LISTING_DEFAULT_URL_PATTERN;
-
-    $alias = token_replace($token_string, array('drealty_listing' => $entity));
-
-    $path['source'] = "listings/$entity->listing_id";
-    $path['alias'] = drupal_strtolower(str_replace(" ", "_", $alias));
-
-
-    path_save($path);
   }
 
 }

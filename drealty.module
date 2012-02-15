@@ -213,6 +213,12 @@ function drealty_entity_info() {
           'controller class' => 'DrealtyConnectionUIController',
       ),
   );
+  
+    // Support entity cache module.
+  if (module_exists('entitycache')) {
+    $entities['drealty_listing']['field cache'] = FALSE;
+    $entities['drealty_listing']['entity cache'] = TRUE;
+  }
 
   return $entities;
 }

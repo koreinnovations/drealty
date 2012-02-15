@@ -28,6 +28,7 @@ function hook_drealty_import_presave(Entity $entity) {
   if($entity->type == 'drealty_listing') {
     $entity->price = '0';
   }
+  
   return $entity;
 }
 

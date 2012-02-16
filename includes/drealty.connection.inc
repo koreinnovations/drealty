@@ -32,28 +32,8 @@ class dRealtyConnection {
       } else {
 
         $connection = entity_load('drealty_connection_entity', array($conid));
-//        // no connection setup need to create it.
-//        $connections = $this->FetchConnections();
-//        if (isset($conid)) {
-//          if (count($connections) <= 0) {
-//            throw new Exception("No Connections setup.");
-//          }
-//          $active_connection = $connections[$conid];
-//        } else {
-//          throw new Exception("Connection ID can not be null.");
-//        }
-//
-//        $new_connection = new dRealtyConnectionEntity();
-//
-//        $new_connection->login_url = $active_connection->login_url;
-//        $new_connection->username = $active_connection->username;
-//        $new_connection->password = $active_connection->password;
-//        $new_connection->force_basic_auth = $active_connection->force_basic_auth;
-//        $new_connection->use_compression = $active_connection->use_compression;
-//        $new_connection->ua_string = $active_connection->ua_string;
-//        $new_connection->version = $active_connection->version;
-        // set the connection
 
+        // set the connection
         self::set_current_connection(array_shift($connection));
 
 
@@ -72,8 +52,10 @@ class dRealtyConnection {
         }
 
         //set debug mode
-//        self::get_phrets()->SetParam('debug_mode', true);
-//        self::get_phrets()->SetParam("debug_file", "debug_log.txt");
+        //self::get_phrets()->SetParam('debug_mode', TRUE);
+        //self::get_phrets()->SetParam("debug_file", realpath(drupal_get_path('module', 'drealty')) . "/debug_log.txt");
+        
+        
         // add some headers
         self::get_phrets()->AddHeader("User-Agent", self::get_current_connection()->ua_string);
         self::get_phrets()->AddHeader("RETS-Version", "RETS/" . self::get_current_connection()->version);

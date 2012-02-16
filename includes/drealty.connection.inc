@@ -262,6 +262,9 @@ class dRealtyConnectionEntity extends Entity {
         drupal_write_record('drealty_field_mappings', $field_mapping);
       }
     }
+    
+    cache_clear_all();
+    menu_rebuild();
   }
 
 //end save

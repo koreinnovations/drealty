@@ -479,9 +479,9 @@ class drealtyDaemon {
           }
 
           try {
-            $item = module_invoke_all('drealty_import_presave', $item);
+            module_invoke_all('drealty_import_presave', $item);
             $item->save();
-            $item = module_invoke_all('drealty_import_save', $item);
+            module_invoke_all('drealty_import_save', $item);
           } catch (Exception $e) {
             drush_log($e->getMessage());
           }

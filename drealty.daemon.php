@@ -25,7 +25,7 @@ class drealtyDaemon {
         }
       }
     }
-    
+
     unset($connections, $mappings, $classes);
     cache_clear_all();
     module_invoke_all('drealty_rets_import_complete');
@@ -115,9 +115,9 @@ class drealtyDaemon {
     $limit = $class->chunk_size;
 
     $options = array(
-        'count' => 1,
-        'Format' => 'COMPACT-DECODED',
-        'Select' => $key_field,
+      'count' => 1,
+      'Format' => 'COMPACT-DECODED',
+      'Select' => $key_field,
     );
 
 
@@ -192,9 +192,9 @@ class drealtyDaemon {
 
     $query = $class->override_status_query_text;
     $options = array(
-        'count' => 1,
-        'Format' => 'COMPACT-DECODED',
-        'Select' => $key_field,
+      'count' => 1,
+      'Format' => 'COMPACT-DECODED',
+      'Select' => $key_field,
     );
 
 
@@ -240,7 +240,7 @@ class drealtyDaemon {
         } else {
           $offset_query = "$query,({$class->offset_field}={$offset_max}+)";
         }
-      }      
+      }
       $this->dc->disconnect();
     } else {
       $error = $rets->Error();
@@ -250,7 +250,6 @@ class drealtyDaemon {
     unset($listings);
     return $chunks;
   }
-  
 
   function fetch_listings_offset_supported_default(dRealtyConnectionEntity $connection, $resource, $class, $query) {
     $offset = 0;
@@ -275,11 +274,11 @@ class drealtyDaemon {
 
 
         $optional_params = array(
-            'Format' => 'COMPACT-DECODED',
-            'Limit' => "$limit",
-            'RestrictedIndicator' => 'xxxx',
-            'Count' => '1',
-            'Offset' => $offset,
+          'Format' => 'COMPACT-DECODED',
+          'Limit' => "$limit",
+          'RestrictedIndicator' => 'xxxx',
+          'Count' => '1',
+          'Offset' => $offset,
         );
 
         // do the actual search
@@ -457,11 +456,13 @@ class drealtyDaemon {
 
           if ($class->do_geocoding) {
 
-            $street_number = isset($item->street_number) ? $item->street_number : '';
-            $street_name = isset($item->street_name) ? $item->street_name : '';
-            $street_suffix = isset($item->street_suffix) ? $item->street_suffix : '';
+            $geoaddress = isset($item->street_number) ? $item->street_number : '';
+            $geoaddress .= isset($item->street_dir_prefix) ? $item->street_dir_prefix : '';
+            $geoaddress .= isset($item->street_name) ? $item->street_name : '';
+            $geoaddress .= isset($item->street_dir_suffix) ? $item->street_dir_suffix : '';
+            $geoaddress .= isset($item->street_suffix) ? $item->street_suffix : '';
+            $geoaddress .= ", {$item->city}, {$item->state_or_province} {$item->postal_code}";
 
-            $geoaddress = "{$street_number} {$street_name} {$street_suffix}, {$item->city}, {$item->state_or_province} {$item->postal_code}";
             // remove any double spaces
             $geoaddress = str_replace("  ", "", $geoaddress);
 
@@ -573,8 +574,8 @@ class drealtyDaemon {
 
           $rets_result = $rets->GetObject($resource, $class->object_type, $id_string, '*');
 
-          
-          
+
+
           if ($rets->Error()) {
             $error = $rets->Error();
             drush_log($error['text']);
@@ -583,14 +584,14 @@ class drealtyDaemon {
 
           $this->dc->disconnect();
 
-          
+
           $photos = array();
-          foreach($rets_result as $photo) {
+          foreach ($rets_result as $photo) {
             $photos[$photo['Object-ID']] = $photo;
           }
-          
+
           ksort($photos);
-          
+
           unset($ids);
           $id_string = "";
           $counter = 0;

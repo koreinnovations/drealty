@@ -315,7 +315,9 @@ function drealty_schema() {
         'status_changed_datetime' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => "The date of the listings contractual status change. This is not necessarily the time the agent made the change in the MLS system, but rather the date of the contractual change.", 'group' => 'general', 'entity_property_type' => 'date'),
         'days_on_market' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "Number calculated from the days elapsed when a listing was first put on the market until it was put under contract, or taken off the market.", 'group' => 'general'),
         'listing_status' => array('type' => 'varchar', 'length' => 50, 'not null' => FALSE, 'default' => NULL, 'description' => "Local or regional status that are well known by business users. Each MlsStatus must map to a single RetsStatus. Multiple MlsStatus may map to a single RetsStatus.", 'group' => 'required'),
+        
         'list_price' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => "The current price of the home as determined by the seller and the contract seller's agent member. The list price is often negotiable. It is also known as the Asking Price. Formatting is specified by the currency attribute.", 'group' => 'general'),
+        'additional_status'=> array('type' => 'text', 'not null' => FALSE, 'default' => NULL, 'description' => "An additional status field.", 'group' => 'general'),
         'view_on_web' => array('type' => 'varchar', 'length' => 10, 'not null' => FALSE, 'default' => NULL, 'description' => "A Y/N field indicating wether this listing can be viewed on the web.", 'group' => 'general'),
         'virtual_tour_url' => array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => "The branded virtual tour URI.", 'group' => 'general'),
         'public_remarks' => array('type' => 'text', 'not null' => FALSE, 'default' => NULL, 'description' => "Text remarks that may be displayed to the public. In an MLS, it is the field where information is entered for the public. This information is intended to be visible on-line. This is typically information that describes the selling points of the building and/or land for sale. Local conditions and rules will determine what such content can contain. Generally, the following information is excluded: any information pertaining to entry to the property, the seller and/or tenant, listing member contact information. In other systems, these remarks will be determined by local business rules.", 'group' => 'general'),
@@ -614,5 +616,10 @@ function drealty_update_7204(&$sandbox) {
 
 function drealty_update_7205(&$sandbox) {
   db_add_field('drealty_classes', 'image_chunk_size', array('type' => 'int', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE, 'default' => 25));
+  cache_clear_all('drealty', 'cache', TRUE);
+}
+
+function drealty_update_7206(&$sandbox) {
+  db_add_field('drealty_listing', 'additional_status', array('type' => 'text', 'not null' => FALSE, 'default' => NULL, 'description' => "An additional status field."));
   cache_clear_all('drealty', 'cache', TRUE);
 }

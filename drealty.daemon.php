@@ -477,9 +477,9 @@ class drealtyDaemon {
               if ($latlon->success) {
                 $item->latitude = $latlon->lat;
                 $item->longitude = $latlon->lon;
-                drush_log(dt('Geocoded: @address to (@lat, @lon)', array('@address' => $geoaddress, '@lat' => $item->latitude, '@lon' => $item->longitude)));
+                drush_log(dt('Geocoded: @address to (@lat, @lon)', array('@address' => $geoaddress, '@lat' => $item->latitude, '@lon' => $item->longitude)), 'success');
               } else {
-                drush_log(dt('Failed to Geocode: @address', array('@address' => $geoaddress)));
+                drush_log(dt('Failed to Geocode: @address', array('@address' => $geoaddress)), 'error');
               }
             } else {
               drush_log(dt('There was a failure with the Geocoder. Please check the configuration for the handler: @handler', array('@handler' => $class->geocoder_handler)));
@@ -493,7 +493,7 @@ class drealtyDaemon {
           } catch (Exception $e) {
             drush_log($e->getMessage());
           }
-          drush_log(dt('Saving item @name', array('@name' => $rets_item[$id])));
+          drush_log(dt('Saving item @name', array('@name' => $rets_item[$id])), 'success');
           unset($item);
         } else {
           // skipping this item

@@ -591,42 +591,48 @@ function drealty_theme($existing, $type, $theme, $path) {
       'file' => 'includes/drealty.admin.inc',
   );
 
-  $themes['views_view_field__active'] = array(
-      'template' => 'views/views-view-field--active',
-      'original hook' => 'views_view',
-      'preprocess functions' => array(
-          'template_preprocess',
-          'template_preprocess_views_view',
-      ),
-      'arguments' => array('view' => NULL),
-  );
-
+//  $themes['entity'] = array(
+//    'render element' => 'elements',
+//    'template' => 'entity',
+//  );
+//  
+  
+//  $themes['views_view_field__active'] = array(
+//      'template' => 'views/views-view-field--active',
+//      'original hook' => 'views_view',
+//      'preprocess functions' => array(
+//          'template_preprocess',
+//          'template_preprocess_views_view',
+//      ),
+//      'arguments' => array('view' => NULL),
+//  );
+//
   $themes['drealty_listing'] = array(
       'render element' => 'elements',
-      'template' => 'templates/drealty-listing',
+      'template' => 'drealty-listing',
   );
+//
+//  $themes['drealty_agent'] = array(
+//      'render element' => 'elements',
+//      'template' => 'templates/drealty-agent',
+//  );
 
-  $themes['drealty_agent'] = array(
-      'render element' => 'elements',
-      'template' => 'templates/drealty-agent',
-  );
+//  $themes['drealty_listing__search'] = array(
+//      'render element' => 'elements',
+//      'template' => 'drealty-listing--search',
+//  );
 
-  $themes['drealty_listing__drealty_listing__search'] = array(
-      'render element' => 'elements',
-      'template' => 'templates/drealty-listing--search',
-  );
-
-  $themes['drealty_mls_images'] = array(
-      'variables' => array('mls_images', 'listing' => NULL),
-      'template' => 'templates/drealty-mls-images',
-  );
-
-
-
-  $themes['drealty_search_map'] = array(
-      'variables' => array('listings' => null),
-      'template' => 'templates/drealty-search-map',
-  );
+//  $themes['drealty_mls_images'] = array(
+//      'variables' => array('mls_images', 'listing' => NULL),
+//      'template' => 'templates/drealty-mls-images',
+//  );
+//
+//
+//
+//  $themes['drealty_search_map'] = array(
+//      'variables' => array('listings' => null),
+//      'template' => 'templates/drealty-search-map',
+//  );
 
 
   return $themes;

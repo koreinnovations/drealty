@@ -52,14 +52,14 @@ class DrealtyListingController extends EntityAPIController {
     
 //
 //  
-//    foreach ($entity as $key => $value) {
-//      $content[$key] = array(
-//          '#value' => $value,
-//          '#markup' => empty($value) ? NULL : "<div class='field-value'>$value</div>",
-//          '#prefix' => empty($value) ? NULL : "<div>\n<div class='field-label'>$key</div>",
-//          '#suffix' => empty($value) ? NULL : "</div>",
-//      );
-//    }
+    foreach ($entity as $key => $value) {
+      $content[$key] = array(
+          '#value' => $value,
+          '#markup' => empty($value) ? NULL : "<div class='field-value'>$value</div>",
+          '#prefix' => empty($value) ? NULL : "<div>\n<div class='field-label'>$key</div>",
+          '#suffix' => empty($value) ? NULL : "</div>",
+      );
+    }
 //
 //
 //

@@ -222,7 +222,7 @@ class dRealtyConnectionEntity extends Entity {
 
     // check to see if we are importing anything
     if (isset($this->resources)) {
-      foreach ($this->resources as $resource) {
+      foreach ($this->resources as &$resource) {
         $resource['rid'] = NULL;
         $resource['conid'] = $this->conid;
         drupal_write_record('drealty_resources', $resource);
@@ -230,7 +230,7 @@ class dRealtyConnectionEntity extends Entity {
     }
 
     if (isset($this->resource_mappings)) {
-      foreach ($this->resource_mappings as $resource_mapping) {
+      foreach ($this->resource_mappings as &$resource_mapping) {
         $resource_mapping['mid'] = NULL;
         $resource_mapping['conid'] = $this->conid;
         drupal_write_record('drealty_resource_mappings', $resource_mapping);
@@ -238,9 +238,10 @@ class dRealtyConnectionEntity extends Entity {
     }
 
     if (isset($this->classes)) {
-      foreach ($this->classes as $class) {
+      foreach ($this->classes as &$class) {
         $class['cid'] = NULL;
         $class['conid'] = $this->conid;
+        $class['rid'] = $this->resources[$class['resourcename']]['rid'];
         drupal_write_record('drealty_classes', $class);
       }
     }
@@ -248,14 +249,16 @@ class dRealtyConnectionEntity extends Entity {
     if (isset($this->fields)) {
       foreach ($this->fields as $field) {
         $field['fid'] = NULL;
-        $field['conid'] = $this->conid;
+        $field['conid'] = $this->conid;        
         drupal_write_record('drealty_fields', $field);
       }
     }
 
+
     if (isset($this->field_mappings)) {
       foreach ($this->field_mappings as $field_mapping) {
         $field_mapping['conid'] = $this->conid;
+        $field_mapping['cid'] = $this->classes[$field_mapping['classname']]['cid'];
         drupal_write_record('drealty_field_mappings', $field_mapping);
       }
     }
@@ -273,17 +276,17 @@ class dRealtyConnectionEntity extends Entity {
     return $dr->GetResourceMappings($this->conid);
   }
 
-  public function FetchClasses($resource = 'Property') {
+  public function FetchClasses($resource = NULL) {
     $dr = new drealtyResources();
     return $dr->FetchClasses($this->conid, $resource);
   }
 
-  public function FetchFields($resource = 'Property') {
+  public function FetchFields($resource = NULL, $keyed = TRUE) {
     $dr = new drealtyResources();
-    return $dr->FetchFields($this->conid, $resource);
+    return $dr->FetchFields($this->conid, $resource, FALSE, $keyed);
   }
 
-  public function FetchFieldMappings($resource = 'Property', $class = NULL) {
+  public function FetchFieldMappings($resource = NULL, $class = NULL) {
     $dr = new drealtyResources();
     return $dr->FetchFieldMappings($this->conid, $resource, $class);
   }
@@ -318,7 +321,7 @@ class dRealtyConnectionEntity extends Entity {
     $this->resources = $this->Resources();
     $this->resource_mappings = $this->ResourceMappings();
     $this->classes = $this->FetchClasses();
-    $this->fields = $this->FetchFields();
+    $this->fields = $this->FetchFields(NULL, FALSE);
     $this->field_mappings = $this->FetchFieldMappings(NULL, NULL);
   }
 

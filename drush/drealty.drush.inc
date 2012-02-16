@@ -9,19 +9,19 @@ function drealty_drush_command() {
   $items = array();
 
   $items['rets-import'] = array(
-      'aliases' => array('ri'),
-      'description' => 'Import RETS Listings.',
-      'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
+    'aliases' => array('ri'),
+    'description' => 'Import RETS Listings.',
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
   );
 
   $items['rets-flush'] = array(
-      'description' => 'Flush ALL RETS items.',
-      'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
+    'description' => 'Flush ALL RETS items.',
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
   );
 
   $items['rets-reprocess-images'] = array(
-      'description' => "Force the (re)downloading of images.",
-      'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
+    'description' => "Force the (re)downloading of images.",
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
   );
   return $items;
 }

@@ -45,30 +45,30 @@ class DrealtyListingController extends EntityAPIController {
    */
   public function buildContent($entity, $view_mode = 'full', $langcode = NULL, $content = array()) {
     $content = parent::buildContent($entity, $view_mode, $langcode, $content);
-    
+
     $content['#theme'] = 'entity';
     $content['#element'] = $entity;
     $content['#view_mode'] = $view_mode;
-    
+
 //
 //  
     foreach ($entity as $key => $value) {
       $content[$key] = array(
-          '#value' => $value,
-          '#markup' => empty($value) ? NULL : "<div class='field-value'>$value</div>",
-          '#prefix' => empty($value) ? NULL : "<div>\n<div class='field-label'>$key</div>",
-          '#suffix' => empty($value) ? NULL : "</div>",
+        '#value' => $value,
+        '#markup' => empty($value) ? NULL : "<div class='field-value'>$value</div>",
+        '#prefix' => empty($value) ? NULL : "<div>\n<div class='field-label'>$key</div>",
+        '#suffix' => empty($value) ? NULL : "</div>",
       );
     }
 //
 //
 //
     $fids = db_select('file_usage', 'f')
-            ->fields('f', array('fid'))
-            ->condition('id', $entity->id)
-            ->condition('type', 'drealty_listing')
-            ->execute()
-            ->fetchAllAssoc('fid');
+      ->fields('f', array('fid'))
+      ->condition('id', $entity->id)
+      ->condition('type', 'drealty_listing')
+      ->execute()
+      ->fetchAllAssoc('fid');
 
     if ($fids) {
       $fids = array_keys($fids);
@@ -84,8 +84,8 @@ class DrealtyListingController extends EntityAPIController {
         $entity->mls_images[] = $image;
 
         $uri = array(
-            'path' => file_create_url($image->uri),
-            'options' => array(),
+          'path' => file_create_url($image->uri),
+          'options' => array(),
         );
 
         $image->title = $entity->listing_id;
@@ -94,11 +94,11 @@ class DrealtyListingController extends EntityAPIController {
         $image->width = '';
 
         $content['mls_images'][$key] = array(
-            '#theme' => 'image_formatter',
-            '#item' => (array) $image,
-            '#path' => '',
-            '#width' => '',
-            '#height' => '',
+          '#theme' => 'image_formatter',
+          '#item' => (array) $image,
+          '#path' => '',
+          '#width' => '',
+          '#height' => '',
         );
       }
     }
@@ -139,7 +139,6 @@ class DrealtyListingController extends EntityAPIController {
 //            'content' => $title,
 //        ),
 //    );
-
 //    if (isset($entity->mls_images)) {
 //      $og_image = array(
 //          '#tag' => 'meta',
@@ -150,7 +149,6 @@ class DrealtyListingController extends EntityAPIController {
 //      );
 //      drupal_add_html_head($og_image, 'og_image');
 //    }
-
 //    drupal_add_html_head($meta_description, 'meta_description');
 //    drupal_add_html_head($og_description, 'og_description');
 //    drupal_add_html_head($og_title, 'og_title');
@@ -177,11 +175,29 @@ class DrealtyListingController extends EntityAPIController {
       return;
     }
     foreach ($entities as $entity) {
-      if (isset($entity->mls_images)) {
-        foreach ($entity->mls_images as $file) {
-          file_delete($file, TRUE);
+
+
+      $fids = db_select('file_usage', 'f')
+        ->fields('f', array('fid'))
+        ->condition('id', $entity->id)
+        ->condition('type', 'drealty_listing')
+        ->execute()
+        ->fetchAllAssoc('fid');
+
+      if ($fids) {
+        $fids = array_keys($fids);
+        $images = file_load_multiple($fids);
+
+        foreach ($images as $key => $image) {
+          file_usage_delete($image, 'drealty', NULL, 0);
+          file_delete($image, TRUE);
         }
       }
+
+
+
+
+
       if (isset($entity->drealty_path_alias)) {
         path_delete($entity->drealty_path_alias['pid']);
       }

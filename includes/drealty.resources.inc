@@ -48,73 +48,70 @@ class drealtyResources {
   }
 
   function FetchActiveFields($conid, $resource) {
-    $cache_name = "drealty_fields_active_{$resource}_{$conid}";
-    $cached = cache_get($cache_name, $this->defaultCache);
-    if (!$cached) {
-      $result = db_query("SELECT * FROM {drealty_fields} WHERE conid = :conid AND resource = :resource AND display = 1", array(':conid' => $conid, ':resource' => $resource))->fetchAll();
-      $fields = array();
-      foreach ($result as $field) {
-        $fields[$field->systemname] = $field;
-      }
-      cache_set($cache_name, $fields, $this->defaultCache);
-      return $fields;
-    } else {
-      return $cached->data;
+
+    $result = db_query("SELECT * FROM {drealty_fields} WHERE conid = :conid AND resource = :resource AND display = 1", array(':conid' => $conid, ':resource' => $resource))->fetchAll();
+    $fields = array();
+    foreach ($result as $field) {
+      $fields[$field->systemname] = $field;
     }
+
+    return $fields;
+
   }
 
   function FetchFieldMappings($conid, $resource = NULL, $class = NULL) {
-    $cache_name = "drealty_field_mapping_{$resource}_{$conid}";
-    $cached = cache_get($cache_name, $this->defaultCache);
 
-    if (!$cached) {
 
-      $query = db_select('drealty_field_mappings', 'dfm')
-        ->fields('dfm')
-        ->condition('conid', $conid);
+    $query = db_select('drealty_field_mappings', 'dfm')
+      ->fields('dfm')
+      ->condition('dfm.conid', $conid);
 
-      if (isset($resource)) {
-        $ra = db_and();
-        $ra->condition('resource', $resource);
-        $query->condition($ra);
-      }
-      if (isset($class)) {
-        $ca = db_and();
-        $ca->where('cid = :cid', array(':cid' => $class));
-        $query->condition($ca);
-      }
-
-      $results = $query->execute()->fetchAll();
-
-      $mappings = array();
-      foreach ($results as $result) {
-        $mappings[$result->field_name] = $result;
-      }
-      if (count($mappings)) {
-        cache_set($cache_name, $mappings, $this->defaultCache);
-      }
-      return $mappings;
-    } else {
-      return $cached->data;
+    if (isset($resource)) {
+      $ra = db_and();
+      $ra->condition('dfm.resource', $resource);
+      $query->condition($ra);
     }
-  }  
+    if (isset($class)) {
+      $ca = db_and();
+      $ca->where('dfm.cid = :cid', array(':cid' => $class));
+      $query->condition($ca);
+    }
 
-  function FetchFields($conid, $resource, $flush = FALSE) {
-    $cache_name = "drealty_fields_{$resource}_{$conid}";
-    $cached = cache_get($cache_name, $this->defaultCache);
+    $query->join('drealty_classes', 'drc', 'dfm.cid = drc.cid');
+    $query->addField('drc', 'systemname', 'classname');
 
-    if (!$cached) {
-      $result = db_query("SELECT * FROM {drealty_fields} WHERE conid = :conid AND resource = :resource", array(':conid' => $conid, ':resource' => $resource))->fetchAll();
+    $results = $query->execute()->fetchAll();
+
+    $mappings = array();
+    foreach ($results as $result) {
+      $mappings[$result->field_name] = $result;
+    }
+
+    return $mappings;
+
+  }
+
+  function FetchFields($conid, $resource = NULL, $flush = FALSE, $keyed = TRUE) {
+
+    $query = db_select('drealty_fields', 'df')
+      ->fields('df')
+      ->condition('df.conid', $conid);
+
+    if (isset($resource)) {
+      $query->condition('df.resource', $resource);
+    }
+    $result = $query->execute()->fetchAll();
+
+    if ($keyed) {
       $fields = array();
+
       foreach ($result as $field) {
         $fields[$field->systemname] = $field;
       }
-      if (count($fields) && !$flush) {
-        cache_set($cache_name, $fields, $this->defaultCache);
-      }
     } else {
-      $fields = $cached->data;
+      $fields = $result;
     }
+
 
     $rets = new drealtyConnection();
 
@@ -185,7 +182,7 @@ class drealtyResources {
         }
       }
       $fields = $rets_fields;
-      cache_set($cache_name, $fields, $this->defaultCache);
+      //cache_set($cache_name, $fields, $this->defaultCache);
     }
     return $fields;
   }
@@ -203,22 +200,24 @@ class drealtyResources {
    *  Setting to TRUE will flush all classes and force an update from the RETS server
    * @return array
    */
-  function FetchClasses($conid, $resource, $update = FALSE) {
-    $cache_name = "drealty_classes_{$resource}_{$conid}";
-    $cached = cache_get($cache_name, $this->defaultCache);
+  function FetchClasses($conid, $resource = NULL, $update = FALSE) {
+
     $resources = $this->FetchResources($conid, $update);
 
-    if (!$cached) {
-      $result = db_query("SELECT * FROM {drealty_classes} WHERE conid = :conid AND rid = :rid", array(':conid' => $conid, ':rid' => $resources[$resource]->rid))->fetchAll();
-      $classes = array();
-      foreach ($result as $class) {
-        $classes[$class->systemname] = $class;
-      }
-      if (count($classes) && !$update) {
-        cache_set($cache_name, $classes, $this->defaultCache);
-      }
-    } else {
-      $classes = $cached->data;
+    $query = db_select('drealty_classes', 'drc')
+      ->fields('drc')
+      ->condition('drc.conid', $conid);
+    if (isset($resource)) {
+      $query->condition('drc.rid', $resources[$resource]->rid);
+    }
+    $query->join('drealty_resources', 'dr', 'drc.rid = dr.rid');
+    $query->addField('dr', 'systemname', 'resourcename');
+    $result = $query->execute()->fetchAll();
+
+
+    $classes = array();
+    foreach ($result as $class) {
+      $classes[$class->systemname] = $class;
     }
 
     $rets = new drealtyConnection();
@@ -261,7 +260,6 @@ class drealtyResources {
         }
       }
       $classes = $rets_classes;
-      cache_set($cache_name, $classes, $this->defaultCache);
     }
 
     return $classes;

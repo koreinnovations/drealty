@@ -271,7 +271,13 @@ class drealtyDaemon {
       while ($end) {
         $end_p = $end ? "FALSE" : "TRUE";
         drush_log("Resource: $resource Class: $class->systemname Limit: $limit Offset: $offset MaxRowsReached: $end_p Chunks: $chunks");
-
+        
+        $field_mappings = $connection->FetchFieldMappings($resource, $class->cid);
+        
+        $fields = array();
+        foreach($field_mappings as $mapping) {
+          $fields[] = $mapping->systemname;
+        }
 
         $optional_params = array(
           'Format' => 'COMPACT-DECODED',
@@ -279,6 +285,7 @@ class drealtyDaemon {
           'RestrictedIndicator' => 'xxxx',
           'Count' => '1',
           'Offset' => $offset,
+          'Select' => implode(',', $fields),
         );
 
         // do the actual search

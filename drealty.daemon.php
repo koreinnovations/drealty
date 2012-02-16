@@ -457,10 +457,10 @@ class drealtyDaemon {
           if ($class->do_geocoding) {
 
             $geoaddress = isset($item->street_number) ? $item->street_number : '';
-            $geoaddress .= isset($item->street_dir_prefix) ? $item->street_dir_prefix : '';
-            $geoaddress .= isset($item->street_name) ? $item->street_name : '';
-            $geoaddress .= isset($item->street_dir_suffix) ? $item->street_dir_suffix : '';
-            $geoaddress .= isset($item->street_suffix) ? $item->street_suffix : '';
+            $geoaddress .= isset($item->street_dir_prefix) ? ' ' . $item->street_dir_prefix : '';
+            $geoaddress .= isset($item->street_name) ? ' '. $item->street_name : '';
+            $geoaddress .= isset($item->street_dir_suffix) ?  ' ' . $item->street_dir_suffix : '';
+            $geoaddress .= isset($item->street_suffix) ? ' ' . $item->street_suffix : '';
             $geoaddress .= ", {$item->city}, {$item->state_or_province} {$item->postal_code}";
 
             // remove any double spaces

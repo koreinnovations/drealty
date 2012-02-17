@@ -664,6 +664,7 @@ class drealtyDaemon {
                 // update the listing table marking the images as processed
                 db_update('drealty_listing', 'dl')
                   ->fields(array('process_images' => 0))
+                  ->condition('id', $listing_id)
                   ->execute();
 
               }

@@ -274,10 +274,6 @@ class drealtyDaemon {
         
         $field_mappings = $connection->FetchFieldMappings($resource, $class->cid);
         
-        $fields = array();
-        foreach($field_mappings as $mapping) {
-          $fields[] = $mapping->systemname;
-        }
 
         $optional_params = array(
           'Format' => 'COMPACT-DECODED',
@@ -285,7 +281,6 @@ class drealtyDaemon {
           'RestrictedIndicator' => 'xxxx',
           'Count' => '1',
           'Offset' => $offset,
-          'Select' => implode(',', $fields),
         );
 
         // do the actual search
@@ -530,7 +525,14 @@ class drealtyDaemon {
     }
     return md5($tmp);
   }
-
+  
+  public function formatBytes($size, $precision = 2) {
+    $base = log($size) / log(1024);
+    $suffixes = array('', 'k', 'M', 'G', 'T');
+    return round(pow(1024, $base - floor($base)), $precision) . $suffixes[floor($base)];
+  }
+  
+  
   public function process_images($conid, $resource, $class) {
     $rets = &$this->dc->get_phrets();
     $entity_type = 'drealty_listing';
@@ -577,11 +579,9 @@ class drealtyDaemon {
 
         if ($this->dc->connect($conid)) {
           $id_string = implode(',', $ids);
-          drush_log("id string: " . $id_string);
-
-          $photos = $rets->GetObject($resource, $class->object_type, $id_string, '*');
-
-
+          
+          drush_log(dt("downloading image data for @count listings", array("@count" => count($ids))));
+          $results = $rets->GetObject($resource, $class->object_type, $id_string, '*');
 
           if ($rets->Error()) {
             $error = $rets->Error();
@@ -589,41 +589,69 @@ class drealtyDaemon {
             return;
           }
 
+          if($results) {
+            $length = 0;
+            $total = 0;
+            $photos = array();
+            foreach($results as $item) {
+              $total ++;
+              if(!isset($photos[$item['Content-ID']])) {
+                $photos[$item['Content-ID']] = array();
+              }
+              $photos[$item['Content-ID']][$item['Object-ID']] = $item;
+              $length += strlen($item['Data']);
+            }
+            
+            ksort($photos, SORT_NUMERIC);
+            foreach($photos as &$set) {
+              ksort($set, SORT_NUMERIC);
+            }
+            
+            drush_log(dt("Downloaded a total of @total images for @count Listings. [@size of data].", array("@total" => $total, "@count" => count($ids), "@size" => $this->formatBytes($length, 1))));
+          }
+          
           $this->dc->disconnect();
 
-          unset($ids);
+          unset($ids, $results);
           $id_string = "";
           $counter = 0;
 
-          foreach ($photos as $photo) {
-            $mlskey = $photo['Content-ID'];
-            $number = $photo['Object-ID'];
-            $filename = "{$mlskey}-{$number}.jpg";
-            $filepath = "{$img_dir}/{$filename}";
+          foreach ($photos as $list_id => &$set) {
+          
+            drush_log(dt("preparing to save @count images for @listing", array("@count" => count($set), "@listing" => $list_id)), "notice");
+            foreach($set as $photo) {
+          
+              $mlskey = $photo['Content-ID'];
+              $number = $photo['Object-ID'];
+              $filename = "{$mlskey}-{$number}.jpg";
+              $filepath = "{$img_dir}/{$filename}";
+              
+              //drush_log($filepath);
 
+              $fid = db_query('SELECT fid FROM {file_managed} WHERE filename = :filename', array(':filename' => $filename))->fetchField();
 
-            $fid = db_query('SELECT fid FROM {file_managed} WHERE filename = :filename', array(':filename' => $filename))->fetchField();
+              if (!empty($fid)) {
+                $file_object = file_load($fid);
+                file_delete($file_object, TRUE);
+              }
 
-            if (!empty($fid)) {
-              $file_object = file_load($fid);
-              file_delete($file_object, TRUE);
+              $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
+              // load the entity that is associated with the image
+              $query = new EntityFieldQuery();
+              $result = $query
+                ->entityCondition('entity_type', 'drealty_listing')
+                ->propertyCondition('listing_key', $mlskey)
+                ->execute();
+              $listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
+
+              file_usage_add($file, 'drealty', $entity_type, $listing->id);
+
+              $listing->process_images = 0;
+              $listing->save();
+            
             }
-
-            drush_log(dt("Saving @filename", array("@filename" => $filepath)));
-
-            $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
-            // load the entity that is associated with the image
-            $query = new EntityFieldQuery();
-            $result = $query
-              ->entityCondition('entity_type', 'drealty_listing')
-              ->propertyCondition('listing_key', $mlskey)
-              ->execute();
-            $listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
-
-            file_usage_add($file, 'drealty', $entity_type, $listing->id);
-
-            $listing->process_images = 0;
-            $listing->save();
+            drush_log(dt("done saving @count images for @listing", array("@count" => count($set), "@listing" => $list_id)), "success");
+            unset($set);
           }
           unset($photos);
         }

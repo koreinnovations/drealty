@@ -650,18 +650,22 @@ class drealtyDaemon {
                 $file->filesize = strlen($photo['Data']);
 
                 drupal_write_record('file_managed', $file);
-                // load the entity that is associated with the image
-                $query = new EntityFieldQuery();
-                $result = $query
-                  ->entityCondition('entity_type', 'drealty_listing')
-                  ->propertyCondition('listing_key', $mlskey)
+                
+                // get the listing id 
+                $listing_id = db_select('drealty_listing', 'dl')
+                  ->fields('dl', array('id'))
+                  ->condition('listing_key', $mlskey)
+                  ->execute()
+                  ->fetchField();
+                
+                // add the file usage
+                file_usage_add($file, 'drealty', $entity_type, $listing_id);
+
+                // update the listing table marking the images as processed
+                db_update('drealty_listing', 'dl')
+                  ->fields(array('process_images' => 0))
                   ->execute();
-                $listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
 
-                file_usage_add($file, 'drealty', $entity_type, $listing->id);
-
-                $listing->process_images = 0;
-                $listing->save();
               }
             }
             drush_log(dt("done saving @count images for @listing", array("@count" => count($set), "@listing" => $list_id)), "success");

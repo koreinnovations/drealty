@@ -662,7 +662,7 @@ class drealtyDaemon {
                 file_usage_add($file, 'drealty', $entity_type, $listing_id);
 
                 // update the listing table marking the images as processed
-                db_update('drealty_listing', 'dl')
+                db_update('drealty_listing')
                   ->fields(array('process_images' => 0))
                   ->condition('id', $listing_id)
                   ->execute();

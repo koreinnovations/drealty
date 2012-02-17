@@ -533,6 +533,7 @@ class drealtyDaemon {
   }
 
   public function process_images($conid, $resource, $class) {
+    global $user;
     $rets = &$this->dc->get_phrets();
     $entity_type = 'drealty_listing';
     $chunk_size = $class->image_chunk_size;

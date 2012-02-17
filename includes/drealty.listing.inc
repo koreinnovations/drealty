@@ -82,6 +82,7 @@ class DrealtyListingController extends EntityAPIController {
       foreach ($images as $key => $image) {
 
         $entity->mls_images[] = $image;
+        
 
         $uri = array(
           'path' => file_create_url($image->uri),
@@ -101,6 +102,8 @@ class DrealtyListingController extends EntityAPIController {
           '#height' => '',
         );
       }
+      
+      
     }
 
     $entity->drealty_path_alias = path_load("listings/$entity->listing_id");

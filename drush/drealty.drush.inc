@@ -18,7 +18,10 @@ function drealty_drush_command() {
     'description' => 'Flush ALL RETS items.',
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
   );
-
+  $items['rets-firewall-test'] = array(
+    'description' => 'Perform a phRets firewall test.',
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
+  );
   $items['rets-reprocess-images'] = array(
     'description' => "Force the (re)downloading of images.",
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
@@ -109,4 +112,10 @@ function drush_drealty_rets_flush() {
     }
     unset($existing_items);
   }
+}
+
+function drush_drealty_rets_firewall_test() {
+  drealty_load_phrets();
+  $rets = new phRETS();
+  $rets->FirewallTest();
 }

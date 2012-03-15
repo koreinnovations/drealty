@@ -85,15 +85,15 @@ function drealty_listing_admin($type = 'new') {
 
 function drealty_listing_admin_overview($form, &$form_state, $arg) {
   $header = array(
-      'listing_id' => array('data' => t('Listing Id'), 'field' => 'id'),
-      'mls_id' => array('data' => t('MLS #'), 'field' => 'listing_id'),
+      'id' => array('data' => t('Listing Id'), 'field' => 'id'),
+      'mls_id' => array('data' => t('MLS #'), 'field' => 'rets_id'),
       'address' => array('data' => t('Address')),
       'operations' => array('data' => t('Operations')),
   );
 
   $query = db_select('drealty_listing', 'd')->extend('PagerDefault')->extend('TableSort');
   $result = $query
-    ->fields('d', array('id', 'listing_id'))
+    ->fields('d', array('id', 'rets_id'))
     ->limit(10)
     ->orderByHeader($header)
     ->execute();
@@ -110,11 +110,11 @@ function drealty_listing_admin_overview($form, &$form_state, $arg) {
   foreach ($listings as $listing) {
     $address = "{$listing->street_number} {$listing->street_dir_prefix} {$listing->street_name} {$listing->street_dir_suffix} {$listing->street_suffix}, {$listing->city}, {$listing->state_or_province} {$listing->postal_code}";
     $address = str_replace("  ", " ", $address);
-    $links = menu_contextual_links('drealty', 'admin/content/drealty_listings', array($listing->listing_id));
+    $links = menu_contextual_links('drealty', 'admin/content/drealty_listings', array($listing->rets_id));
 
     $options[$listing->id] = array(
-        'listing_id' => $listing->id,
-        'mls_id' => array('data' => array('#type' => 'link', '#title' => $listing->listing_id, '#href' => 'listings/' . $listing->listing_id)),
+        'id' => $listing->id,
+        'mls_id' => array('data' => array('#type' => 'link', '#title' => $listing->rets_id, '#href' => 'listings/' . $listing->rets_id)),
         'address' => $address,
         'operations' => theme('links', array('links' => $links, 'attributes' => array('class' => array('links', 'inline', 'operations')))),
     );
@@ -147,8 +147,8 @@ function drealty_listing_edit_form($form, &$form_state, $op, $listing) {
     $address = str_replace("  ", " ", $address);
     $price = number_format($listing->list_price);
     $form['address'] = array('#markup' => "<div><strong>Address: </strong>$address</div>", '#prefix' => '<div class="section">');
-    $form['mlsid'] = array('#markup' => "<div><strong>MSL#: </strong> {$listing->listing_id}</div>");
-    $form['mlskey'] = array('#markup' => "<div><strong>MLS Key: </strong> {$listing->listing_key}</div>");
+    $form['mlsid'] = array('#markup' => "<div><strong>MSL#: </strong> {$listing->rets_id}</div>");
+    $form['mlskey'] = array('#markup' => "<div><strong>MLS Key: </strong> {$listing->rets_key}</div>");
     $form['price'] = array('#markup' => "<div><strong>Price: </strong>$$price</div>", '#suffix' => '</div>');
   } else {
     $listing_info = entity_get_property_info('drealty_listing');

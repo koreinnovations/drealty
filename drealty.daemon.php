@@ -69,14 +69,14 @@ class drealtyDaemon {
         switch ($entity_type) {
           case 'drealty_listing':
           case 'drealty_openhouse':
-            $query_field = 'listing_status';
+            $query_field = 'rets_status';
             break;
           case 'drealty_agent':
           case 'drealty_office':
             $query_field = 'type';
             break;
           default:
-            $query_field = 'listing_status';
+            $query_field = 'rets_status';
         }
         $query = array();
         $query[] = "{$fieldmappings[$query_field]->systemname}={$status_q}";

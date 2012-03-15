@@ -1,0 +1,32 @@
+name = dRealty
+description = Provides an implementation of the RETS standard to facilitate the importing of Real Estate listing information into Drupal as entities.
+core = 7.x
+configure = admin/drealty
+
+dependencies[] = entity
+dependencies[] = entity_token
+dependencies[] = libraries
+
+
+
+files[] = includes/drealty.listing.inc
+files[] = includes/drealty.openhouse.inc
+files[] = includes/drealty.agent.inc
+files[] = includes/drealty.office.inc
+
+files[] = includes/drealty.connection.admin.inc
+files[] = includes/drealty.listing.admin.inc
+files[] = includes/drealty.openhouse.admin.inc
+files[] = includes/drealty.agent.admin.inc
+files[] = includes/drealty.office.admin.inc
+files[] = includes/drealty.connection.inc
+files[] = includes/drealty.resources.inc
+
+files[] = drealty.daemon.php
+
+package = Real Estate
+
+
+
+
+

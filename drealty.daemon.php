@@ -384,7 +384,8 @@ class drealtyDaemon {
           $item->changed = time();
           $item->class = $class->cid;
           $item->rets_imported = TRUE;
-
+					$item->rets_status = $rets_item['ListingStatus'];
+										
           if ($entity_type == 'drealty_listing' && $class->process_images) {
             $item->process_images = TRUE;
           }

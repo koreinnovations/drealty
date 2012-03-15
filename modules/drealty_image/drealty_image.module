@@ -1,0 +1,88 @@
+<?php
+
+function drealty_image_field_info() {
+  $fields = array();
+
+  $fields['drealty_image'] = array(
+      'label' => t('Drealty Image'),
+      'description' => t('A field type used for hotlinking images from a RETS feed. (RETS server must support this.)'),
+      'settings' => array(),
+      'instance_settings' => array('css_class' => ''),
+      'default_widget' => 'drealty_image_standard',
+      'default_formatter' => 'drealty_image_default',
+  );
+
+  return $fields;
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function drealty_image_is_empty($item, $field) {
+  if (empty($item['url']) && drupal_strlen(trim($item['url'])) <= 0) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ *
+ */
+function drealty_image_instance_settings_form($field, $instance) {
+  $settings = $instance['settings'];
+
+  $form['css_class'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Css Class'),
+      '#default_value' => $settings['css_class'],
+      '#description' => t('The minimum value that should be allowed in this field. Leave blank for no minimum.'),
+  );
+
+  return $form;
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function drealty_image_field_formatter_info() {
+  return array(
+      'drealty_image_default' => array(
+          'label' => t('Default'),
+          'field types' => array('drealty_image'),
+          'settings' => array(
+              'use_widget_handlers' => 1,
+              'format_handlers' => array('drealty_image'),
+          ),
+      ),
+  );
+}
+
+function drealty_image_formatter_settings_summary($field, $instance, $view_mode) {
+  return '';
+}
+
+function drealty_image_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  $settings = $display['settings'];
+  foreach ($items as $delta => $item) {
+    $output = "<img src='{$item['url']}' alt=''" . isset($settings['css_class']) ? "class='{$settings['css_class']}'" : "" . " />";
+    $element[$delta] = array('#markup' => $output);
+  }
+  return $element;
+}
+
+function drealty_image_widget_info() {
+  return array(
+      'drealty_image_standard' => array(
+          'label' => t('Standard Widget'),
+          'field types' => array('drealty_image'),
+      ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function drealty_image_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  return array('value' => $element);
+}

@@ -1,0 +1,4 @@
+name = Drealty Image Field
+description = Provides an image field for hotlinked images from a RETS feed.
+core = 7.x
+package = Real Estate

@@ -1,0 +1,15 @@
+<?php
+
+function drealty_image_field_schema($field) {
+  $columns = array(
+      'url' => array(
+          'description' => 'The url where the image is located.',
+          'type' => 'varchar',
+          'length' => 255,
+          'default' => '',
+          'not null' => FALSE,
+      ),
+  );
+
+  return array('columns' => $columns);
+}

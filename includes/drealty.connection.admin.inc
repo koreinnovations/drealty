@@ -97,9 +97,12 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
       if ($active) {
         $operation .= l("Deactivate", "admin/drealty/connections/manage/$name/deactivate");
         $operation .= ' <br /> ' . "Configure: " . l("Properties", "admin/drealty/connections/manage/$name/resource/drealty_listing");
+        /*
         $operation .= ' | ' . l("Open Houses", "admin/drealty/connections/manage/$name/resource/drealty_openhouse");
         $operation .= ' | ' . l("Offices", "admin/drealty/connections/manage/$name/resource/drealty_office");
         $operation .= ' | ' . l("Agents", "admin/drealty/connections/manage/$name/resource/drealty_agent");
+         *
+         */
       } else {
         $operation .= l("Activate", "admin/drealty/connections/manage/$name/activate");
       }
@@ -388,14 +391,16 @@ function drealty_connection_delete_form_wrapper(dRealtyConnectionEntity $connect
 
 function drealty_select_resource_type($form, &$form_state) {
   $connection = $form_state['connection'];
-
   $entity_type = $form_state['entity_type'];
+  
+  $dr = new drealtyResources();
+  $selected_resource = $dr->FetchResource($form_state['values']['prop_resource']);
 
 // update the resource mapping for this connection
   $mapping = array(
       'mid' => isset($form_state['values']['mid']) ? $form_state['values']['mid'] : NULL,
       'conid' => $connection->conid,
-      'resource' => $form_state['values']['prop_resource'],
+      'rid' => $selected_resource->rid,
       'entity_type' => $entity_type,
   );
 // update or insert
@@ -428,7 +433,7 @@ function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionE
 
   $resources = array();
   foreach ($results as $res) {
-    $resources[$res->systemname] = $res->systemname;
+    $resources[$res->rid] = $res->systemname;
   }
 
   $form['mid'] = array('#type' => 'value', '#value' => isset($mappings[$entity_type]) ? $mappings[$entity_type]->mid : NULL);
@@ -437,7 +442,7 @@ function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionE
   $form['prop_resource'] = array(
       '#type' => 'select',
       '#title' => t('@resource Resource', array('@resource' => ucwords(str_replace("_", " ", $entity_type)))),
-      '#default_value' => isset($mappings[$entity_type]) ? $mappings[$entity_type]->resource : NULL,
+      '#default_value' => isset($mappings[$entity_type]) ? $mappings[$entity_type]->rid : NULL,
       '#options' => $resources,
   );
   $form['select_prop_resource'] = array(
@@ -447,11 +452,17 @@ function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionE
       '#suffix' => '<br /><br />',
   );
 
+
   if (isset($form_state['input']['prop_resource']) || isset($mappings[$entity_type])) {
+    
+      $dr = new drealtyResources();
     if (isset($form_state['input']['prop_resource'])) {
-      $results = $connection->fetchClasses($form_state['input']['prop_resource']);
+      
+      $selected_resource = $dr->FetchResource($form_state['input']['prop_resource']);
+      $results = $connection->fetchClasses($selected_resource);
     } else {
-      $results = $connection->fetchClasses($mappings[$entity_type]->resource);
+      $selected_resource = $dr->FetchResource($mappings[$entity_type]->rid);
+      $results = $connection->fetchClasses($selected_resource);
     }
 
     $life_opts = array(0 => t('Every time')) + drupal_map_assoc(array(
@@ -573,10 +584,13 @@ function drealty_configure_resource_fields_form($form, &$form_state, dRealtyConn
     return $form;
   }
 
-  $field_mappings = $connection->FetchFieldMappings($mappings[$entity_type]->resource, $class->cid);
-  $fields = $connection->FetchFields($mappings[$entity_type]->resource);
-
-  $form['rets_id'] = array(
+  $dr = new drealtyResources();
+  $resource = $dr->FetchResource($mappings[$entity_type]->rid);
+  
+  $field_mappings = $connection->FetchFieldMappings($resource, $class);
+  $fields = $connection->FetchFields($resource, $class);
+  $form['required'] = array('#type' => 'fieldset', '#title' => t('Required Fields'));
+  $form['required']['rets_id'] = array(
       '#type' => 'textfield',
       '#title' => t('Id Field'),
       '#description' => t('A unique ID field for the RETS resource, for Properties this is typically the MLS ID.'),
@@ -585,7 +599,7 @@ function drealty_configure_resource_fields_form($form, &$form_state, dRealtyConn
       '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
   );
 
-  $form['rets_key'] = array(
+  $form['required']['rets_key'] = array(
       '#type' => 'textfield',
       '#title' => t('Key Field'),
       '#description' => t('The unique key field for the RETS resource as defined by the RETS provider. Can be the same as the ID field, however some RETS providers have seperate fields for the Key and the ID. Images are also typically based off of the Key field rather than the ID field.'),
@@ -595,7 +609,7 @@ function drealty_configure_resource_fields_form($form, &$form_state, dRealtyConn
   );
 
 
-  $form['rets_status'] = array(
+  $form['required']['rets_status'] = array(
       '#type' => 'textfield',
       '#title' => t('Status Field'),
       '#description' => t('The RETS Listing status field. If your server supports offset, then this field must be mapped in order to build the default RETS query.'),
@@ -603,6 +617,8 @@ function drealty_configure_resource_fields_form($form, &$form_state, dRealtyConn
       '#default_value' => !empty($field_mappings['rets_status']) ? $fields[$field_mappings['rets_status']->systemname]->systemname . ' - ' . $fields[$field_mappings['rets_status']->systemname]->longname : NULL,
       '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
   );
+  
+  
 
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
@@ -1062,6 +1078,13 @@ function drealty_test_manual_query($form, &$form_state) {
 //  $class->override_status_query_text = $query;
 //  drupal_write_record('drealty_classes', $class, 'cid');
 //  cache_clear_all('drealty_classes_', 'cache', TRUE);
+}
+
+function theme_drealty_field_config_form(&$variables) {
+  $header = array('System Name', 'Standard Name', 'Long Name', 'Data Type', 'Interpretation', 'Operation');
+  $rows = array();
+  $form = $variables['form'];
+  
 }
 
 function theme_drealty_classes_form(&$variables) {

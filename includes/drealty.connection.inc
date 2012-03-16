@@ -146,7 +146,7 @@ class dRealtyConnection {
 
 class dRealtyConnectionEntity extends Entity {
 
-  public $conid;
+  public $conid = 0;
   public $name;
   public $label;
   public $login_url;
@@ -178,27 +178,43 @@ class dRealtyConnectionEntity extends Entity {
     return $this->label;
   }
 
+  /**
+   *
+   * @return drealtyRetsResource[] 
+   */
   public function Resources() {
     $dr = new drealtyResources();
     return $dr->FetchResources($this->conid);
   }
 
+  /**
+   *
+   * @return drealtyResourceMapping[] 
+   */
   public function ResourceMappings() {
     $dr = new drealtyResources();
     return $dr->GetResourceMappings($this->conid);
   }
-
-  public function FetchClasses(drealtyRetsResource $resource) {
+/**
+ *
+ * @param drealtyRetsResource $resource
+ * @return drealtyRetsClass[] 
+ */
+  public function FetchClasses($resource) {
     $dr = new drealtyResources();
     return $dr->FetchClasses($this->conid, $resource);
   }
-
-  public function FetchFields(drealtyRetsResource $resource) {
+/**
+ *
+ * @param drealtyRetsResource $resource
+ * @return drealtyRetsField[] 
+ */
+  public function FetchFields($resource, $class) {
     $dr = new drealtyResources();
-    return $dr->FetchFields($this->conid, $resource);
+    return $dr->FetchFields($this->conid, $resource, $class);
   }
 
-  public function FetchFieldMappings(drealtyRetsResource $resource = NULL, drealtyRetsClass $class = NULL) {
+  public function FetchFieldMappings($resource = NULL, $class = NULL) {
     $dr = new drealtyResources();
     return $dr->FetchFieldMappings($this->conid, $resource, $class);
   }
@@ -260,7 +276,7 @@ class dRealtyConnectionEntityContoller extends EntityAPIControllerExportable {
   public function create(array $values = array()) {
     // Add values that are specific to our Model
     $values += array(
-      'conid' => '',
+      'conid' => NULL,
       'name' => NULL,
       'login_url' => NULL,
       'username' => NULL,

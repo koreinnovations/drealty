@@ -200,7 +200,6 @@ class drealtyResources {
         $dc->disconnect();
       }
     }
-
     return empty($classes)?FALSE:$classes;
   }
 

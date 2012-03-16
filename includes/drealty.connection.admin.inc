@@ -157,7 +157,7 @@ function drealty_configure_resource_title_callback($type) {
   return $title;
 }
 
-function drealty_connection_entity_edit_form($form, &$form_state, $connection) {
+function drealty_connection_entity_edit_form($form, &$form_state, dRealtyConnectionEntity $connection) {
   $form['conid'] = array('#type' => 'value', '#value' => $connection->conid);
 
   $form['label'] = array(
@@ -247,6 +247,13 @@ function drealty_connection_entity_edit_form($form, &$form_state, $connection) {
       '#required' => TRUE,
       '#default_value' => isset($connection->use_compression) ? $connection->use_compression : '0',
   );
+  
+  $form['debug_mode'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable Debug Mode'),
+    '#default_value' => isset($connection->debug_mode) ? $connection->debug_mode : FALSE,
+  );
+  
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
       '#type' => 'submit',
@@ -285,22 +292,22 @@ function drealty_activate_connection_form($form, &$form_state, $connection = NUL
     drupal_set_message(t("Must have a connection selected."), 'error');
   } else {
 
-    $rets = new drealtyConnection();
+    $dc = new drealtyConnection();
 
-    if ($rets->connect($connection->conid)) {
+    if ($dc->connect($connection->conid)) {
 
-      $server = $rets->get_phrets()->GetServerInformation();
-      $resources = $rets->get_phrets()->GetMetadataResources();
-      $login_url = $rets->get_phrets()->GetLoginURL();
-      $server_software = $rets->get_phrets()->GetServerSoftware();
-      $rets_version = $rets->get_phrets()->GetServerVersion();
-      $caps = $rets->get_phrets()->GetAllTransactions();
+      $server = $dc->rets->GetServerInformation();
+      $resources = $dc->rets->GetMetadataResources();
+      $login_url = $dc->rets->GetLoginURL();
+      $server_software = $dc->rets->GetServerSoftware();
+      $rets_version = $dc->rets->GetServerVersion();
+      $caps = $dc->rets->GetAllTransactions();
       $capabilities = '';
       foreach ($caps as $cap) {
         $capabilities .= $cap . ', ';
       }
       $supported_caps = drupal_substr($capabilities, 0, drupal_strlen($capabilities) - 2);
-      $auth_supported = $rets->get_phrets()->CheckAuthSupport('digest') ? "Digest Authentication is Supported" : "(unknown - assuming Basic)";
+      $auth_supported = $dc->rets->CheckAuthSupport('digest') ? "Digest Authentication is Supported" : "(unknown - assuming Basic)";
 
 
 
@@ -330,7 +337,7 @@ function drealty_activate_connection_form($form, &$form_state, $connection = NUL
     }
 
 
-    $rets->disconnect();
+    $dc->rets->disconnect();
   }
   return $form;
 }

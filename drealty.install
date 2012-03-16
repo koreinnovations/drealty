@@ -105,6 +105,7 @@ function drealty_schema() {
 				'use_interealty_auth' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
 				'active' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
 				'office_id' => array('type' => 'varchar', 'length' => 12, 'not null' => FALSE),
+                'debug_mode' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => FALSE),
       ) + entity_exportable_schema_fields(),
       'primary key' => array('conid'),
   );

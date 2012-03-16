@@ -32,7 +32,7 @@ class dRealtyConnection {
 
   public function __construct() {
     drealty_load_phrets();
-    $rets = new phRETS();
+    $this->rets = new phRETS();
   }
 
   /**
@@ -56,8 +56,8 @@ class dRealtyConnection {
         }
       } else {
 
-        $this->current_connection(entity_load('drealty_connection_entity', array($conid)));
-
+        $this->current_connection = $this->FetchConnection($conid);
+        
         $error = FALSE;
         // force basic authentication
         if ($this->current_connection->force_basic_auth) {
@@ -138,7 +138,8 @@ class dRealtyConnection {
   }
 
   public function FetchConnection($id) {
-    return reset(entity_load('drealty_connection_entity', array($id)));
+    $connection = entity_load('drealty_connection_entity', array($id));
+    return reset($connection);
   }
 
 }
@@ -164,11 +165,11 @@ class dRealtyConnectionEntity extends Entity {
   public $fields;
   public $field_mappings;
   public $debug_mode = FALSE;
-  
+
   public function __construct($values = array()) {
     parent::__construct($values, 'drealty_connection_entity');
   }
-  
+
   protected function defaultLabel() {
     return $this->label;
   }
@@ -187,17 +188,17 @@ class dRealtyConnectionEntity extends Entity {
     return $dr->GetResourceMappings($this->conid);
   }
 
-  public function FetchClasses($resource = 'Property') {
+  public function FetchClasses(drealtyRetsResource $resource) {
     $dr = new drealtyResources();
     return $dr->FetchClasses($this->conid, $resource);
   }
 
-  public function FetchFields($resource = 'Property') {
+  public function FetchFields(drealtyRetsResource $resource) {
     $dr = new drealtyResources();
     return $dr->FetchFields($this->conid, $resource);
   }
 
-  public function FetchFieldMappings($resource = 'Property', $class = NULL) {
+  public function FetchFieldMappings(drealtyRetsResource $resource = NULL, drealtyRetsClass $class = NULL) {
     $dr = new drealtyResources();
     return $dr->FetchFieldMappings($this->conid, $resource, $class);
   }

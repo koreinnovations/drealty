@@ -6,8 +6,33 @@ function drealty_connection_entity_save(dRealtyConnectionEntity $connection) {
 
 class dRealtyConnection {
 
+  /**
+   *
+   * @var phRETS 
+   */
+  public $rets = NULL;
+
+  /**
+   *
+   * @var string 
+   */
+  private $error_string = '';
+
+  /**
+   *
+   * @var bool 
+   */
+  private $connected = FALSE;
+
+  /**
+   *
+   * @var dRealtyConnectionEntity 
+   */
+  private $current_connection = NULL;
+
   public function __construct() {
     drealty_load_phrets();
+    $rets = new phRETS();
   }
 
   /**
@@ -20,9 +45,9 @@ class dRealtyConnection {
     // check to see if we  are connected to a rets server. If there is a connection
     // do nothing.
 
-    if (!self::$_is_connected) {
+    if (!$this->connected) {
       // need to setup a connection
-      if (self::get_current_connection()) {
+      if ($this->current_connection) {
         try {
           return $this->handle_connection();
         } catch (drealty_rets_connection_exception $e) {
@@ -31,57 +56,29 @@ class dRealtyConnection {
         }
       } else {
 
-        $connection = entity_load('drealty_connection_entity', array($conid));
-//        // no connection setup need to create it.
-//        $connections = $this->FetchConnections();
-//        if (isset($conid)) {
-//          if (count($connections) <= 0) {
-//            throw new Exception("No Connections setup.");
-//          }
-//          $active_connection = $connections[$conid];
-//        } else {
-//          throw new Exception("Connection ID can not be null.");
-//        }
-//
-//        $new_connection = new dRealtyConnectionEntity();
-//
-//        $new_connection->login_url = $active_connection->login_url;
-//        $new_connection->username = $active_connection->username;
-//        $new_connection->password = $active_connection->password;
-//        $new_connection->force_basic_auth = $active_connection->force_basic_auth;
-//        $new_connection->use_compression = $active_connection->use_compression;
-//        $new_connection->ua_string = $active_connection->ua_string;
-//        $new_connection->version = $active_connection->version;
-        // set the connection
-
-        self::set_current_connection(array_shift($connection));
-
+        $this->current_connection(entity_load('drealty_connection_entity', array($conid)));
 
         $error = FALSE;
         // force basic authentication
-        if (self::get_current_connection()->force_basic_auth) {
-          self::get_phrets()->SetParam('force_basic_authentication', TRUE);
+        if ($this->current_connection->force_basic_auth) {
+          $this->rets->SetParam('force_basic_authentication', TRUE);
         }
         // enable compression
-        if (self::get_current_connection()->use_compression) {
-          self::get_phrets()->SetParam('compression_enabled', TRUE);
+        if ($this->current_connection->use_compression) {
+          $this->rets->SetParam('compression_enabled', TRUE);
         }
 
-        if (self::get_current_connection()->use_interealty_auth) {
-          self::get_phrets()->SetParam('use_interealty_ua_auth', TRUE);
+        if ($this->current_connection->use_interealty_auth) {
+          $this->rets->SetParam('use_interealty_ua_auth', TRUE);
         }
 
-        //set debug mode
-//        self::get_phrets()->SetParam('debug_mode', true);
-//        self::get_phrets()->SetParam("debug_file", "debug_log.txt");
+        if ($this->current_connection->debug_mode) {
+          $this->rets->SetParam('debug_mode', true);
+          $this->rets->SetParam("debug_file", "debug_log.txt");
+        }
         // add some headers
-        self::get_phrets()->AddHeader("User-Agent", self::get_current_connection()->ua_string);
-        self::get_phrets()->AddHeader("RETS-Version", "RETS/" . self::get_current_connection()->version);
-
-        // clean up
-        unset($new_connection);
-        unset($ative_connection);
-        unset($connections);
+        $this->rets->AddHeader("User-Agent", $this->current_connection->ua_string);
+        $this->rets->AddHeader("RETS-Version", "RETS/" . $this->current_connection->version);
 
         try {
           return $this->handle_connection();
@@ -98,12 +95,13 @@ class dRealtyConnection {
    * @return bool
    */
   protected function handle_connection() {
-    $current_connection = self::get_current_connection();
-    if (!self::get_phrets()->Connect(self::get_current_connection()->login_url, self::get_current_connection()->username, self::get_current_connection()->password, self::get_current_connection()->ua_password)) {
+
+    $current_connection = $this->current_connection;
+    if (!$this->rets->Connect($this->current_connection->login_url, $this->current_connection->username, $this->current_connection->password, $this->current_connection->ua_password)) {
       // we didn't connect, check to see if we have any error results
-      if (self::get_phrets()->Error()) {
+      if ($this->rets->Error()) {
         // error result present, use that in our exception
-        $error_info = self::get_phrets()->Error();
+        $error_info = $this->rets->Error();
         $this->error_string = $error_info['text'];
         throw new drealty_rets_connection_exception($error_info['text'], $error_info['code']);
       } else {
@@ -123,9 +121,10 @@ class dRealtyConnection {
    */
   public function disconnect() {
     // disconnect if we are connected.
-    if (self::get_phrets() && self::$_is_connected) {
-      if (self::get_phrets()->Disconnect()) {
-        self::$_is_connected = FALSE;
+
+    if ($this->rets && $this->connected) {
+      if ($this->rets->Disconnect()) {
+        $this->connected = FALSE;
         drush_log("Disconnected from RETS server.");
         return TRUE;
       } else {
@@ -133,47 +132,6 @@ class dRealtyConnection {
       }
     }
   }
-
-  /**
-   * Signleton Design Pattern
-   *  @link http://en.wikipedia.org/wiki/Singleton_pattern#PHP
-   * @return phRETS
-   */
-  public static function get_phrets() {
-    if (!self::$_phrets) {
-      self::$_phrets = new phRETS();
-    }
-    return self::$_phrets;
-  }
-
-  /**
-   * Set the current connection
-   *
-   * @param dRealtyConnectionEntity $connection
-   */
-  protected static function set_current_connection(dRealtyConnectionEntity $connection) {
-    self::$_current_connection = $connection;
-  }
-
-  /**
-   * Get a reference to the current connection
-   *
-   * @return dRealtyConnectionEntity
-   */
-  protected static function get_current_connection() {
-    if (!self::$_current_connection) {
-      return NULL;
-    }
-    return self::$_current_connection;
-  }
-
-  public $error_string = NULL;
-  // the phRETS class
-  protected static $_phrets = NULL;
-  // wether we are connected to the RETS server
-  protected static $_is_connected = FALSE;
-  // the current RETS Connection credentials
-  protected static $_current_connection = NULL;
 
   public function FetchConnections() {
     return entity_load('drealty_connection_entity');
@@ -205,11 +163,12 @@ class dRealtyConnectionEntity extends Entity {
   public $classes;
   public $fields;
   public $field_mappings;
-
+  public $debug_mode = FALSE;
+  
   public function __construct($values = array()) {
     parent::__construct($values, 'drealty_connection_entity');
   }
-
+  
   protected function defaultLabel() {
     return $this->label;
   }
@@ -217,7 +176,6 @@ class dRealtyConnectionEntity extends Entity {
   public function label() {
     return $this->label;
   }
-
 
   public function Resources() {
     $dr = new drealtyResources();
@@ -259,13 +217,13 @@ class dRealtyConnectionEntity extends Entity {
 
     db_insert('drealty_field_mappings')
       ->fields(array(
-          'conid' => $this->conid,
-          'resource' => $resource,
-          'field_name' => $field_name,
-          'systemname' => $systemname,
-          'field_api_type' => $field_api_type,
-          'data' => isset($data)?serialize($data):NULL,
-          'cid' => $class,
+        'conid' => $this->conid,
+        'resource' => $resource,
+        'field_name' => $field_name,
+        'systemname' => $systemname,
+        'field_api_type' => $field_api_type,
+        'data' => isset($data) ? serialize($data) : NULL,
+        'cid' => $class,
       ))
       ->execute();
   }
@@ -278,8 +236,6 @@ class dRealtyConnectionEntity extends Entity {
       ->condition('cid', $class)
       ->execute();
   }
-
- 
 
   public function delete() {
     $dr = new drealtyResources();
@@ -303,23 +259,24 @@ class dRealtyConnectionEntityContoller extends EntityAPIControllerExportable {
   public function create(array $values = array()) {
     // Add values that are specific to our Model
     $values += array(
-        'conid' => '',
-        'name' => NULL,
-        'login_url' => NULL,
-        'username' => NULL,
-        'password' => NULL,
-        'ua_string' => 'DREALTY/1.0',
-        'ua_password' => '',
-        'version' => '1.5',
-        'use_interealty_auth' => '0',
-        'force_basic_auth' => '0',
-        'use_compression' => '0',
-        'active' => FALSE,
+      'conid' => '',
+      'name' => NULL,
+      'login_url' => NULL,
+      'username' => NULL,
+      'password' => NULL,
+      'ua_string' => 'DREALTY/1.0',
+      'ua_password' => '',
+      'version' => '1.5',
+      'use_interealty_auth' => '0',
+      'force_basic_auth' => '0',
+      'use_compression' => '0',
+      'active' => FALSE,
+      'debug_mode' => FALSE,
     );
     $dRealtyConnectionEntity = parent::create($values);
     return $dRealtyConnectionEntity;
   }
-  
+
   public function export($entity, $prefix = '') {
     $entity->active = 0;
     return parent::export($entity, $prefix);

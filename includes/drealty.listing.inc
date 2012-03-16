@@ -178,20 +178,6 @@ class DrealtyListingController extends EntityAPIController {
 
   public function save($entity, DatabaseTransaction $transaction = NULL) {
     parent::save($entity, $transaction);
-
-    $path = array();
-    if (isset($entity->drealty_path_alias)) {
-      $path['pid'] = $entity->drealty_path_alias['pid'];
-    }
-
-    $token_string = ($pattern = variable_get("drealty_listing_url_pattern", FALSE)) ? $pattern : DREALTY_LISTING_DEFAULT_URL_PATTERN;
-
-    $alias = token_replace($token_string, array('drealty_listing' => $entity));
-
-    $path['source'] = "drealty_listing/$entity->id";
-    $path['alias'] = check_plain(drupal_strtolower(str_replace(" ", "-", $alias)));
-
-    path_save($path);
   }
 
 }

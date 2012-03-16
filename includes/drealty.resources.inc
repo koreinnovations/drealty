@@ -8,79 +8,70 @@ class drealtyResources {
     drealty_load_phrets();
   }
 
-  function GetActiveFields($conid, $resource) {
-    $cache_name = "drealty_fields_active_{$resource}_{$conid}";
-    $cached = cache_get($cache_name, $this->defaultCache);
-    if ($cached) {
-      $result = db_query("SELECT * FROM {drealty_fields} WHERE conid = :conid AND resource = :resource AND display = 1", array(':conid' => $conid, ':resource' => $resource))->fetchAll();
-      $fields = array();
-      foreach ($result as $field) {
-        $fields[$field->systemname] = $field;
-      }
-      cache_set($cache_name, $fields);
-      return $fields;
-    } else {
-      return $cached->data;
-    }
+  /**
+   * Internal Function to log errors.
+   * @param phRETS $rets 
+   */
+  private function handleRetsError(phRETS $rets) {
+    $error = $rets->Error();
+    drupal_set_message($error, 'error');
+  }
+
+  /**
+   *
+   * @param integer $conid
+   * @param drealtyRetsResource $resource
+   * @return drealtyRetsField[] 
+   */
+  function GetActiveFields(integer $conid, drealtyRetsResource $resource) {
+
+    $fields = db_select('drealty_fields', 'df')
+      ->fields('df')
+      ->condition('conid', $conid)
+      ->condition('resource', $resource->systemname)
+      ->execute()
+      ->fetchAllAssoc('systemname');
+
+    return empty($fields) ? $FALSE : FALSE;
   }
 
   /**
    * Retrieve resource mappings for a given connnection
-   *
-   * @param int $conid
-   *  The connection you want to retrieve mappings for
-   * @return array
+   * @param integer $conid
+   * @return drealtyResourceMapping[]
+   *  or FALSE if no mappings are found
+   *   
    */
-  function GetResourceMappings($conid) {
-    $cache_name = "drealty_mappings_{$conid}";
-    $cached = cache_get($cache_name, $this->defaultCache);
-    if (!$cached) {
-      $result = db_query("SELECT * FROM {drealty_resource_mappings} WHERE conid = :conid", array(':conid' => $conid))->fetchAll();
-      $mappings = array();
-      foreach ($result as $mapping) {
-        $mappings[$mapping->entity_type] = $mapping;
-      }
-      cache_set($cache_name, $mappings);
-    } else {
-      $mappings = $cached->data;
-    }
-    return $mappings;
+  function GetResourceMappings(integer $conid) {
+
+    $mappings = db_select('drealty_resource_mappings', 'drm')
+      ->fields('drm')
+      ->condition('conid', $conid)
+      ->execute()
+      ->fetchAllAssoc('entity_type');
+    return empty($mappings) ? FALSE : $mappings;
   }
 
-  function FetchActiveFields($conid, $resource) {
-    $cache_name = "drealty_fields_active_{$resource}_{$conid}";
-    $cached = cache_get($cache_name, $this->defaultCache);
-    if (!$cached) {
-      $result = db_query("SELECT * FROM {drealty_fields} WHERE conid = :conid AND resource = :resource AND display = 1", array(':conid' => $conid, ':resource' => $resource))->fetchAll();
-      $fields = array();
-      foreach ($result as $field) {
-        $fields[$field->systemname] = $field;
-      }
-      cache_set($cache_name, $fields, $this->defaultCache);
-      return $fields;
-    } else {
-      return $cached->data;
-    }
-  }
-
-  function FetchFieldMappings($conid, $resource = NULL, $class_id = NULL) {
+  function FetchFieldMappings(integer $conid, drealtyRetsResource $resource = NULL, drealtyRetsClass $class = NULL) {
 
     $query = db_select('drealty_field_mappings', 'm')
       ->fields('m')
       ->condition('conid', $conid);
 
     if (isset($resource)) {
-      $query->condition('resource', $resource);
+      $query->condition('resource', $resource->systemname);
     }
-    if (isset($class_id)) {
-      $query->condition('cid', $class_id);
+    if (isset($class)) {
+      $query->condition('cid', $class->cid);
     }
 
     $mappings = $query->execute()->fetchAllAssoc('field_name');
-    foreach ($mappings as $mapping) {
-      $mapping->data = unserialize($mapping->data);
+    if (!empty($mappings)) {
+      foreach ($mappings as $mapping) {
+        $mapping->data = unserialize($mapping->data);
+      }
     }
-    return $mappings;
+    return empty($mappings) ? FALSE : $mappings;
   }
 
   /**
@@ -92,80 +83,64 @@ class drealtyResources {
    * @return drealtyRetsField[]
    */
   function FetchFields(integer $conid, drealtyRetsResource $resource = NULL, drealtyRetsClass $class = NULL) {
+    $fields = array();
+    $query = db_select('drealty_fields', 'f')
+      ->fields('f')
+      ->condition('conid', $conif);
 
-    $cache = &drupal_static(__FUNCTION__);
-
-    if (!isset($cache)) {
-
-      $query = db_select('drealty_fields', 'f')
-        ->fields('f')
-        ->condition('conid', $conif);
-
-      if ($resource) {
-        $query->condition('resource', $resource->systemname);
-      }
-
-      if ($class) {
-        $query->condition('class', $class->systemname);
-      }
-
-      $fields = $query->execute()->fetchAllAssoc('systemname');
-
-      if (count($fields)) {
-        $cache = $fields;
-      } else {
-
-        $dc = new dRealtyConnection();
-
-        if ($dc->connect($conid)) {
-          $fields = array();
-
-          $results = $dc->rets->GetMetadata($resource->systemname, $class->systemname);
-          if ($results) {
-
-            // make sure we don't have any stray fields for this connection / resource / class
-            db_delete('drealty_fields')
-              ->condition('conid', $conid)
-              ->condition('class', $class)
-              ->condition('resource', $resource->systemname)
-              ->execute();
-
-            foreach ($results as $field) {
-              $field = (object) $field;
-              $newField = new drealtyRetsField();
-              $newField->conid = $conid;
-              $newField->resource = $resource;
-              $newField->systemname = $field->SystemName;
-              $newField->standardname = $field->StandardName;
-              $newField->longname = $field->LongName;
-              $newField->datatype = $field->DataType;
-              $newField->max_length = $field->MaximumLength;
-              $newField->field_precision = $field->Precision === '' ? 0 : $field->Precision;
-              $newField->interpretation = $field->Interpretation;
-              $newField->class = array($class->systemname);
-              $newField->lastupdate = strtotime("now");
-
-
-              if (drupal_write_record('drealty_fields', $newField)) {
-                $fields[$newField->systemname] = $newField;
-              }
-            } // end foreach
-          } else {
-            $this->handleRetsError($dc->rets);
-          }
-          $dc->disconnect();
-        } // end if $dc->connect
-        // set the static cache
-        $cache = $fields;
-      }
+    if ($resource) {
+      $query->condition('resource', $resource->systemname);
     }
 
-    return $cache;
-  }
+    if ($class) {
+      $query->condition('class', $class->systemname);
+    }
 
-  private function handleRetsError(phRETS $rets) {
-    $error = $rets->Error();
-    drupal_set_message($error, 'error');
+    $fields = $query->execute()->fetchAllAssoc('systemname');
+
+    if (empty($fields)) {
+      $dc = new dRealtyConnection();
+
+      if ($dc->connect($conid)) {
+
+        $results = $dc->rets->GetMetadata($resource->systemname, $class->systemname);
+        if ($results) {
+
+          // make sure we don't have any stray fields for this connection / resource / class
+          db_delete('drealty_fields')
+            ->condition('conid', $conid)
+            ->condition('class', $class)
+            ->condition('resource', $resource->systemname)
+            ->execute();
+
+          foreach ($results as $field) {
+            $field = (object) $field;
+            $newField = new drealtyRetsField();
+            $newField->conid = $conid;
+            $newField->resource = $resource;
+            $newField->systemname = $field->SystemName;
+            $newField->standardname = $field->StandardName;
+            $newField->longname = $field->LongName;
+            $newField->datatype = $field->DataType;
+            $newField->max_length = $field->MaximumLength;
+            $newField->field_precision = $field->Precision === '' ? 0 : $field->Precision;
+            $newField->interpretation = $field->Interpretation;
+            $newField->class = array($class->systemname);
+            $newField->lastupdate = strtotime("now");
+
+
+            if (drupal_write_record('drealty_fields', $newField)) {
+              $fields[$newField->systemname] = $newField;
+            }
+          } // end foreach
+        } else {
+          $this->handleRetsError($dc->rets);
+        }
+        $dc->disconnect();
+      } // end if $dc->connect
+    }
+
+    return empty($fields) ? FALSE : $fields;
   }
 
   /**
@@ -174,18 +149,13 @@ class drealtyResources {
    * @return drealtyRetsClass 
    */
   public function FetchClass(integer $id) {
-    $cache = &drupal_static(__FUNCTION__);
-    if (!isset($cache)) {
-      $result = db_select('drealty_classes', 'dc')
-        ->fields('dc')
-        ->condition('cid', $id)
-        ->range(0, 1)
-        ->execute()
-        ->fetchObject();
-
-      $cache = $result;
-    }
-    return $cache;
+    $result = db_select('drealty_classes', 'dc')
+      ->fields('dc')
+      ->condition('cid', $id)
+      ->range(0, 1)
+      ->execute()
+      ->fetchObject();
+    return empty($result) ? FALSE : $result;
   }
 
   /**
@@ -195,56 +165,43 @@ class drealtyResources {
    * @return drealtyRetsClass[]
    */
   function FetchClasses(integer $conid, drealtyRetsResource $resource) {
+    $classes = array();
+    $classes = db_select('drealty_classes', 'dc')
+      ->fields('dc')
+      ->condition('conid', $conid)
+      ->condition('rid', $resource->rid)
+      ->execute()
+      ->fetchAllAssoc('systemname');
 
-    $cache = &drupal_static(__FUNCTION__);
+    if (empty($classes)) {
+      // we didn't find any classes so we'll need to get the metadata from the RETS provider
+      $dc = new dRealtyConnection();
+      if ($dc->connect($conid)) {
+        $metadata = $dc->rets->GetMetadataClasses($resource->systemname);
+        if ($metadata) {
+          foreach ($metadata as $class) {
 
-    if (!isset($cache)) {
-      // need to retrieve these from the db
-      $classes = db_select('drealty_classes', 'dc')
-        ->fields('dc')
-        ->condition('conid', $conid)
-        ->condition('rid', $resource->rid)
-        ->execute()
-        ->fetchAllAssoc('systemname');
+            $class = (object) $class;
+            $newClass = new drealtyRetsClass();
+            $newClass->systemname = $class->ClassName;
+            $newClass->conid = $conid;
+            $newClass->standardname = $class->StandardName;
+            $newClass->visiblename = $class->VisibleName;
+            $newClass->description = $class->Description;
+            $newClass->rid = $resource->rid;
 
-      //check to see if we got any
-      if (count($classes)) {
-        // set the static cache
-        $cache = $classes;
-      } else {
-        // we didn't find any classes so we'll need to get the metadata from the RETS provider
-        $dc = new dRealtyConnection();
-        if ($dc->connect($conid)) {
-          $metadata = $dc->rets->GetMetadataClasses($resource->systemname);
-          if ($metadata) {
-
-
-            $classes = array();
-            foreach ($metadata as $class) {
-              $class = (object) $class;
-
-              $newClass = new drealtyRetsClass();
-              $newClass->systemname = $class->ClassName;
-              $newClass->conid = $conid;
-              $newClass->standardname = $class->StandardName;
-              $newClass->visiblename = $class->VisibleName;
-              $newClass->description = $class->Description;
-              $newClass->rid = $resource->rid;
-
-              if (db_write_record('drealty_classes', $newClass)) {
-                $classes[$newClass->systemname] = $newClass;
-              }
-            } // end foreach
-            // set the static cache
-            $cache = $classes;
-          } else {
-            $this->handleRetsError($dc->rets);
-          }
-          $dc->disconnect();
+            if (db_write_record('drealty_classes', $newClass)) {
+              $classes[$newClass->systemname] = $newClass;
+            }
+          } // end foreach
+        } else {
+          $this->handleRetsError($dc->rets);
         }
+        $dc->disconnect();
       }
     }
-    return $cache;
+
+    return empty($classes)?FALSE:$classes;
   }
 
   /**
@@ -263,28 +220,23 @@ class drealtyResources {
    *
    */
   function FetchResources($conid) {
+      $resources = array();
 
-
-    $cache = &drupal_static(__FUNCTION__);
-
-    if (!isset($cache)) {
       $resources = db_select('drealty_resources', 'dr')
         ->fields('dr')
         ->condition('conid', $conid)
         ->execute()
         ->fetchAllAssoc('systemname');
 
-      $cache = $resources;
-    } else {
+      if(empty($resources)) {
       // we didn't find any classes so we'll need to get the metadata from the RETS provider
       $dc = new dRealtyConnection();
       if ($dc->connect($conid)) {
         $metadata = $dc->rets->GetMetadataResources();
         if ($metadata) {
 
-          $resources = array();
-          foreach ($metadata as $class) {
-            $class = (object) $class;
+          foreach ($metadata as $resource) {
+            $resource = (object) $resource;
 
             $newResource = new drealtyRetsResource();
             $newResource->conid = $conid;
@@ -305,9 +257,8 @@ class drealtyResources {
         $dc->disconnect();
       }
     }
-    return $cache;
+    return empty($resources)?FALSE:$resources;
   }
-    
 
   function get_correlation_mls_system_name($correlation_name, $resource, $conid) {
     $result = db_result(db_query("SELECT systemName FROM {drealty_fields} WHERE correlation = '%s' AND resource = '%s' AND conid = %d", $correlation_name, $resource, $conid));

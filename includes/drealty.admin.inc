@@ -15,8 +15,6 @@ function drealty_settings_form($form, &$form_state) {
   $form['general_settings']['connections']['#theme'] = 'drealty_general_setting_form';
   $form['general_settings']['connections']['#tree'] = TRUE;
 
-
-
   foreach ($connections as $key => $connection) {
 
     $form['general_settings']['connections'][$key]['name'] = array('#markup' => $connection->name);
@@ -63,13 +61,10 @@ function drealty_settings_form($form, &$form_state) {
 
   foreach ($types as $type => $name) {
 
-
     $form["seo"]["{$type}"] = array('#type' => 'fieldset', '#title' => "{$name}s", '#collapsible' => TRUE, '#collapsed' => TRUE);
-
 
     $default_title_pattern = strtoupper("{$type}_DEFAULT_TITLE_PATTERN");
     $default_url_pattern = strtoupper("{$type}_DEFAULT_URL_PATTERN");
-
 
     $form["seo"]["{$type}"]['page_title'] = array(
         '#type' => 'textfield',
@@ -79,18 +74,6 @@ function drealty_settings_form($form, &$form_state) {
         '#size' => 150,
         '#description' => t('Pattern to use to create the page title.'),
     );
-
-
-    $form["seo"]["{$type}"]['url_alias'] = array(
-        '#type' => 'textfield',
-        '#title' => t('URL Pattern'),
-        '#maxlength' => 255,
-        '#default_value' => ($url_pattern = variable_get("{$type}_url_pattern", FALSE)) ? $url_pattern : constant($default_url_pattern),
-        '#size' => 150,
-        '#description' => t('Pattern to use to create the url alias'),
-    );
-
-
 
     $form["seo"]["{$type}"]['token_help'] = array(
         '#title' => t('Replacement patterns'),

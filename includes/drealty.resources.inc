@@ -23,7 +23,7 @@ class drealtyResources {
    * @param drealtyRetsResource $resource
    * @return drealtyRetsField[] 
    */
-  function GetActiveFields(integer $conid, drealtyRetsResource $resource) {
+  function GetActiveFields($conid, $resource) {
 
     $fields = db_select('drealty_fields', 'df')
       ->fields('df')
@@ -42,7 +42,7 @@ class drealtyResources {
    *  or FALSE if no mappings are found
    *   
    */
-  function GetResourceMappings(integer $conid) {
+  function GetResourceMappings($conid) {
 
     $mappings = db_select('drealty_resource_mappings', 'drm')
       ->fields('drm')
@@ -52,7 +52,7 @@ class drealtyResources {
     return empty($mappings) ? FALSE : $mappings;
   }
 
-  function FetchFieldMappings(integer $conid, drealtyRetsResource $resource = NULL, drealtyRetsClass $class = NULL) {
+  function FetchFieldMappings($conid, $resource = NULL, $class = NULL) {
 
     $query = db_select('drealty_field_mappings', 'm')
       ->fields('m')
@@ -82,14 +82,14 @@ class drealtyResources {
    * @param drealtyRetsClass $class
    * @return drealtyRetsField[]
    */
-  function FetchFields(integer $conid, drealtyRetsResource $resource = NULL, drealtyRetsClass $class = NULL) {
+  function FetchFields($conid, $resource = NULL, $class = NULL) {
     $fields = array();
     $query = db_select('drealty_fields', 'f')
       ->fields('f')
-      ->condition('conid', $conif);
+      ->condition('conid', $conid);
 
     if ($resource) {
-      $query->condition('resource', $resource->systemname);
+      $query->condition('rid', $resource->rid);
     }
 
     if ($class) {
@@ -109,15 +109,15 @@ class drealtyResources {
           // make sure we don't have any stray fields for this connection / resource / class
           db_delete('drealty_fields')
             ->condition('conid', $conid)
-            ->condition('class', $class)
-            ->condition('resource', $resource->systemname)
+            ->condition('class', $class->systemname)
+            ->condition('rid', $resource->rid)
             ->execute();
 
           foreach ($results as $field) {
             $field = (object) $field;
             $newField = new drealtyRetsField();
             $newField->conid = $conid;
-            $newField->resource = $resource;
+            $newField->rid = $resource->rid;
             $newField->systemname = $field->SystemName;
             $newField->standardname = $field->StandardName;
             $newField->longname = $field->LongName;
@@ -125,7 +125,7 @@ class drealtyResources {
             $newField->max_length = $field->MaximumLength;
             $newField->field_precision = $field->Precision === '' ? 0 : $field->Precision;
             $newField->interpretation = $field->Interpretation;
-            $newField->class = array($class->systemname);
+            $newField->class = $class->systemname;
             $newField->lastupdate = strtotime("now");
 
 
@@ -148,7 +148,7 @@ class drealtyResources {
    * @param integer $id
    * @return drealtyRetsClass 
    */
-  public function FetchClass(integer $id) {
+  public function FetchClass($id) {
     $result = db_select('drealty_classes', 'dc')
       ->fields('dc')
       ->condition('cid', $id)
@@ -164,7 +164,7 @@ class drealtyResources {
    * @param drealtyRetsResource $resource
    * @return drealtyRetsClass[]
    */
-  function FetchClasses(integer $conid, drealtyRetsResource $resource) {
+  function FetchClasses($conid, $resource) {
     $classes = array();
     $classes = db_select('drealty_classes', 'dc')
       ->fields('dc')
@@ -190,7 +190,7 @@ class drealtyResources {
             $newClass->description = $class->Description;
             $newClass->rid = $resource->rid;
 
-            if (db_write_record('drealty_classes', $newClass)) {
+            if (drupal_write_record('drealty_classes', $newClass)) {
               $classes[$newClass->systemname] = $newClass;
             }
           } // end foreach
@@ -203,6 +203,21 @@ class drealtyResources {
     return empty($classes)?FALSE:$classes;
   }
 
+ /**
+  *
+  * @param int $rid
+  * @return drealtyRetsResource 
+  */
+  function FetchResource($rid) {
+    $resource = db_select('drealty_resources', 'dr')
+      ->fields('dr')
+      ->condition('rid', $rid)
+      ->execute()
+      ->fetchObject();
+    
+    return $resource;
+  }
+  
   /**
    * Retrieve the current resources for a given connection.
    *
@@ -244,7 +259,7 @@ class drealtyResources {
             $newResource->lastupdate = strtotime($resource->ClassDate);
             $newResource->keyfield = $resource->KeyField;
 
-            if (db_write_record('drealty_resource', $newResource)) {
+            if (drupal_write_record('drealty_resources', $newResource)) {
               $resources[$newResource->systemname] = $newResource;
             }
           } // end foreach
@@ -394,7 +409,7 @@ class drealtyResourceMapping {
 
   public $mid;
   public $conid;
-  public $resource;
+  public $rid;
   public $entity_type;
 
 }

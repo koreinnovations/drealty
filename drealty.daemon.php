@@ -398,10 +398,10 @@ class drealtyDaemon {
 
                 switch ($mapping->field_api_type) {
                   case 'addressfield':
-                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare'] = isset($mapping->data['address_1']) ? $rets_item[$mapping->data['address_1']] : NULL;
-                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['premise'] = isset($mapping->data['address_2']) ? $rets_item[$mapping->data['address_2']] : NULL;
-                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['locality'] = isset($mapping->data['city']) ? $rets_item[$mapping->data['city']] : NULL;
-                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['administrative_area'] = isset($mapping->data['state']) ? $rets_item[$mapping->data['state']] : NULL;
+                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare'] = isset($rets_item[$mapping->data['address_1']]) ? ucwords(strtolower($rets_item[$mapping->data['address_1']])) : NULL;
+                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['premise'] = isset($mapping->data['address_2']) ? ucwords(strtolower($rets_item[$mapping->data['address_2']])) : NULL;
+                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['locality'] = isset($mapping->data['city']) ? ucwords(strtolower($rets_item[$mapping->data['city']])) : NULL;
+                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['administrative_area'] = isset($mapping->data['state']) ? strtoupper($rets_item[$mapping->data['state']]) : NULL;
                     $item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code'] = isset($mapping->data['zip']) ? $rets_item[$mapping->data['zip']] : NULL;
                     break;
                   case 'geofield':
@@ -422,7 +422,7 @@ class drealtyDaemon {
                     $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = empty($rets_item[$mapping->systemname]) ? 0 : is_numeric($rets_item[$mapping->systemname]) ? $rets_item[$mapping->systemname] : 0;
                     break;
                   default:
-                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
+                    //$item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
                 }
               }
             }

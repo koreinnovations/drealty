@@ -390,44 +390,37 @@ class drealtyDaemon {
           }
 
           foreach ($field_mappings as $mapping) {
-            if (isset($rets_item[$mapping->systemname]) || $mapping->systemname == 'drealty_data_mapped' || $mapping->systemname == 'drealty') {
-              if ($mapping->field_name == 'rets_id' || $mapping->field_name == 'rets_key') {
-                $item->{$mapping->field_name} = $rets_item[$mapping->systemname];
-              } else {
-
-                switch ($mapping->field_api_type) {
-                  case 'addressfield':
-                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare'] = isset($rets_item[$mapping->data['address_1']]) ? $rets_item[$mapping->data['address_1']] : NULL;
-                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['premise'] = isset($mapping->data['address_2']) ? $rets_item[$mapping->data['address_2']] : NULL;
-                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['locality'] = isset($mapping->data['city']) ? $rets_item[$mapping->data['city']] : NULL;
-                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['administrative_area'] = isset($mapping->data['state']) ? $rets_item[$mapping->data['state']] : NULL;
-                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code'] = isset($mapping->data['zip']) ? $rets_item[$mapping->data['zip']] : NULL;
-                    break;
-                  case 'geofield':
-                    // check to see if we already have already geocoded this address
-                    if (!isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lat']) && !isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lon'])) {
-                      drush_log('******Geocoding*****');
-                      $item->{$mapping->field_name}[LANGUAGE_NONE][0]['wkt'] = GEOCODER_DUMMY_WKT;
-                      $item->{$mapping->field_name}[LANGUAGE_NONE][0]['geocode'] = TRUE;
-                    }
-                    break;
-                  case 'text_long':
-                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
-                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['format'] = 'plain_text';
-                    break;
-                  case 'number_integer':
-                  case 'number_decimal':
-                  case 'number_float':
-                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = empty($rets_item[$mapping->systemname]) ? 0 : is_numeric($rets_item[$mapping->systemname]) ? $rets_item[$mapping->systemname] : 0;
-                    break;
-									case 'drealty':
-										$item->{$mapping->field_name} = $rets_item[$mapping->systemname];
-										break;
-                  default:
-                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
-                }
-              }
-            }
+						switch ($mapping->field_api_type) {
+							case 'addressfield':
+								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare'] = isset($rets_item[$mapping->data['address_1']]) ? $rets_item[$mapping->data['address_1']] : NULL;
+								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['premise'] = isset($mapping->data['address_2']) ? $rets_item[$mapping->data['address_2']] : NULL;
+								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['locality'] = isset($mapping->data['city']) ? $rets_item[$mapping->data['city']] : NULL;
+								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['administrative_area'] = isset($mapping->data['state']) ? $rets_item[$mapping->data['state']] : NULL;
+								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code'] = isset($mapping->data['zip']) ? $rets_item[$mapping->data['zip']] : NULL;
+								break;
+							case 'geofield':
+								// check to see if we already have already geocoded this address
+								if (!isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lat']) && !isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lon'])) {
+									drush_log('******Geocoding*****');
+									$item->{$mapping->field_name}[LANGUAGE_NONE][0]['wkt'] = GEOCODER_DUMMY_WKT;
+									$item->{$mapping->field_name}[LANGUAGE_NONE][0]['geocode'] = TRUE;
+								}
+								break;
+							case 'text_long':
+								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
+								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['format'] = 'plain_text';
+								break;
+							case 'number_integer':
+							case 'number_decimal':
+							case 'number_float':
+								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = empty($rets_item[$mapping->systemname]) ? 0 : is_numeric($rets_item[$mapping->systemname]) ? $rets_item[$mapping->systemname] : 0;
+								break;
+							case 'drealty':
+								$item->{$mapping->field_name} = $rets_item[$mapping->systemname];
+								break;
+							default:
+								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
+						}
           }
 
 

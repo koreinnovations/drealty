@@ -384,7 +384,6 @@ class drealtyDaemon {
           $item->changed = time();
           $item->class = $class->cid;
           $item->rets_imported = TRUE;
-					$item->rets_status = $rets_item['ListingStatus'];
 										
           if ($entity_type == 'drealty_listing' && $class->process_images) {
             $item->process_images = TRUE;
@@ -421,8 +420,11 @@ class drealtyDaemon {
                   case 'number_float':
                     $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = empty($rets_item[$mapping->systemname]) ? 0 : is_numeric($rets_item[$mapping->systemname]) ? $rets_item[$mapping->systemname] : 0;
                     break;
+									case 'drealty':
+										$item->{$mapping->field_name} = $rets_item[$mapping->systemname];
+										break;
                   default:
-                    //$item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
+                    $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
                 }
               }
             }

@@ -127,7 +127,7 @@ class drealtyResources {
             $newField->interpretation = $field->Interpretation;
             $newField->class = $class->systemname;
             $newField->lastupdate = strtotime("now");
-
+            $newField->lookupname = $field->LookupName;
 
             if (drupal_write_record('drealty_fields', $newField)) {
               $fields[$newField->systemname] = $newField;

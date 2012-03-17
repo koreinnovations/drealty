@@ -505,7 +505,7 @@ function drealty_resource_overview_form($form, &$form_state, dRealtyConnectionEn
 
     $form['save_changes'] = array(
       '#type' => 'submit',
-      '#submit' => array('drealty_configure_resource_form_submit'),
+      '#submit' => array('drealty_resource_overview_form_submit'),
       '#value' => t('Save Changes'),
     );
   }

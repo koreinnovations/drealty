@@ -52,6 +52,13 @@ class drealtyResources {
     return empty($mappings) ? FALSE : $mappings;
   }
 
+  /**
+   *
+   * @param int $conid
+   * @param drealtyRetsResource $resource
+   * @param drealttyRetsClass $class
+   * @return drealtyFieldMapping[]
+   */
   function FetchFieldMappings($conid, $resource = NULL, $class = NULL) {
 
     $query = db_select('drealty_field_mappings', 'm')
@@ -158,6 +165,15 @@ class drealtyResources {
     return empty($result) ? FALSE : $result;
   }
 
+  public function FetchEnabledClasses($conid) {
+    $classes = db_select('drealty_classes', 'dc')
+      ->fields('dc')
+      ->condition('enabled', TRUE)
+      ->execute()
+      ->fetchAllAssoc('systemname');
+    return $classes;
+  }
+  
   /**
    *
    * @param integer $conid
@@ -383,7 +399,7 @@ class drealtyRetsClass {
 }
 
 class drealtyRetsResource {
-
+  //TODO: Remove chunk_size and selection_values from the schema as they are not used.
   public $rid;
   public $conid;
   public $systemname;

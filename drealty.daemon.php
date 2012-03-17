@@ -2,7 +2,16 @@
 
 class drealtyDaemon {
 
+  /**
+   *
+   * @var drealtyConnection 
+   */
   protected $dc;
+
+  /**
+   *
+   * @var drealtyResources 
+   */
   protected $dr;
 
   public function __construct() {
@@ -15,10 +24,11 @@ class drealtyDaemon {
     foreach ($connections as $connection) {
       $mappings = $connection->ResourceMappings();
       foreach ($mappings as $mapping) {
-        $classes = $connection->FetchClasses($mapping->resource);
+        $resource = $this->dr->FetchResource($mapping->rid);
+        $classes = $connection->FetchClasses($resource);
         foreach ($classes as $class) {
           if ($class->enabled && $class->lifetime <= time() - ($class->lastupdate + 60)) {
-            $this->ProcessRetsClass($connection, $mapping->resource, $class, $mapping->entity_type);
+            $this->ProcessRetsClass($connection, $resource, $class, $mapping->entity_type);
             $class->lastupdate = time();
             drupal_write_record('drealty_classes', $class, 'cid');
           }
@@ -32,6 +42,13 @@ class drealtyDaemon {
     return TRUE;
   }
 
+  /**
+   *
+   * @param dRealtyConnectionEntity $connection
+   * @param drealtyRetsResource $resource
+   * @param drealtyRetsClass $class
+   * @param string $entity_type 
+   */
   private function ProcessRetsClass(dRealtyConnectionEntity $connection, $resource, $class, $entity_type) {
 
     $mappings = $connection->ResourceMappings();
@@ -40,9 +57,9 @@ class drealtyDaemon {
     $chunks = 0;
 
 // build a list of fields we are going to request from the RETS server
-    $fieldmappings = $connection->FetchFieldMappings($resource, $class->cid);
+    $fieldmappings = $connection->FetchFieldMappings($resource, $class);
 
-    drush_log(dt("Processing Resource: @res for Connection: @con", array("@res" => $resource, "@con" => $connection->name)));
+    drush_log(dt("Processing Resource: @res for Connection: @con", array("@res" => $resource->systemname, "@con" => $connection->name)));
 
     $key_field = $fieldmappings['rets_key']->systemname;
 
@@ -85,7 +102,7 @@ class drealtyDaemon {
 
 // at this point we have data waiting to be processed. Need to process the
 // data which will insert/update/delete the listing data as nodes
-    drush_log(dt("process_results( connection: @connection_name, resource: @resource, class: @class, chunks: @chunks)", array("@connection_name" => $connection->name, "@resource" => $resource, "@class" => $class->systemname, "@chunks" => $chunks)));
+    drush_log(dt("process_results( connection: @connection_name, resource: @resource, class: @class, chunks: @chunks)", array("@connection_name" => $connection->name, "@resource" => $resource->systemname, "@class" => $class->systemname, "@chunks" => $chunks)));
     $this->process_results($connection, $resource, $class, $entity_type, $chunks);
     if ($entity_type == 'drealty_listing' && $class->process_images) {
       $this->process_images($connection, $resource, $class);
@@ -94,8 +111,16 @@ class drealtyDaemon {
     unset($mappings, $resources, $fieldmappings, $query);
   }
 
+  /**
+   *
+   * @param dRealtyConnectionEntity $connection
+   * @param drealtyRetsResource $resource
+   * @param drealtyRetsClass $class
+   * @param string $key_field
+   * @return int 
+   */
   function fetch_listings_offset_not_supported_key(dRealtyConnectionEntity $connection, $resource, $class, $key_field) {
-    $rets = &$this->dc->get_phrets();
+    $rets = $this->dc->rets;
 
     $chunks = 0;
     $id = 0;
@@ -104,16 +129,16 @@ class drealtyDaemon {
     $limit = $class->chunk_size;
 
     $options = array(
-        'count' => 1,
-        'Format' => 'COMPACT-DECODED',
-        'Select' => $key_field,
+      'count' => 1,
+      'Format' => 'COMPACT-DECODED',
+      'Select' => $key_field,
     );
 
 
     if ($this->dc->connect($connection->conid)) {
 
 
-      $search = $rets->SearchQuery($resource, $class->systemname, $query, $options);
+      $search = $rets->SearchQuery($resource->systemname, $class->systemname, $query, $options);
 
       if ($error = $rets->Error()) {
         drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
@@ -133,7 +158,7 @@ class drealtyDaemon {
 
       while ($count <= $total) {
 
-        $search = $rets->SearchQuery($resource, $class->systemname, $query, $options);
+        $search = $rets->SearchQuery($resource->systemname, $class->systemname, $query, $options);
 
         if ($rets->NumRows($search) > 0) {
           while ($listing = $rets->FetchRow($search)) {
@@ -149,14 +174,14 @@ class drealtyDaemon {
           $id = $last[$key_field];
           $id = (int) $id + 1;
 
-          cache_set("drealty_chunk_{$resource}_{$class->systemname}_" . $chunks++, $listings);
+          cache_set("drealty_chunk_{$resource->systemname}_{$class->systemname}_" . $chunks++, $listings);
           unset($listings);
         } else {
           break;
         }
 
         $rets->FreeResult($search);
-        drush_log("[connection: {$connection->name}][resource: $resource][class: {$class->systemname}][downloaded: $count][query: $query][chunks: $chunks]");
+        drush_log("[connection: {$connection->name}][resource: {$resource->systemname}][class: {$class->systemname}][downloaded: $count][query: $query][chunks: $chunks]");
 
         $query = "({$key_field}={$id}+)";
       }
@@ -170,8 +195,16 @@ class drealtyDaemon {
     return $chunks;
   }
 
+  /**
+   *
+   * @param dRealtyConnectionEntity $connection
+   * @param drealtyRetsResource $resource
+   * @param drealtyRetsClass $class
+   * @param string $key_field
+   * @return int 
+   */
   function fetch_listings_offset_not_supported_price(dRealtyConnectionEntity $connection, $resource, $class, $key_field) {
-    $rets = &$this->dc->get_phrets();
+    $rets = $this->dc->rets;
 
     $chunks = 0;
     $offset_amount = $class->offset_amount;
@@ -181,16 +214,16 @@ class drealtyDaemon {
 
     $query = $class->override_status_query_text;
     $options = array(
-        'count' => 1,
-        'Format' => 'COMPACT-DECODED',
-        'Select' => $key_field,
+      'count' => 1,
+      'Format' => 'COMPACT-DECODED',
+      'Select' => $key_field,
     );
 
 
     if ($this->dc->connect($connection->conid)) {
 
 
-      $search = $rets->SearchQuery($resource, $class->systemname, $query, $options);
+      $search = $rets->SearchQuery($resource->systemname, $class->systemname, $query, $options);
 
       if ($error = $rets->Error()) {
         drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
@@ -207,7 +240,7 @@ class drealtyDaemon {
 
       while ($count < $total) {
 
-        $search = $rets->SearchQuery($resource, $class->systemname, $offset_query, $options);
+        $search = $rets->SearchQuery($resource->systemname, $class->systemname, $offset_query, $options);
 
         if ($rets->NumRows($search) > 0) {
           while ($listing = $rets->FetchRow($search)) {
@@ -215,12 +248,12 @@ class drealtyDaemon {
             $listings[] = $listing;
             $count++;
           }
-          cache_set("drealty_chunk_{$resource}_{$class->systemname}_" . $chunks++, $listings);
+          cache_set("drealty_chunk_{$resource->systemname}_{$class->systemname}_" . $chunks++, $listings);
           unset($listings);
         }
 
         $rets->FreeResult($search);
-        drush_log("Resource: $resource Class: {$class->systemname} Listings Downloaded: $count Query: $offset_query  Chunks: $chunks");
+        drush_log("Resource: {$resource->systemname} Class: {$class->systemname} Listings Downloaded: $count Query: $offset_query  Chunks: $chunks");
 
         if ($offset_end < $offset_max) {
           $offset_start = $offset_end + 1;
@@ -240,9 +273,17 @@ class drealtyDaemon {
     return $chunks;
   }
 
+  /**
+   *
+   * @param dRealtyConnectionEntity $connection
+   * @param drealtyRetsResource $resource
+   * @param drealtyRetsClass $class
+   * @param string $query
+   * @return int 
+   */
   function fetch_listings_offset_supported_default(dRealtyConnectionEntity $connection, $resource, $class, $query) {
     $offset = 0;
-    $rets = &$this->dc->get_phrets();
+    $rets = $this->dc->rets;
     $limit = $class->chunk_size;
     if ($limit == 0) {
       $limit = 'NONE';
@@ -250,34 +291,33 @@ class drealtyDaemon {
     $chunks = 0;
 
     if ($this->dc->connect($connection->conid)) {
-// prepare the query
+    // prepare the query
       $q = implode('),(', $query);
-// $fields = implode(',', $query_fields);
 
       $end = TRUE;
 
-// fetch the search results until we've queried for them all
+      // fetch the search results until we've queried for them all
       while ($end) {
         $end_p = $end ? "FALSE" : "TRUE";
-        drush_log("Resource: $resource Class: $class->systemname Limit: $limit Offset: $offset MaxRowsReached: $end_p Chunks: $chunks");
+        drush_log("Resource: {$resource->systemname} Class: $class->systemname Limit: $limit Offset: $offset MaxRowsReached: $end_p Chunks: $chunks");
 
 
         $optional_params = array(
-            'Format' => 'COMPACT-DECODED',
-            'Limit' => "$limit",
-            'RestrictedIndicator' => 'xxxx',
-            'Count' => '1',
-            'Offset' => $offset,
+          'Format' => 'COMPACT-DECODED',
+          'Limit' => "$limit",
+          'RestrictedIndicator' => 'xxxx',
+          'Count' => '1',
+          'Offset' => $offset,
         );
 
-// do the actual search
-        $search = $rets->SearchQuery($resource, $class->systemname, "($q)", $optional_params);
+        // do the actual search
+        $search = $rets->SearchQuery($resource->systemname, $class->systemname, "($q)", $optional_params);
 
         $items = array();
 
-// loop through the search results
+        // loop through the search results
         while ($item = $rets->FetchRow($search)) {
-// calculate the hash
+        // calculate the hash
           $item['hash'] = $this->calculate_hash($item);
           $items[] = $item;
         }
@@ -287,8 +327,8 @@ class drealtyDaemon {
           drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
         }
 
-        drush_log(dt("caching @count items for resource: @resource | class: @class", array("@count" => count($items), "@resource" => $resource, "@class" => $class->systemname)));
-        cache_set("drealty_chunk_{$resource}_{$class->systemname}_" . $chunks++, $items);
+        drush_log(dt("caching @count items for resource: @resource | class: @class", array("@count" => count($items), "@resource" => $resource->systemname, "@class" => $class->systemname)));
+        cache_set("drealty_chunk_{$resource->systemname}_{$class->systemname}_" . $chunks++, $items);
 
         $offset += count($items) + 1;
 
@@ -311,23 +351,14 @@ class drealtyDaemon {
     return $chunks;
   }
 
+
   /**
-   * Insert / Update the listing data
    *
-   * @param int $conid
-   *  The dRealty connection id to be processed
-   * @param string $resource
-   *  The RETS resource to be processed
-   * @param string $class
-   *  The RETS class to be processed
-   * @param string $type
-   *  The associated node type to be processed
-   * @param array $context_mapping
-   *  A mapping array for id fields:
-   *  array("id"=>int, "id_field"=>int);
-   * @param int $chunk_count
-   *  The number of chunks that need to be processed
-   *
+   * @param dRealtyConnectionEntity $connection
+   * @param drealtyRetsResource $resource
+   * @param drealtyRetsClass $class
+   * @param string $entity_type
+   * @param int $chunk_count 
    */
   protected function process_results(dRealtyConnectionEntity $connection, $resource, $class, $entity_type, $chunk_count) {
 
@@ -338,19 +369,19 @@ class drealtyDaemon {
     $key_field = 'rets_key';
 
     $existing_items = db_select($entity_type, "t")
-            ->fields("t", array($key_field, "hash", "id"))
-            ->condition("conid", $connection->conid)
-            ->execute()
-            ->fetchAllAssoc($key_field);
+      ->fields("t", array($key_field, "hash", "id"))
+      ->condition("conid", $connection->conid)
+      ->execute()
+      ->fetchAllAssoc($key_field);
 
 // get the fieldmappings
-    $field_mappings = $connection->FetchFieldMappings($resource, $class->cid);
+    $field_mappings = $connection->FetchFieldMappings($resource, $class);
 
 // set $id to the systemname of the entity's corresponding key from the rets feed to make the code easier to read
     $id = $field_mappings[$key_field]->systemname;
 
     for ($i = 0; $i < $chunk_count; $chunk_idx++, $i++) {
-      $chunk_name = "drealty_chunk_{$resource}_{$class->systemname}_{$chunk_idx}";
+      $chunk_name = "drealty_chunk_{$resource->systemname}_{$class->systemname}_{$chunk_idx}";
       $rets_results = cache_get($chunk_name);
 
       $rets_results_count = count($rets_results->data);
@@ -384,43 +415,43 @@ class drealtyDaemon {
           $item->changed = time();
           $item->class = $class->cid;
           $item->rets_imported = TRUE;
-										
+
           if ($entity_type == 'drealty_listing' && $class->process_images) {
             $item->process_images = TRUE;
           }
 
           foreach ($field_mappings as $mapping) {
-						switch ($mapping->field_api_type) {
-							case 'addressfield':
-								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare'] = isset($rets_item[$mapping->data['address_1']]) ? $rets_item[$mapping->data['address_1']] : NULL;
-								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['premise'] = isset($mapping->data['address_2']) ? $rets_item[$mapping->data['address_2']] : NULL;
-								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['locality'] = isset($mapping->data['city']) ? $rets_item[$mapping->data['city']] : NULL;
-								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['administrative_area'] = isset($mapping->data['state']) ? $rets_item[$mapping->data['state']] : NULL;
-								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code'] = isset($mapping->data['zip']) ? $rets_item[$mapping->data['zip']] : NULL;
-								break;
-							case 'geofield':
-								// check to see if we already have already geocoded this address
-								if (!isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lat']) && !isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lon'])) {
-									drush_log('******Geocoding*****');
-									$item->{$mapping->field_name}[LANGUAGE_NONE][0]['wkt'] = GEOCODER_DUMMY_WKT;
-									$item->{$mapping->field_name}[LANGUAGE_NONE][0]['geocode'] = TRUE;
-								}
-								break;
-							case 'text_long':
-								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
-								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['format'] = 'plain_text';
-								break;
-							case 'number_integer':
-							case 'number_decimal':
-							case 'number_float':
-								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = empty($rets_item[$mapping->systemname]) ? 0 : is_numeric($rets_item[$mapping->systemname]) ? $rets_item[$mapping->systemname] : 0;
-								break;
-							case 'drealty':
-								$item->{$mapping->field_name} = $rets_item[$mapping->systemname];
-								break;
-							default:
-								$item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
-						}
+            switch ($mapping->field_api_type) {
+              case 'addressfield':
+                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare'] = isset($rets_item[$mapping->data['address_1']]) ? $rets_item[$mapping->data['address_1']] : NULL;
+                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['premise'] = isset($mapping->data['address_2']) ? $rets_item[$mapping->data['address_2']] : NULL;
+                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['locality'] = isset($mapping->data['city']) ? $rets_item[$mapping->data['city']] : NULL;
+                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['administrative_area'] = isset($mapping->data['state']) ? $rets_item[$mapping->data['state']] : NULL;
+                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code'] = isset($mapping->data['zip']) ? $rets_item[$mapping->data['zip']] : NULL;
+                break;
+              case 'geofield':
+                // check to see if we already have already geocoded this address
+                if (!isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lat']) && !isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lon'])) {
+                  drush_log('******Geocoding*****');
+                  $item->{$mapping->field_name}[LANGUAGE_NONE][0]['wkt'] = GEOCODER_DUMMY_WKT;
+                  $item->{$mapping->field_name}[LANGUAGE_NONE][0]['geocode'] = TRUE;
+                }
+                break;
+              case 'text_long':
+                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
+                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['format'] = 'plain_text';
+                break;
+              case 'number_integer':
+              case 'number_decimal':
+              case 'number_float':
+                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = empty($rets_item[$mapping->systemname]) ? 0 : is_numeric($rets_item[$mapping->systemname]) ? $rets_item[$mapping->systemname] : 0;
+                break;
+              case 'drealty':
+                $item->{$mapping->field_name} = $rets_item[$mapping->systemname];
+                break;
+              default:
+                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
+            }
           }
 
 
@@ -434,7 +465,7 @@ class drealtyDaemon {
           drush_log(dt('Saving item @name', array('@name' => $rets_item[$id])));
           unset($item);
         } else {
-// skipping this item
+          // skipping this item
           drush_log(dt("Skipping item @name", array("@name" => $rets_item[$id])));
         }
 
@@ -478,15 +509,15 @@ class drealtyDaemon {
     $img_field = $class->image_field_name;
     $dir = $class->image_dir;
 
-    $rets = &$this->dc->get_phrets();
+    $rets = $this->dc->rets;
     $entity_type = 'drealty_listing';
     $chunk_size = $class->image_chunk_size;
 
     $query = new EntityFieldQuery();
     $result = $query
-            ->entityCondition('entity_type', $entity_type)
-            ->propertyCondition('process_images', TRUE)
-            ->execute();
+      ->entityCondition('entity_type', $entity_type)
+      ->propertyCondition('process_images', TRUE)
+      ->execute();
 
     if (!empty($result[$entity_type])) {
       $items = entity_load($entity_type, array_keys($result[$entity_type]));
@@ -562,9 +593,9 @@ class drealtyDaemon {
             // load the entity that is associated with the image
             $query = new EntityFieldQuery();
             $result = $query
-                    ->entityCondition('entity_type', 'drealty_listing')
-                    ->propertyCondition('rets_key', $mlskey)
-                    ->execute();
+              ->entityCondition('entity_type', 'drealty_listing')
+              ->propertyCondition('rets_key', $mlskey)
+              ->execute();
             $listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
 
             $listing->{$img_field}[LANGUAGE_NONE][] = (array) $file;

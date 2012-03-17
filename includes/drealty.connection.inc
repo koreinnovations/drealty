@@ -133,10 +133,19 @@ class dRealtyConnection {
     }
   }
 
+  /**
+   *
+   * @return dRealtyConnectionEntity[] 
+   */
   public function FetchConnections() {
     return entity_load('drealty_connection_entity');
   }
 
+  /**
+   *
+   * @param int $id
+   * @return dRealtyConnectionEntity 
+   */
   public function FetchConnection($id) {
     $connection = entity_load('drealty_connection_entity', array($id));
     return reset($connection);
@@ -204,6 +213,16 @@ class dRealtyConnectionEntity extends Entity {
     $dr = new drealtyResources();
     return $dr->FetchClasses($this->conid, $resource);
   }
+  
+  /**
+   *
+   * @return drealtyRetsClass[] 
+   */
+  public function FetchEnabledClasses() {
+    $dr = new drealtyResources();
+    return $dr->FetchEnabledClasses($this->conid);
+  }
+  
 /**
  *
  * @param drealtyRetsResource $resource
@@ -214,6 +233,13 @@ class dRealtyConnectionEntity extends Entity {
     return $dr->FetchFields($this->conid, $resource, $class);
   }
 
+    /**
+   *
+   * @param int $conid
+   * @param drealtyRetsResource $resource
+   * @param drealttyRetsClass $class
+   * @return drealtyFieldMapping[]
+   */
   public function FetchFieldMappings($resource = NULL, $class = NULL) {
     $dr = new drealtyResources();
     return $dr->FetchFieldMappings($this->conid, $resource, $class);

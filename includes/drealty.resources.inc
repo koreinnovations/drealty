@@ -59,7 +59,7 @@ class drealtyResources {
       ->condition('conid', $conid);
 
     if (isset($resource)) {
-      $query->condition('resource', $resource->systemname);
+      $query->condition('rid', $resource->rid);
     }
     if (isset($class)) {
       $query->condition('cid', $class->cid);
@@ -164,13 +164,15 @@ class drealtyResources {
    * @param drealtyRetsResource $resource
    * @return drealtyRetsClass[]
    */
-  function FetchClasses($conid, $resource) {
+  function FetchClasses($conid, $resource = NULL) {
     $classes = array();
-    $classes = db_select('drealty_classes', 'dc')
+    $query = db_select('drealty_classes', 'dc')
       ->fields('dc')
-      ->condition('conid', $conid)
-      ->condition('rid', $resource->rid)
-      ->execute()
+      ->condition('conid', $conid);
+    if ($resource) {
+      $query->condition('rid', $resource->rid);
+    }
+    $classes = $query->execute()
       ->fetchAllAssoc('systemname');
 
     if (empty($classes)) {
@@ -200,24 +202,24 @@ class drealtyResources {
         $dc->disconnect();
       }
     }
-    return empty($classes)?FALSE:$classes;
+    return empty($classes) ? FALSE : $classes;
   }
 
- /**
-  *
-  * @param int $rid
-  * @return drealtyRetsResource 
-  */
+  /**
+   *
+   * @param int $rid
+   * @return drealtyRetsResource 
+   */
   function FetchResource($rid) {
     $resource = db_select('drealty_resources', 'dr')
       ->fields('dr')
       ->condition('rid', $rid)
       ->execute()
       ->fetchObject();
-    
+
     return $resource;
   }
-  
+
   /**
    * Retrieve the current resources for a given connection.
    *
@@ -234,15 +236,15 @@ class drealtyResources {
    *
    */
   function FetchResources($conid) {
-      $resources = array();
+    $resources = array();
 
-      $resources = db_select('drealty_resources', 'dr')
-        ->fields('dr')
-        ->condition('conid', $conid)
-        ->execute()
-        ->fetchAllAssoc('systemname');
+    $resources = db_select('drealty_resources', 'dr')
+      ->fields('dr')
+      ->condition('conid', $conid)
+      ->execute()
+      ->fetchAllAssoc('systemname');
 
-      if(empty($resources)) {
+    if (empty($resources)) {
       // we didn't find any classes so we'll need to get the metadata from the RETS provider
       $dc = new dRealtyConnection();
       if ($dc->connect($conid)) {
@@ -271,7 +273,7 @@ class drealtyResources {
         $dc->disconnect();
       }
     }
-    return empty($resources)?FALSE:$resources;
+    return empty($resources) ? FALSE : $resources;
   }
 
   function get_correlation_mls_system_name($correlation_name, $resource, $conid) {

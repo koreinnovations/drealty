@@ -200,7 +200,7 @@ class dRealtyConnectionEntity extends Entity {
  * @param drealtyRetsResource $resource
  * @return drealtyRetsClass[] 
  */
-  public function FetchClasses($resource) {
+  public function FetchClasses($resource = NULL) {
     $dr = new drealtyResources();
     return $dr->FetchClasses($this->conid, $resource);
   }
@@ -228,14 +228,14 @@ class dRealtyConnectionEntity extends Entity {
    * @param string $field_api_type
    * @param array $data 
    */
-  public function CreateFieldMapMapping($resource, $field_name, $systemname, $class, $field_api_type = 'drealty', array $data = NULL) {
+  public function CreateFieldMapMapping($rid, $field_name, $systemname, $class, $field_api_type = 'drealty', array $data = NULL) {
     // remove any mapping and create a new one
-    $this->RemoveFieldMapping($resource, $field_name, $class);
+    $this->RemoveFieldMapping($rid, $field_name, $class);
 
     db_insert('drealty_field_mappings')
       ->fields(array(
         'conid' => $this->conid,
-        'resource' => $resource,
+        'rid' => $rid,
         'field_name' => $field_name,
         'systemname' => $systemname,
         'field_api_type' => $field_api_type,
@@ -245,10 +245,10 @@ class dRealtyConnectionEntity extends Entity {
       ->execute();
   }
 
-  public function RemoveFieldMapping($resource, $field_name, $class) {
+  public function RemoveFieldMapping($rid, $field_name, $class) {
     db_delete("drealty_field_mappings")
       ->condition("conid", $this->conid)
-      ->condition("resource", $resource)
+      ->condition("rid", $rid)
       ->condition("field_name", $field_name)
       ->condition('cid', $class)
       ->execute();

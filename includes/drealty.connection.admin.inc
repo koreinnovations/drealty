@@ -17,67 +17,67 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
     $items[$this->path . '/import']['title'] = t('import drealty connection');
 
     $items[$this->path . '/manage/' . $wildcard . '/activate'] = array(
-        'title' => 'Activate',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('drealty_activate_connection_form', $id_count + 1),
-        'access arguments' => array('access drealty admin'),
-        'file' => 'drealty.connection.admin.inc',
-        'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
-        'type' => MENU_CALLBACK,
+      'title' => 'Activate',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('drealty_activate_connection_form', $id_count + 1),
+      'access arguments' => array('access drealty admin'),
+      'file' => 'drealty.connection.admin.inc',
+      'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
+      'type' => MENU_CALLBACK,
     );
 
     $items[$this->path . '/manage/' . $wildcard . '/deactivate'] = array(
-        'title' => 'Dectivate',
-        'page callback' => 'drealty_deactivate_connection',
-        'page arguments' => array($id_count + 1),
-        'access arguments' => array('access drealty admin'),
-        'file' => 'drealty.connection.admin.inc',
-        'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
-        'type' => MENU_CALLBACK,
+      'title' => 'Dectivate',
+      'page callback' => 'drealty_deactivate_connection',
+      'page arguments' => array($id_count + 1),
+      'access arguments' => array('access drealty admin'),
+      'file' => 'drealty.connection.admin.inc',
+      'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
+      'type' => MENU_CALLBACK,
     );
 
 
     $items[$this->path . '/manage/' . $wildcard . '/delete'] = array(
-        'title' => 'Delete',
-        'page callback' => 'drealty_connection_delete_form_wrapper',
-        'page arguments' => array($id_count + 1),
-        'access arguments' => array('access drealty admin'),
-        'type' => MENU_LOCAL_TASK,
-        'context' => MENU_CONTEXT_INLINE,
-        'weight' => 10,
-        'file' => 'drealty.connection.admin.inc',
-        'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
+      'title' => 'Delete',
+      'page callback' => 'drealty_connection_delete_form_wrapper',
+      'page arguments' => array($id_count + 1),
+      'access arguments' => array('access drealty admin'),
+      'type' => MENU_LOCAL_TASK,
+      'context' => MENU_CONTEXT_INLINE,
+      'weight' => 10,
+      'file' => 'drealty.connection.admin.inc',
+      'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
     );
 
     $items[$this->path . '/manage/' . $wildcard . '/resource/%'] = array(
-        'title callback' => 'drealty_configure_resource_title_callback',
-        'title arguments' => array($id_count + 3),
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('drealty_configure_resource_form', $id_count + 1, $id_count + 3),
-        'access arguments' => array('access drealty admin'),
-        'file' => 'drealty.connection.admin.inc',
-        'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
-        'type' => MENU_NORMAL_ITEM,
+      'title callback' => 'drealty_configure_resource_title_callback',
+      'title arguments' => array($id_count + 3),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('drealty_configure_resource_form', $id_count + 1, $id_count + 3),
+      'access arguments' => array('access drealty admin'),
+      'file' => 'drealty.connection.admin.inc',
+      'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
+      'type' => MENU_NORMAL_ITEM,
     );
 
     $items[$this->path . '/manage/' . $wildcard . '/resource/%/%drealty_class/fields'] = array(
-        'title callback' => 'drealty_configure_fields_title_callback',
-        'title arguments' => array($id_count + 4),
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('drealty_configure_resource_fields_form', $id_count + 1, $id_count + 3, $id_count + 4),
-        'access arguments' => array('access drealty admin'),
-        'file' => 'drealty.connection.admin.inc',
-        'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
-        'type' => MENU_NORMAL_ITEM,
+      'title callback' => 'drealty_configure_fields_title_callback',
+      'title arguments' => array($id_count + 4),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('drealty_configure_resource_fields_form', $id_count + 1, $id_count + 3, $id_count + 4),
+      'access arguments' => array('access drealty admin'),
+      'file' => 'drealty.connection.admin.inc',
+      'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
+      'type' => MENU_NORMAL_ITEM,
     );
     $items[$this->path . '/manage/' . $wildcard . '/resource/%/%drealty_class/limits'] = array(
-        'title' => 'Configure Import Options',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('drealty_configure_resource_limits_form', $id_count + 1, $id_count + 3, $id_count + 4),
-        'access arguments' => array('access drealty admin'),
-        'file' => 'drealty.connection.admin.inc',
-        'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
-        'type' => MENU_NORMAL_ITEM,
+      'title' => 'Configure Import Options',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('drealty_configure_resource_limits_form', $id_count + 1, $id_count + 3, $id_count + 4),
+      'access arguments' => array('access drealty admin'),
+      'file' => 'drealty.connection.admin.inc',
+      'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
+      'type' => MENU_NORMAL_ITEM,
     );
     return $items;
   }
@@ -98,9 +98,9 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
         $operation .= l("Deactivate", "admin/drealty/connections/manage/$name/deactivate");
         $operation .= ' <br /> ' . "Configure: " . l("Properties", "admin/drealty/connections/manage/$name/resource/drealty_listing");
         /*
-        $operation .= ' | ' . l("Open Houses", "admin/drealty/connections/manage/$name/resource/drealty_openhouse");
-        $operation .= ' | ' . l("Offices", "admin/drealty/connections/manage/$name/resource/drealty_office");
-        $operation .= ' | ' . l("Agents", "admin/drealty/connections/manage/$name/resource/drealty_agent");
+          $operation .= ' | ' . l("Open Houses", "admin/drealty/connections/manage/$name/resource/drealty_openhouse");
+          $operation .= ' | ' . l("Offices", "admin/drealty/connections/manage/$name/resource/drealty_office");
+          $operation .= ' | ' . l("Agents", "admin/drealty/connections/manage/$name/resource/drealty_agent");
          *
          */
       } else {
@@ -126,10 +126,10 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
     $header[] = array('data' => t('Operations'), 'colspan' => $colspan);
 
     $render = array(
-        '#theme' => 'table',
-        '#header' => $header,
-        '#rows' => $rows,
-        '#empty' => t('None.'),
+      '#theme' => 'table',
+      '#header' => $header,
+      '#rows' => $rows,
+      '#empty' => t('None.'),
     );
     return $render;
   }
@@ -164,104 +164,104 @@ function drealty_connection_entity_edit_form($form, &$form_state, dRealtyConnect
   $form['conid'] = array('#type' => 'value', '#value' => $connection->conid);
 
   $form['label'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Connection Label'),
-      '#description' => t('The human-readable name of this connection.'),
-      '#required' => TRUE,
-      '#size' => 80,
-      '#default_value' => isset($connection->label) ? $connection->label : '',
+    '#type' => 'textfield',
+    '#title' => t('Connection Label'),
+    '#description' => t('The human-readable name of this connection.'),
+    '#required' => TRUE,
+    '#size' => 80,
+    '#default_value' => isset($connection->label) ? $connection->label : '',
   );
   $form['name'] = array(
-      '#type' => 'machine_name',
-      '#title' => t('Connection Name'),
-      '#machine_name' => array(
-          'exists' => 'drealty_connections_get_all',
-          'source' => array('label'),
-      ),
-      '#description' => t('A unique machine-readable name for this connection. It must only contain lowercase letters, numbers, and underscores.'),
-      '#size' => 80,
-      '#default_value' => isset($connection->name) ? $connection->name : '',
+    '#type' => 'machine_name',
+    '#title' => t('Connection Name'),
+    '#machine_name' => array(
+      'exists' => 'drealty_connections_get_all',
+      'source' => array('label'),
+    ),
+    '#description' => t('A unique machine-readable name for this connection. It must only contain lowercase letters, numbers, and underscores.'),
+    '#size' => 80,
+    '#default_value' => isset($connection->name) ? $connection->name : '',
   );
   $form['login_url'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Login URL'),
-      '#default_value' => isset($connection->login_url) ? $connection->login_url : '',
-      '#description' => t('Login URL given to you by your RETS provider. <em>i.e. (http://demo.crt.realtors.org:6103/rets/login)</em>'),
-      '#required' => TRUE,
-      '#size' => 80,
+    '#type' => 'textfield',
+    '#title' => t('Login URL'),
+    '#default_value' => isset($connection->login_url) ? $connection->login_url : '',
+    '#description' => t('Login URL given to you by your RETS provider. <em>i.e. (http://demo.crt.realtors.org:6103/rets/login)</em>'),
+    '#required' => TRUE,
+    '#size' => 80,
   );
   $form['username'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Username'),
-      '#default_value' => isset($connection->username) ? $connection->username : '',
-      '#size' => 40,
-      '#required' => TRUE,
+    '#type' => 'textfield',
+    '#title' => t('Username'),
+    '#default_value' => isset($connection->username) ? $connection->username : '',
+    '#size' => 40,
+    '#required' => TRUE,
   );
   $form['password'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Password'),
-      '#default_value' => isset($connection->password) ? $connection->password : '',
-      '#size' => 40,
-      '#required' => TRUE,
+    '#type' => 'textfield',
+    '#title' => t('Password'),
+    '#default_value' => isset($connection->password) ? $connection->password : '',
+    '#size' => 40,
+    '#required' => TRUE,
   );
 
   $form['ua_string'] = array(
-      '#type' => 'textfield',
-      '#title' => t('User Agent String'),
-      '#description' => t('A User Agent String.'),
-      '#required' => TRUE,
-      '#size' => 80,
-      '#default_value' => isset($connection->ua_string) ? $connection->ua_string : 'dRealty/1.0',
+    '#type' => 'textfield',
+    '#title' => t('User Agent String'),
+    '#description' => t('A User Agent String.'),
+    '#required' => TRUE,
+    '#size' => 80,
+    '#default_value' => isset($connection->ua_string) ? $connection->ua_string : 'dRealty/1.0',
   );
   $form['ua_password'] = array(
-      '#type' => 'textfield',
-      '#title' => t('User Agent Password'),
-      '#description' => t('(Leave blank if you don\'t have one).'),
-      '#required' => FALSE,
-      '#size' => 40,
-      '#default_value' => isset($connection->ua_password) ? $connection->ua_password : 'dRealty/1.0',
+    '#type' => 'textfield',
+    '#title' => t('User Agent Password'),
+    '#description' => t('(Leave blank if you don\'t have one).'),
+    '#required' => FALSE,
+    '#size' => 40,
+    '#default_value' => isset($connection->ua_password) ? $connection->ua_password : 'dRealty/1.0',
   );
   $rets_versions = array('1.0' => '1.0', '1.5' => '1.5', '1.7' => '1.7', '1.7.2' => '1.7.2');
   $form['version'] = array(
-      '#type' => 'select',
-      '#title' => t('RETS Version'),
-      '#options' => $rets_versions,
-      '#required' => TRUE,
-      '#default_value' => isset($connection->version) ? $connection->version : '1.5',
+    '#type' => 'select',
+    '#title' => t('RETS Version'),
+    '#options' => $rets_versions,
+    '#required' => TRUE,
+    '#default_value' => isset($connection->version) ? $connection->version : '1.5',
   );
   $form['use_interealty_auth'] = array(
-      '#type' => 'radios',
-      '#title' => t('Use Interealty Authentication'),
-      '#options' => array(TRUE => 'yes', FALSE => 'no'),
-      '#required' => TRUE,
-      '#default_value' => isset($connection->use_interealty_auth) ? $connection->use_interealty_auth : '0',
+    '#type' => 'radios',
+    '#title' => t('Use Interealty Authentication'),
+    '#options' => array(TRUE => 'yes', FALSE => 'no'),
+    '#required' => TRUE,
+    '#default_value' => isset($connection->use_interealty_auth) ? $connection->use_interealty_auth : '0',
   );
   $form['force_basic_auth'] = array(
-      '#type' => 'radios',
-      '#title' => t('Force Basic Authentication'),
-      '#options' => array(TRUE => 'yes', FALSE => 'no'),
-      '#required' => TRUE,
-      '#default_value' => isset($connection->force_basic_auth) ? $connection->force_basic_auth : '0',
+    '#type' => 'radios',
+    '#title' => t('Force Basic Authentication'),
+    '#options' => array(TRUE => 'yes', FALSE => 'no'),
+    '#required' => TRUE,
+    '#default_value' => isset($connection->force_basic_auth) ? $connection->force_basic_auth : '0',
   );
   $form['use_compression'] = array(
-      '#type' => 'radios',
-      '#title' => t('Use Compression'),
-      '#options' => array(TRUE => 'yes', FALSE => 'no'),
-      '#required' => TRUE,
-      '#default_value' => isset($connection->use_compression) ? $connection->use_compression : '0',
+    '#type' => 'radios',
+    '#title' => t('Use Compression'),
+    '#options' => array(TRUE => 'yes', FALSE => 'no'),
+    '#required' => TRUE,
+    '#default_value' => isset($connection->use_compression) ? $connection->use_compression : '0',
   );
-  
+
   $form['debug_mode'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable Debug Mode'),
     '#default_value' => isset($connection->debug_mode) ? $connection->debug_mode : FALSE,
   );
-  
+
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Save Connection'),
-      '#weight' => 40,
+    '#type' => 'submit',
+    '#value' => t('Save Connection'),
+    '#weight' => 40,
   );
   return $form;
 }
@@ -316,26 +316,26 @@ function drealty_activate_connection_form($form, &$form_state, $connection = NUL
 
       $form['server_info'] = array('#type' => 'fieldset', '#title' => 'Server Information');
       $form['server_info']['properties'] = array(
-          '#type' => 'item',
-          '#markup' => "<table border='0' cellpadding='1' cellspacing='1' width='100%'>\n" .
-          " <tr><td width='25%' valign='top'><strong>RETS Server:</strong></td><td width='75%' valign='top'>{$server['SystemDescription']}</td></tr>\n" .
-          " <tr><td width='25%' valign='top'><strong>RETS System ID:</strong></td><td width='75%' valign='top'>{$server['SystemID']}</td></tr>\n" .
-          " <tr><td width='25%' valign='top'><strong>Login URL:</strong></td><td width='75%' valign='top'>$login_url</td></tr>\n" .
-          " <tr><td width='25%' valign='top'><strong>RETS Version:</strong></td><td width='75%' valign='top'>{$rets_version}</td></tr>\n" .
-          " <tr><td width='25%' valign='top'><strong>Server Software:</strong></td><td width='75%' valign='top'>{$server_software}</td></tr>\n" .
-          " <tr><td width='25%' valign='top'><strong>Authentication Supported:</strong></td><td width='75%' valign='top'>{$auth_supported}</td></tr>\n" .
-          " <tr><td width='25%' valign='top'><strong>Transactions Supported:</strong></td><td width='75%' valign='top'>{$supported_caps}</td></tr>\n" .
-          "</table>"
+        '#type' => 'item',
+        '#markup' => "<table border='0' cellpadding='1' cellspacing='1' width='100%'>\n" .
+        " <tr><td width='25%' valign='top'><strong>RETS Server:</strong></td><td width='75%' valign='top'>{$server['SystemDescription']}</td></tr>\n" .
+        " <tr><td width='25%' valign='top'><strong>RETS System ID:</strong></td><td width='75%' valign='top'>{$server['SystemID']}</td></tr>\n" .
+        " <tr><td width='25%' valign='top'><strong>Login URL:</strong></td><td width='75%' valign='top'>$login_url</td></tr>\n" .
+        " <tr><td width='25%' valign='top'><strong>RETS Version:</strong></td><td width='75%' valign='top'>{$rets_version}</td></tr>\n" .
+        " <tr><td width='25%' valign='top'><strong>Server Software:</strong></td><td width='75%' valign='top'>{$server_software}</td></tr>\n" .
+        " <tr><td width='25%' valign='top'><strong>Authentication Supported:</strong></td><td width='75%' valign='top'>{$auth_supported}</td></tr>\n" .
+        " <tr><td width='25%' valign='top'><strong>Transactions Supported:</strong></td><td width='75%' valign='top'>{$supported_caps}</td></tr>\n" .
+        "</table>"
       );
 
       $form['activate'] = array(
-          '#type' => 'submit',
-          '#value' => t('Activate'),
+        '#type' => 'submit',
+        '#value' => t('Activate'),
       );
     } else {
       drupal_set_message($rets->error_string, 'error');
       $form['markup'] = array(
-          '#markup' => '<div>There was an error activating the current connection. Please check the settings and attempt to activate the connection again.</div>'
+        '#markup' => '<div>There was an error activating the current connection. Please check the settings and attempt to activate the connection again.</div>'
       );
     }
 
@@ -392,16 +392,16 @@ function drealty_connection_delete_form_wrapper(dRealtyConnectionEntity $connect
 function drealty_select_resource_type($form, &$form_state) {
   $connection = $form_state['connection'];
   $entity_type = $form_state['entity_type'];
-  
+
   $dr = new drealtyResources();
   $selected_resource = $dr->FetchResource($form_state['values']['prop_resource']);
 
 // update the resource mapping for this connection
   $mapping = array(
-      'mid' => isset($form_state['values']['mid']) ? $form_state['values']['mid'] : NULL,
-      'conid' => $connection->conid,
-      'rid' => $selected_resource->rid,
-      'entity_type' => $entity_type,
+    'mid' => isset($form_state['values']['mid']) ? $form_state['values']['mid'] : NULL,
+    'conid' => $connection->conid,
+    'rid' => $selected_resource->rid,
+    'entity_type' => $entity_type,
   );
 // update or insert
   if (isset($mapping['mid'])) {
@@ -415,6 +415,7 @@ function drealty_select_resource_type($form, &$form_state) {
   // set a succes message
   drupal_set_message(t('The resource type selection has been saved.'));
 }
+
 
 function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionEntity $connection = NULL, $entity_type = NULL) {
 
@@ -440,24 +441,24 @@ function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionE
   $form['conid'] = array('#type' => 'value', '#value' => $connection->conid);
   $form['resource'] = array('#type' => 'value', '#value' => $entity_type);
   $form['prop_resource'] = array(
-      '#type' => 'select',
-      '#title' => t('@resource Resource', array('@resource' => ucwords(str_replace("_", " ", $entity_type)))),
-      '#default_value' => isset($mappings[$entity_type]) ? $mappings[$entity_type]->rid : NULL,
-      '#options' => $resources,
+    '#type' => 'select',
+    '#title' => t('@resource Resource', array('@resource' => ucwords(str_replace("_", " ", $entity_type)))),
+    '#default_value' => isset($mappings[$entity_type]) ? $mappings[$entity_type]->rid : NULL,
+    '#options' => $resources,
   );
   $form['select_prop_resource'] = array(
-      '#type' => 'submit',
-      '#value' => isset($mappings[$entity_type]) ? 'change' : 'select',
-      '#submit' => array('drealty_select_resource_type'),
-      '#suffix' => '<br /><br />',
+    '#type' => 'submit',
+    '#value' => isset($mappings[$entity_type]) ? 'change' : 'select',
+    '#submit' => array('drealty_select_resource_type'),
+    '#suffix' => '<br /><br />',
   );
 
 
   if (isset($form_state['input']['prop_resource']) || isset($mappings[$entity_type])) {
-    
-      $dr = new drealtyResources();
+
+    $dr = new drealtyResources();
     if (isset($form_state['input']['prop_resource'])) {
-      
+
       $selected_resource = $dr->FetchResource($form_state['input']['prop_resource']);
       $results = $connection->fetchClasses($selected_resource);
     } else {
@@ -466,17 +467,17 @@ function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionE
     }
 
     $life_opts = array(0 => t('Every time')) + drupal_map_assoc(array(
-                900, // 15 mins
-                1800, // 30 mins
-                3600, // 1 hour
-                7200, // 2 hours
-                10800, // 3 hours
-                21600, // 6 hours
-                28800, // 8 hours
-                43200, // 12 hours
-                86400, // 1 day
-                172800, // 2 days
-                    ), 'format_interval');
+        900, // 15 mins
+        1800, // 30 mins
+        3600, // 1 hour
+        7200, // 2 hours
+        10800, // 3 hours
+        21600, // 6 hours
+        28800, // 8 hours
+        43200, // 12 hours
+        86400, // 1 day
+        172800, // 2 days
+        ), 'format_interval');
 
     // setup the property types for the dropdown
     $bundle_types = entity_load('drealty_listing_type');
@@ -501,7 +502,6 @@ function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionE
       $form['classes'][$key]['sname'] = array('#value' => "{$class->standardname} {$class->description}");
 
       $form['classes'][$key]['enabled'] = array('#type' => 'checkbox', '#default_value' => $class->enabled, '#attributes' => $class->enabled ? array('checked' => 'checked') : NULL, '#disabled' => $class->configured ? FALSE : TRUE,);
-      $form['classes'][$key]['bundle'] = array('#type' => 'select', '#options' => $type_opts, '#default_value' => isset($class->bundle) ? $class->bundle : 'none',);
       $form['classes'][$key]['lifetime'] = array('#type' => 'select', '#options' => $life_opts, '#default_value' => isset($class->lifetime) ? $class->lifetime : 28000, '#disabled' => $class->configured ? FALSE : TRUE,);
       $configure_fields_link = l("configure id fields", "admin/drealty/connections/manage/{$connection->name}/resource/{$entity_type}/{$class->cid}/fields");
       $configure_limits_link = l("configure options", "admin/drealty/connections/manage/{$connection->name}/resource/{$entity_type}/{$class->cid}/limits");
@@ -514,21 +514,16 @@ function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionE
     }
 
     $form['save_changes'] = array(
-        '#type' => 'submit',
-        '#submit' => array('drealty_configure_resource_form_submit'),
-        '#value' => t('Save Changes'),
+      '#type' => 'submit',
+      '#submit' => array('drealty_configure_resource_form_submit'),
+      '#value' => t('Save Changes'),
     );
   }
   return $form;
 }
 
 function drealty_configure_resource_form_validate($form, &$form_state) {
-  foreach ($form_state['values']['classes'] as $class) {
-    if ($class['enabled'] == TRUE && $class['bundle'] == 'none') {
-      $name = $class['classname'];
-      form_set_error("classes][$name][bundle", "Please select a property type.");
-    }
-  }
+
 }
 
 function drealty_configure_resource_form_submit($form, &$form_state) {
@@ -539,10 +534,10 @@ function drealty_configure_resource_form_submit($form, &$form_state) {
 
 // update the resource mapping for this connection
   $mapping = array(
-      'mid' => isset($form_state['values']['mid']) ? $form_state['values']['mid'] : NULL,
-      'conid' => $connection->conid,
-      'resource' => $form_state['values']['prop_resource'],
-      'entity_type' => $entity_type,
+    'mid' => isset($form_state['values']['mid']) ? $form_state['values']['mid'] : NULL,
+    'conid' => $connection->conid,
+    'resource' => $form_state['values']['prop_resource'],
+    'entity_type' => $entity_type,
   );
 // update or insert
   if (isset($mapping['mid'])) {
@@ -552,19 +547,14 @@ function drealty_configure_resource_form_submit($form, &$form_state) {
     drupal_write_record('drealty_resource_mappings', $mapping, array());
   }
 
-  $select_opts = array();
   // update the classes
   foreach ($form_state['values']['classes'] as $class) {
     drupal_write_record('drealty_classes', $class, array('cid'));
-    $select_opts[] = "{$class['classname']}|{$class['standardname']}";
   }
 
 
   $conid = $connection->conid;
 
-  // clear out the cached data
-  cache_clear_all("drealty_classes_", 'cache', TRUE);
-  cache_clear_all("drealty_mappings_$conid", 'cache');
   // set a succes message
   drupal_set_message(t('The Configuration options have been Saved.'));
 }
@@ -584,46 +574,80 @@ function drealty_configure_resource_fields_form($form, &$form_state, dRealtyConn
     return $form;
   }
 
+  
+      // setup the property types for the dropdown
+    $bundle_types = entity_load('drealty_listing_type');
+    $type_opts = array();
+    $type_opts['none'] = '-- Select --';
+    foreach ($bundle_types as $type) {
+      $type_opts[$type->type] = $type->label;
+    }
+  
+  
   $dr = new drealtyResources();
   $resource = $dr->FetchResource($mappings[$entity_type]->rid);
-  
+
   $field_mappings = $connection->FetchFieldMappings($resource, $class);
   $fields = $connection->FetchFields($resource, $class);
   $form['required'] = array('#type' => 'fieldset', '#title' => t('Required Fields'));
   $form['required']['rets_id'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Id Field'),
-      '#description' => t('A unique ID field for the RETS resource, for Properties this is typically the MLS ID.'),
-      '#required' => TRUE,
-      '#default_value' => isset($field_mappings['rets_id']) ? $fields[$field_mappings['rets_id']->systemname]->systemname . ' - ' . $fields[$field_mappings['rets_id']->systemname]->longname : NULL,
-      '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
+    '#type' => 'textfield',
+    '#title' => t('Id Field'),
+    '#description' => t('A unique ID field for the RETS resource, for Properties this is typically the MLS ID.'),
+    '#required' => TRUE,
+    '#default_value' => isset($field_mappings['rets_id']) ? $fields[$field_mappings['rets_id']->systemname]->systemname . ' - ' . $fields[$field_mappings['rets_id']->systemname]->longname : NULL,
+    '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
   );
 
   $form['required']['rets_key'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Key Field'),
-      '#description' => t('The unique key field for the RETS resource as defined by the RETS provider. Can be the same as the ID field, however some RETS providers have seperate fields for the Key and the ID. Images are also typically based off of the Key field rather than the ID field.'),
-      '#required' => TRUE,
-      '#default_value' => isset($field_mappings['rets_key']) ? $fields[$field_mappings['rets_key']->systemname]->systemname . ' - ' . $fields[$field_mappings['rets_key']->systemname]->longname : NULL,
-      '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
+    '#type' => 'textfield',
+    '#title' => t('Key Field'),
+    '#description' => t('The unique key field for the RETS resource as defined by the RETS provider. Can be the same as the ID field, however some RETS providers have seperate fields for the Key and the ID. Images are also typically based off of the Key field rather than the ID field.'),
+    '#required' => TRUE,
+    '#default_value' => isset($field_mappings['rets_key']) ? $fields[$field_mappings['rets_key']->systemname]->systemname . ' - ' . $fields[$field_mappings['rets_key']->systemname]->longname : NULL,
+    '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
   );
 
 
   $form['required']['rets_status'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Status Field'),
-      '#description' => t('The RETS Listing status field. If your server supports offset, then this field must be mapped in order to build the default RETS query.'),
-      '#required' => FALSE,
-      '#default_value' => !empty($field_mappings['rets_status']) ? $fields[$field_mappings['rets_status']->systemname]->systemname . ' - ' . $fields[$field_mappings['rets_status']->systemname]->longname : NULL,
-      '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
+    '#type' => 'textfield',
+    '#title' => t('Status Field'),
+    '#description' => t('The RETS Listing status field. If your server supports offset, then this field must be mapped in order to build the default RETS query.'),
+    '#required' => FALSE,
+    '#default_value' => !empty($field_mappings['rets_status']) ? $fields[$field_mappings['rets_status']->systemname]->systemname . ' - ' . $fields[$field_mappings['rets_status']->systemname]->longname : NULL,
+    '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
   );
   
+  $form['required']['bundle'] = array(
+    '#type' => 'select', 
+    '#title' => t('Drealty Property Type'),
+    '#description' => t('Select the Property Type to associate this Listing Type with. You can add new types <a href="/admin/drealty/drealty_listings">here</a>'),
+    '#options' => $type_opts, 
+    '#default_value' => isset($class->bundle) ? $class->bundle : 'none',
+    );
+  
+
+  
+
+  $form['rets'] = array('#type' => 'fieldset', '#title' => t('Available RETS Fields'), '#collapsible' => TRUE, '#collapsed' => TRUE);
+  
+  $form['rets']['fields']['#tree'] = TRUE;
+  $form['rets']['fields']['#theme'] = 'drealty_field_config_form';
+  
+  foreach($fields as $field) {
+    $form['rets']['fields'][$field->systemname]['system_name'] = array('#markup' => $field->systemname);
+    $form['rets']['fields'][$field->systemname]['standard_name'] = array('#markup'=> $field->standardname);
+    $form['rets']['fields'][$field->systemname]['long_name'] = array('#markup' => $field->longname);
+    $form['rets']['fields'][$field->systemname]['data_type'] = array('#markup' => $field->datatype);
+    $form['rets']['fields'][$field->systemname]['interpretation'] = array('#markup' => $field->interpretation);
+    $form['rets']['fields'][$field->systemname]['operation'] = array('#markup' => 'add | remove');
+  }
   
 
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Save Configuration'),
+    '#type' => 'submit',
+    '#value' => t('Save Configuration'),
   );
   return $form;
 }
@@ -632,11 +656,14 @@ function drealty_configure_resource_fields_form_validate($form, &$form_state) {
   $connection = $form_state['connection'];
   $entity_type = $form_state['entity_type'];
   $class = $form_state['class'];
-
+  
+  $dr = new drealtyResources();
+  $resource = $dr->FetchResource($class->rid);
+  
   $mappings = $connection->resourceMappings();
 
-  $field_mappings = $connection->FetchFieldMappings($mappings[$entity_type]->resource, $class->cid);
-  $mls_fields = $connection->FetchFields($mappings[$entity_type]->resource);
+  $field_mappings = $connection->FetchFieldMappings($resource, $class);
+  $mls_fields = $connection->FetchFields($resource, $class);
 
   $rets_id = explode(' - ', $form_state['values']['rets_id']);
   if (!isset($mls_fields[$rets_id[0]])) {
@@ -659,30 +686,28 @@ function drealty_configure_resource_fields_form_submit($form, &$form_state) {
   $connection = $form_state['connection'];
 
   $mappings = $connection->resourceMappings();
-  $resource = $mappings[$entity_type]->resource;
+  $rid = $mappings[$entity_type]->rid;
 
   $rets_id = explode(' - ', $form_state['values']['rets_id']);
   $rets_key = explode(' - ', $form_state['values']['rets_key']);
   if (!empty($form_state['values']['rets_status'])) {
     $rets_status = explode(' - ', $form_state['values']['rets_status']);
-    $connection->CreateFieldMapMapping($resource, 'rets_status', $rets_status[0], $class->cid);
+    $connection->CreateFieldMapMapping($rid, 'rets_status', $rets_status[0], $class->cid);
   }
-  $connection->CreateFieldMapMapping($resource, 'rets_id', $rets_id[0], $class->cid);
-  $connection->CreateFieldMapMapping($resource, 'rets_key', $rets_key[0], $class->cid);
+  $connection->CreateFieldMapMapping($rid, 'rets_id', $rets_id[0], $class->cid);
+  $connection->CreateFieldMapMapping($rid, 'rets_key', $rets_key[0], $class->cid);
 
-  cache_clear_all("drealty_fields_", 'cache', TRUE);
-  cache_clear_all('drealty_field_mapping_', 'cache', TRUE);
-
-  // since we have added some fields we need to clear the hash value on the affected listings so that when 
-  // an import is run again we get the new values inserted
-
+  // set the bundle
+  $class->bundle = $form_state['values']['bundle'];  
+  drupal_write_record('drealty_classes', $class, 'cid');
+  
   db_update($entity_type)
-          ->fields(array(
-              'hash' => '0',
-          ))
-          ->condition('conid', $connection->conid)
-          ->condition('class', $class->cid)
-          ->execute();
+    ->fields(array(
+      'hash' => '0',
+    ))
+    ->condition('conid', $connection->conid)
+    ->condition('class', $class->cid)
+    ->execute();
 
 
   drupal_set_message('Configuration options have been saved.');
@@ -698,8 +723,8 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
     drupal_goto("admin/drealty/connections/manage/{$connection->name}/resource/$entity_type");
   }
 
-  
-  
+
+
   $resource = $mappings[$entity_type]->resource;
 
 
@@ -709,10 +734,10 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
   $form_state['class'] = $class;
 
   $fieldmappings = $connection->FetchFieldMappings($resource, $class->cid);
-  
 
-  
-  
+
+
+
   $fields = $connection->FetchFields($resource);
 
 
@@ -731,7 +756,7 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
 
   $skip_status = FALSE;
   $query_types = array(0 => 'Default (Server must support offset. Relies on RETS Status Field.)', 1 => 'Offset <strong>Not</strong> Supported (Query based on price field)', 3 => 'Offset <strong>Not</strong> Supported (Query based on RETS Key)', 2 => 'Manually supplied Query (Server must support offset)');
-  
+
   if ($query_field === FALSE || !isset($fieldmappings[$query_field])) {
     $skip_status = TRUE;
     unset($query_types[0]);
@@ -778,25 +803,25 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
 
 
   $form['query_options']['query_type'] = array(
-      '#type' => 'radios',
-      '#title' => t('Query Type'),
-      '#default_value' => isset($class->query_type) ? $class->query_type : 0,
-      '#options' => $query_types,
-      '#description' => t('Please select the type of query operation to use.'),
+    '#type' => 'radios',
+    '#title' => t('Query Type'),
+    '#default_value' => isset($class->query_type) ? $class->query_type : 0,
+    '#options' => $query_types,
+    '#description' => t('Please select the type of query operation to use.'),
   );
 
   if (!$skip_status) {
     $form['query_options']['status'] = array(
-        '#type' => 'select',
-        '#title' => t('Status Field'),
-        '#options' => $opts,
-        '#default_value' => explode(',', $class->status_values),
-        '#description' => t('Select the appropriate values to limit the search query.'),
-        '#multiple' => TRUE,
-        '#states' => array(
-            'visible' => array(':input[name="query_type"]' => array('value' => '0')),
-            'required' => array(':input[name="query_type"]' => array('value' => '0')),
-        ),
+      '#type' => 'select',
+      '#title' => t('Status Field'),
+      '#options' => $opts,
+      '#default_value' => explode(',', $class->status_values),
+      '#description' => t('Select the appropriate values to limit the search query.'),
+      '#multiple' => TRUE,
+      '#states' => array(
+        'visible' => array(':input[name="query_type"]' => array('value' => '0')),
+        'required' => array(':input[name="query_type"]' => array('value' => '0')),
+      ),
     );
   } else {
     $form_state['status_null'] = TRUE;
@@ -809,94 +834,94 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
 //    );
   }
   $form['query_options']['status_override_query'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Query to use'),
-      '#size' => 100,
-      '#description' => t('Must be a valid DMQL query. (specs found <a href="http://retsdoc.onconfluence.com/display/rets172/7.7+Query+language" target="_blank">here.</a> A good tutorial can be found <a href="http://www.flexmls.com/support/rets/tutorials/dmql/" target="_blank">here.</a> You may also find that <a href="http://www.retsmd.com" target="_blank">www.retsmd.com</a> is a valuable resource in helping write the query.'),
-      '#default_value' => $class->override_status_query_text,
-      '#states' => array(
-          'visible' => array(':input[name="query_type"]' => array('value' => '2')),
-          'required' => array(':input[name="query_type"]' => array('value' => '2')),
-      ),
+    '#type' => 'textfield',
+    '#title' => t('Query to use'),
+    '#size' => 100,
+    '#description' => t('Must be a valid DMQL query. (specs found <a href="http://retsdoc.onconfluence.com/display/rets172/7.7+Query+language" target="_blank">here.</a> A good tutorial can be found <a href="http://www.flexmls.com/support/rets/tutorials/dmql/" target="_blank">here.</a> You may also find that <a href="http://www.retsmd.com" target="_blank">www.retsmd.com</a> is a valuable resource in helping write the query.'),
+    '#default_value' => $class->override_status_query_text,
+    '#states' => array(
+      'visible' => array(':input[name="query_type"]' => array('value' => '2')),
+      'required' => array(':input[name="query_type"]' => array('value' => '2')),
+    ),
   );
   $form['query_options']['total_query'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Query to use'),
-      '#size' => 100,
-      '#description' => t('Must be a valid DMQL query. (specs found <a href="http://retsdoc.onconfluence.com/display/rets172/7.7+Query+language" target="_blank">here.</a> A good tutorial can be found <a href="http://www.flexmls.com/support/rets/tutorials/dmql/" target="_blank">here.</a> You may also find that <a href="http://www.retsmd.com" target="_blank">www.retsmd.com</a> is a valuable resource in helping write the query.'),
-      '#default_value' => $class->override_status_query_text,
-      '#states' => array(
-          'visible' => array(':input[name="query_type"]' => array('value' => '1')),
-          'required' => array(':input[name="query_type"]' => array('value' => '1')),
-      ),
+    '#type' => 'textfield',
+    '#title' => t('Query to use'),
+    '#size' => 100,
+    '#description' => t('Must be a valid DMQL query. (specs found <a href="http://retsdoc.onconfluence.com/display/rets172/7.7+Query+language" target="_blank">here.</a> A good tutorial can be found <a href="http://www.flexmls.com/support/rets/tutorials/dmql/" target="_blank">here.</a> You may also find that <a href="http://www.retsmd.com" target="_blank">www.retsmd.com</a> is a valuable resource in helping write the query.'),
+    '#default_value' => $class->override_status_query_text,
+    '#states' => array(
+      'visible' => array(':input[name="query_type"]' => array('value' => '1')),
+      'required' => array(':input[name="query_type"]' => array('value' => '1')),
+    ),
   );
   $form['query_options']['check_query_1'] = array(
-      '#type' => 'submit',
-      '#value' => t('Test DMQL Query'),
-      '#description' => t('This process my take several minutes.'),
-      '#submit' => array('drealty_test_manual_query'),
-      '#states' => array(
-          'visible' => array(':input[name="query_type"]' => array('value' => '1')),
-      ),
+    '#type' => 'submit',
+    '#value' => t('Test DMQL Query'),
+    '#description' => t('This process my take several minutes.'),
+    '#submit' => array('drealty_test_manual_query'),
+    '#states' => array(
+      'visible' => array(':input[name="query_type"]' => array('value' => '1')),
+    ),
   );
   $form['query_options']['check_query'] = array(
-      '#type' => 'submit',
-      '#value' => t('Test DMQL Query'),
-      '#description' => t('This process my take several minutes.'),
-      '#submit' => array('drealty_test_manual_query'),
-      '#states' => array(
-          'visible' => array(':input[name="query_type"]' => array('value' => '2')),
-      ),
+    '#type' => 'submit',
+    '#value' => t('Test DMQL Query'),
+    '#description' => t('This process my take several minutes.'),
+    '#submit' => array('drealty_test_manual_query'),
+    '#states' => array(
+      'visible' => array(':input[name="query_type"]' => array('value' => '2')),
+    ),
   );
 
   $form['query_options']['offset_field'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Price field to base the offset on'),
-      '#description' => t('This field must be a numeric price field. If you are unsure, visit <a href="http://www.retsmd.com" target="_blank">www.retsmd.com</a> to ensure that the field is numeric.'),
-      '#default_value' => $class->offset_field,
-      '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
-      '#states' => array(
-          'visible' => array(':input[name="query_type"]' => array('value' => '1')),
-          'required' => array(':input[name="query_type"]' => array('value' => '1')),
-      ),
+    '#type' => 'textfield',
+    '#title' => t('Price field to base the offset on'),
+    '#description' => t('This field must be a numeric price field. If you are unsure, visit <a href="http://www.retsmd.com" target="_blank">www.retsmd.com</a> to ensure that the field is numeric.'),
+    '#default_value' => $class->offset_field,
+    '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
+    '#states' => array(
+      'visible' => array(':input[name="query_type"]' => array('value' => '1')),
+      'required' => array(':input[name="query_type"]' => array('value' => '1')),
+    ),
   );
 
   $form['query_options']['offset_amount'] = array(
-      '#type' => 'select',
-      '#title' => t('The amount to offset by.'),
-      '#default_value' => $class->offset_amount,
-      '#options' => array(10000 => '$10,000', 25000 => '$25,000', 50000 => '$50,000', 75000 => '$75,000', 100000 => '$100,000', 200000 => '$200,000'),
-      '#states' => array(
-          'visible' => array(':input[name="query_type"]' => array('value' => '1')),
-          'required' => array(':input[name="query_type"]' => array('value' => '1')),
-      ),
+    '#type' => 'select',
+    '#title' => t('The amount to offset by.'),
+    '#default_value' => $class->offset_amount,
+    '#options' => array(10000 => '$10,000', 25000 => '$25,000', 50000 => '$50,000', 75000 => '$75,000', 100000 => '$100,000', 200000 => '$200,000'),
+    '#states' => array(
+      'visible' => array(':input[name="query_type"]' => array('value' => '1')),
+      'required' => array(':input[name="query_type"]' => array('value' => '1')),
+    ),
   );
 
   $form['query_options']['offset_max'] = array(
-      '#type' => 'select',
-      '#title' => t('The maximum offset amount.'),
-      '#default_value' => $class->offset_max,
-      '#options' => array(1000000 => '$1m', 1500000 => '$1.5m', 2000000 => '$2m', 5000000 => '$5m', 7500000 => '$7.5m', 10000000 => '$10m', 999000000 => '$999m'),
-      '#states' => array(
-          'visible' => array(':input[name="query_type"]' => array('value' => '1')),
-          'required' => array(':input[name="query_type"]' => array('value' => '1')),
-      ),
+    '#type' => 'select',
+    '#title' => t('The maximum offset amount.'),
+    '#default_value' => $class->offset_max,
+    '#options' => array(1000000 => '$1m', 1500000 => '$1.5m', 2000000 => '$2m', 5000000 => '$5m', 7500000 => '$7.5m', 10000000 => '$10m', 999000000 => '$999m'),
+    '#states' => array(
+      'visible' => array(':input[name="query_type"]' => array('value' => '1')),
+      'required' => array(':input[name="query_type"]' => array('value' => '1')),
+    ),
   );
 
 
 
 
   $form['query_options']['chunk'] = array(
-      '#title' => t('Record chunk size'),
-      '#type' => 'select',
-      '#options' => drupal_map_assoc(array(250, 500, 1000, 1500, 2000, 3000)) + array('0' => t('Unlimited')),
-      '#default_value' => $class->chunk_size,
-      '#description' => t('When processing incoming records, the system will work with data structures containing this many records simultaneously,
+    '#title' => t('Record chunk size'),
+    '#type' => 'select',
+    '#options' => drupal_map_assoc(array(250, 500, 1000, 1500, 2000, 3000)) + array('0' => t('Unlimited')),
+    '#default_value' => $class->chunk_size,
+    '#description' => t('When processing incoming records, the system will work with data structures containing this many records simultaneously,
       and cache the rest for later. If updating listings is often failing due to out of memory errors and increasing PHP&rsquo;s memory allocation is not an option,
       try decreasing this value. However, decreasing this value increases the amount of time it will take to update listings. The RETS server may override this value (MAXROWS).'),
-      '#states' => array(
-          'invisible' => array(':input[name="query_type"]' => array('value' => '1')),
-      ),
+    '#states' => array(
+      'invisible' => array(':input[name="query_type"]' => array('value' => '1')),
+    ),
   );
 
 
@@ -918,67 +943,67 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
 
     if (count($img_field_opts) <= 0) {
       $form['images']['no_image_field'] = array(
-          '#markup' => t('<div class="messages warning">There are no image fields defined for the Property Type associated with this class. In order to associate images you will need to create an image field to hold them.</div>'),
-          '#states' => array(
-              'visible' => array(':input[name="process_images"]' => array('checked' => TRUE)),
-          ),
+        '#markup' => t('<div class="messages warning">There are no image fields defined for the Property Type associated with this class. In order to associate images you will need to create an image field to hold them.</div>'),
+        '#states' => array(
+          'visible' => array(':input[name="process_images"]' => array('checked' => TRUE)),
+        ),
       );
     }
 
     $form['images']['process_images'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Process Images?'),
-        '#description' => t('Process images/metadata objects for this resource type?'),
-        '#default_value' => $class->process_images,
-        '#disabled' => (count($img_field_opts) >= 1) ? FALSE : TRUE,
+      '#type' => 'checkbox',
+      '#title' => t('Process Images?'),
+      '#description' => t('Process images/metadata objects for this resource type?'),
+      '#default_value' => $class->process_images,
+      '#disabled' => (count($img_field_opts) >= 1) ? FALSE : TRUE,
     );
 
     $form['images']['object_type'] = array(
-        '#type' => 'select',
-        '#multiple' => FALSE,
-        '#title' => t('Object types to download'),
-        '#description' => t('Each MLS provides zero or more object types (photos) to download for each listing. Select the object type you would like to download.'),
-        '#options' => $opts_object_types,
-        '#default_value' => $class->object_type,
-        '#states' => array(
-            'visible' => array(':input[name="process_images"]' => array('checked' => TRUE)),
-        ),
+      '#type' => 'select',
+      '#multiple' => FALSE,
+      '#title' => t('Object types to download'),
+      '#description' => t('Each MLS provides zero or more object types (photos) to download for each listing. Select the object type you would like to download.'),
+      '#options' => $opts_object_types,
+      '#default_value' => $class->object_type,
+      '#states' => array(
+        'visible' => array(':input[name="process_images"]' => array('checked' => TRUE)),
+      ),
     );
 
 
 
     if (count($img_field_opts) >= 1) {
       $form['images']['image_field_name'] = array(
-          '#type' => 'select',
-          '#multiple' => FALSE,
-          '#title' => t('Image Field'),
-          '#description' => t('Select the Image Field you would like to store the images in. You will need to create an image field if there are none to select.'),
-          '#options' => $img_field_opts,
-          '#default_value' => NULL,
-          '#states' => array(
-              'visible' => array(':input[name="process_images"]' => array('checked' => TRUE)),
-          ),
+        '#type' => 'select',
+        '#multiple' => FALSE,
+        '#title' => t('Image Field'),
+        '#description' => t('Select the Image Field you would like to store the images in. You will need to create an image field if there are none to select.'),
+        '#options' => $img_field_opts,
+        '#default_value' => NULL,
+        '#states' => array(
+          'visible' => array(':input[name="process_images"]' => array('checked' => TRUE)),
+        ),
       );
     }
 
     $chunk_opts = array('5' => '5', '10' => '10', '25' => '25', '40' => '40', '50' => '50');
     $form['images']['image_chunk_size'] = array(
-        '#type' => 'select',
-        '#multiple' => FALSE,
-        '#title' => t('Image Chunk Size'),
-        '#description' => t('Images are downloaded in batches, a listing can have 0 or more images associated with it. The chunk size determines how many listings are included in a batch. If each listing has 10 images associated with it and the chunk size
+      '#type' => 'select',
+      '#multiple' => FALSE,
+      '#title' => t('Image Chunk Size'),
+      '#description' => t('Images are downloaded in batches, a listing can have 0 or more images associated with it. The chunk size determines how many listings are included in a batch. If each listing has 10 images associated with it and the chunk size
           is set to 10 a total of 100 images would potentially be downloaded at one time. This setting is meant to <em>adjust</em> the number of images that are downloaded in a single round trip to the RETS server. The more images downloaded the more 
           memory that is used by the system to process them. <strong>If you are experiencing out of memory errors while the system is processing images try decreasing the size.</strong> Default is 25'),
-        '#options' => $chunk_opts,
-        '#default_value' => isset($class->image_chunk_size) ? $class->image_chunk_size : '25',
-        '#states' => array(
-            'visible' => array(':input[name="process_images"]' => array('checked' => TRUE)),
-        ),
+      '#options' => $chunk_opts,
+      '#default_value' => isset($class->image_chunk_size) ? $class->image_chunk_size : '25',
+      '#states' => array(
+        'visible' => array(':input[name="process_images"]' => array('checked' => TRUE)),
+      ),
     );
   }
   $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Save Configuration'),
+    '#type' => 'submit',
+    '#value' => t('Save Configuration'),
   );
 
   return $form;
@@ -1055,8 +1080,8 @@ function drealty_test_manual_query($form, &$form_state) {
   if ($dc->connect($connection->conid)) {
 
     $options = array(
-        'count' => 1,
-        'Format' => 'COMPACT-DECODED',
+      'count' => 1,
+      'Format' => 'COMPACT-DECODED',
     );
 
     $search = $dc->get_phrets()->SearchQuery($resource, $class->systemname, $query);
@@ -1084,11 +1109,24 @@ function theme_drealty_field_config_form(&$variables) {
   $header = array('System Name', 'Standard Name', 'Long Name', 'Data Type', 'Interpretation', 'Operation');
   $rows = array();
   $form = $variables['form'];
-  
+
+  foreach (element_children($form) as $key) {
+    $row = array();
+    $row[] = array('data' => drupal_render($form[$key]['system_name']));
+    $row[] = array('data' => drupal_render($form[$key]['standard_name']));
+    $row[] = array('data' => drupal_render($form[$key]['long_name']));
+    $row[] = array('data' => drupal_render($form[$key]['data_type']));
+    $row[] = array('data' => drupal_render($form[$key]['interpretation']));
+    $row[] = array('data' => drupal_render($form[$key]['operation']));
+    $rows[] = $row;
+  }
+  $output = theme('table', array('header' => $header, 'rows' => $rows));
+  //$output .= drupal_render($form);
+  return $output;
 }
 
 function theme_drealty_classes_form(&$variables) {
-  $header = array('System Name', 'Description', 'Enabled', 'Property Type', 'Lifetime', 'Actions');
+  $header = array('System Name', 'Description', 'Enabled', 'Lifetime', 'Actions');
   $rows = array();
   $form = $variables['form'];
   foreach (element_children($form) as $key) {
@@ -1096,7 +1134,6 @@ function theme_drealty_classes_form(&$variables) {
     $row[] = array('data' => drupal_render($form[$key]['name']));
     $row[] = array('data' => drupal_render($form[$key]['description']));
     $row[] = array('data' => drupal_render($form[$key]['enabled']));
-    $row[] = array('data' => drupal_render($form[$key]['bundle']));
     $row[] = array('data' => drupal_render($form[$key]['lifetime']));
     $row[] = array('data' => drupal_render($form[$key]['actions']));
     $rows[] = $row;

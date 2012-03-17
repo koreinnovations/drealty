@@ -115,8 +115,6 @@ class DrealtyListingController extends EntityAPIController {
    * @param type $content
    * @return string 
    */
-  
-  
   public function buildContent($entity, $view_mode = 'full', $langcode = NULL, $content = array()) {
     $content = parent::buildContent($entity, $view_mode, $langcode, $content);
 
@@ -150,11 +148,11 @@ class DrealtyListingController extends EntityAPIController {
     drupal_set_title($title);
 
     $og_title = array(
-        '#tag' => 'meta',
-        '#attributes' => array(
-            'property' => 'og:title',
-            'content' => $title,
-        ),
+      '#tag' => 'meta',
+      '#attributes' => array(
+        'property' => 'og:title',
+        'content' => $title,
+      ),
     );
 
 //    if (isset($entity->mls_images)) {
@@ -167,7 +165,6 @@ class DrealtyListingController extends EntityAPIController {
 //      );
 //      drupal_add_html_head($og_image, 'og_image');
 //    }
-
 //    drupal_add_html_head($meta_description, 'meta_description');
 //    drupal_add_html_head($og_description, 'og_description');
     drupal_add_html_head($og_title, 'og_title');
@@ -200,6 +197,22 @@ class DrealtyListingType extends Entity {
    */
   public function isLocked() {
     return isset($this->status) && empty($this->is_new) && (($this->status & ENTITY_IN_CODE) || ($this->status & ENTITY_FIXED));
+  }
+
+}
+
+class DrealtyListingTypeController extends EntityAPIControllerExportable {
+
+  public function delete($ids, DatabaseTransaction $transaction = NULL) {
+    parent::delete($ids, $transaction);
+    foreach ($ids as $id) {
+      field_attach_delete_bundle('drealty_listing', $id);
+      //check to see if any classes are using this bundle if so disable the class and set it's bundle to null
+      db_update('drealty_classes')
+        ->condition('bundle', $id)
+        ->fields(array('bundle' => 'none', 'enabled' => 0))
+        ->execute();
+    }
   }
 
 }

@@ -283,7 +283,6 @@ function drealty_schema() {
       'type' => array('type'),
     ),
   );
-  $schema['cache_drealty'] = drupal_get_schema_unprocessed('system', 'cache');
 
   return $schema;
 }

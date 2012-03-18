@@ -1,17 +1,5 @@
 <?php
 
-define('DREALTY_LISTING_DEFAULT_URL_PATTERN', "listing/[drealty_listing:rets-id]", TRUE);
-define('DREALTY_LISTING_DEFAULT_TITLE_PATTERN', "[drealty_listing:rets-id]", TRUE);
-
-define('DREALTY_OPENHOUSE_DEFAULT_URL_PATTERN', "openhouse/[drealty_openhouse:id]");
-define('DREALTY_OPENHOUSE_DEFAULT_TITLE_PATTERN', "open house title");
-
-define('DREALTY_AGENT_DEFAULT_URL_PATTERN', "agent/[drealty_agent:first_name]-[drealty_agent:last_name]");
-define('DREALTY_AGENT_DEFAULT_TITLE_PATTERN', "[drealty_agent:first_name] [drealty_agent:last_name]");
-
-define('DREALTY_OFFICE_DEFAULT_URL_PATTERN', "office/[drealty_office:office_name]");
-define('DREALTY_OFFICE_DEFAULT_TITLE_PATTERN', "[drealty_office:office_name]");
-
 function drealty_entity_info() {
   $entities = array();
   $entities['drealty_listing'] = array(
@@ -160,32 +148,10 @@ function drealty_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
-  $items['admin/drealty/settings'] = array(
-    'title' => 'Drealty Settings',
-    'description' => t('Configuration settings for Drealty'),
-    'access arguments' => array('access drealty admin'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('drealty_settings_form'),
-    'file' => 'drealty.admin.inc',
-    'file path' => drupal_get_path('module', 'drealty') . '/includes',
-    'type' => MENU_NORMAL_ITEM,
-    'weight' => 1,
-  );
-
   $items['admin/drealty/fields_autocomplete/%/%/%'] = array(
     'title' => 'Autocomplete for fields',
     'page callback' => 'drealty_fields_autocomplete',
     'page arguments' => array(3, 4, 5),
-    'access arguments' => array('access drealty admin'),
-    'type' => MENU_CALLBACK
-  );
-
-  $items['admin/drealty/office_autocomplete/%/%'] = array(
-    'title' => 'Autocomplete for fields',
-    'page callback' => 'drealty_office_autocomplete_callback',
-    'file' => 'drealty.admin.inc',
-    'file path' => drupal_get_path('module', 'drealty') . '/includes',
-    'page arguments' => array(3, 4),
     'access arguments' => array('access drealty admin'),
     'type' => MENU_CALLBACK
   );
@@ -198,9 +164,6 @@ function drealty_connections_get_all() {
   return $connections;
 }
 
-function drealty_some_func($type) {
-  return $type;
-}
 
 function drealty_admin_menu_block_page() {
   $item = menu_get_item();
@@ -210,51 +173,6 @@ function drealty_admin_menu_block_page() {
     $output = t('You do not have any administrative items.');
   }
   return $output;
-}
-
-function drealty_management_page() {
-
-  ctools_add_css('drealty.admin', 'drealty');
-
-  $content = '';
-  $content .= "<div class='section'>";
-  $content .= "<h3>dRealty RETS Configuration</h3>";
-  $content .= "<div class='description'>Use the adminstration sections below to configure one or more RETs connections.</div>";
-  $content .= "<div>";
-  $content .= l('dRealty Connections', 'admin/drealty/connections');
-  $content .= "<div class='description'>Manage dRealty Connections</div>";
-  $content .= "</div>";
-
-  $content .= "<div>";
-  $content .= l('dRealty Settings', 'admin/drealty/settings');
-  $content .= "<div class='description'>Manage dRealty Global Settings</div>";
-  $content .= "</div>";
-  $content .= "</div>";
-
-  $content .= "<div class='section'>";
-  $content .= "<h3>dRealty Entity Field Configuration</h3>";
-  $content .= "<div class='description'>Use the adminstration sections below to add | remove | manage fields for the various dRealty Entities via Drupal's Core Field API.</div>";
-  $content .= "<div><strong>dRealty Listings</strong></div>";
-  $content .= "<div>" . l("Manage Fields", "admin/drealty/structure/drealty_listing/fields") . ' | ' . l("Manage Display", "admin/drealty/structure/drealty_listing/display") . '</div>';
-  $content .= "<div><strong>dRealty Open Houses</strong></div>";
-  $content .= "<div>" . l("Manage Fields", "admin/drealty/structure/drealty_openhouse/fields") . ' | ' . l("Manage Display", "admin/drealty/structure/drealty_openhouse/display") . '</div>';
-  $content .= "<div><strong>dRealty Agents</strong></div>";
-  $content .= "<div>" . l("Manage Fields", "admin/drealty/structure/drealty_agent/fields") . ' | ' . l("Manage Display", "admin/drealty/structure/drealty_agent/display") . '</div>';
-  $content .= "<div><strong>dRealty Offices</strong></div>";
-  $content .= "<div>" . l("Manage Fields", "admin/drealty/structure/drealty_office/fields") . ' | ' . l("Manage Display", "admin/drealty/structure/drealty_office/display") . '</div>';
-  $content .= "</div>";
-
-  return $content;
-}
-
-/**
- * Implements hook_rdf_namespaces().
- */
-function drealty_rdf_namespaces() {
-  return array(
-    'og' => 'http://ogp.me/ns#',
-    'fb' => 'http://www.facebook.com/2008/fbml',
-  );
 }
 
 function drealty_class_load($cid) {
@@ -293,43 +211,6 @@ function drealty_fields_autocomplete($conid, $class, $string) {
   print drupal_json_encode($matches);
   //print drupal_to_js($matches);
   exit();
-}
-
-function drealty_sentence_case($string) {
-  $sentences = preg_split('/([.?!]+)/', $string, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
-  $new_string = '';
-  foreach ($sentences as $key => $sentence) {
-    $new_string .= ($key & 1) == 0 ?
-      drupal_ucfirst(drupal_strtolower(trim($sentence))) :
-      $sentence . ' ';
-  }
-  return trim($new_string);
-}
-
-function drealty_word_limit($text, $limit = 40) {
-
-  $explode = explode(' ', $text);
-
-  if (count($explode) < $limit) {
-    return $text;
-  }
-
-  $string = '';
-
-  $dots = '...';
-  if (count($explode) <= $limit) {
-    $dots = '';
-  }
-
-  for ($i = 0; $i < $limit; $i++) {
-    $string .= $explode[$i] . " ";
-  }
-
-  if ($dots) {
-    $string = drupal_substr($string, 0, drupal_strlen($string));
-  }
-
-  return "$string $dots";
 }
 
 function drealty_load_phrets() {
@@ -629,106 +510,6 @@ function drealty_connection_access($op, $type = NULL, $account = NULL) {
 }
 
 // ***********************************************************************************************************  //
-// Office Functions
-// ***********************************************************************************************************  //
-
-function drealty_office_access($op, $office = NULL, $account = NULL) {
-  return TRUE;
-}
-
-function drealty_office_load($office_mlsid, $reset = FALSE) {
-  $query = new EntityFieldQuery();
-  $result = $query
-    ->entityCondition('entity_type', 'drealty_office')
-    ->propertyCondition('office_id', $office_mlsid)
-    ->execute();
-
-  return reset(entity_load('drealty_office', array_keys($result['drealty_office']), array(), $reset));
-}
-
-function drealty_office_page_title(DrealtyAgent $office) {
-  return $office->name;
-}
-
-function drealty_office_page_view($office, $view_mode = 'full', $langcode = NULL, $page = NULL) {
-  $controller = entity_get_controller('drealty_office');
-  $content = $controller->view(array($office->id => $office), $view_mode, $langcode, $page);
-
-  return $content;
-}
-
-function drealty_office_create($values = array()) {
-  return entity_get_controller('drealty_office')->create($values);
-}
-
-// ***********************************************************************************************************  //
-// Open House Functions
-// ***********************************************************************************************************  //
-
-function drealty_openhouse_load($listing_mlsid, $reset = FALSE) {
-  $query = new EntityFieldQuery();
-  $result = $query
-    ->entityCondition('entity_type', 'drealty_openhouse')
-    ->propertyCondition('listing_id', $listing_mlsid)
-    ->execute();
-
-  return reset(entity_load('drealty_openhouse', array_keys($result['drealty_openhouse']), array(), $reset));
-}
-
-function drealty_openhouse_page_title(DrealtyOpenHouse $openHouse) {
-  return $openHouse->name;
-}
-
-function drealty_openhouse_page_view($openhouse, $view_mode = 'full', $langcode = NULL, $page = NULL) {
-  $controller = entity_get_controller('drealty_openhouse');
-  $content = $controller->view(array($openhouse->id => $openhouse), $view_mode, $langcode, $page);
-
-  return $content;
-}
-
-function drealty_openhouse_access($op, $openhouse = NULL, $account = NULL) {
-  return TRUE;
-}
-
-function drealty_openhouse_create($values = array()) {
-  return entity_get_controller('drealty_openhouse')->create($values);
-}
-
-// ***********************************************************************************************************  //
-// Agent Functions
-// ***********************************************************************************************************  //
-function drealty_agent_access($op, $agent = NULL, $account = NULL) {
-  return TRUE;
-}
-
-function drealty_agent_load($agent_name, $reset = FALSE) {
-  $name = explode("_", $agent_name);
-  $query = new EntityFieldQuery();
-  $result = $query
-    ->entityCondition('entity_type', 'drealty_agent')
-    ->propertyCondition('first_name', $name[0])
-    ->propertyCondition('last_name', $name[1])
-    ->execute();
-
-  return reset(entity_load('drealty_agent', array_keys($result['drealty_agent']), array(), $reset));
-}
-
-function drealty_agent_page_title(DrealtyAgent $agent) {
-  return "{$agent->first_name} {$agent->last_name}";
-}
-
-function drealty_agent_page_view($agent, $view_mode = 'full', $langcode = NULL, $page = NULL) {
-  $controller = entity_get_controller('drealty_agent');
-  $content = $controller->view(array($agent->id => $agent), $view_mode, $langcode, $page);
-
-  return $content;
-}
-
-function drealty_agent_create($values = array()) {
-  return entity_get_controller('drealty_agent')->create($values);
-}
-
-// ***********************************************************************************************************  //
 // Field API Functions
 // ***********************************************************************************************************  //
 
@@ -740,10 +521,6 @@ function drealty_form_field_ui_field_overview_form_alter(&$form, &$form_state, $
   }
 }
 
-function drealty_field_create_submit($form, &$form_state) {
-// TODO: Add method body.
-}
-
 function drealty_field_delete_instance($field) {
   $entity_types = array('drealty_listing', 'drealty_agent', 'drealty_openhouse', 'drealty_office');
   if (in_array($field['entity_type'], $entity_types)) {
@@ -751,11 +528,6 @@ function drealty_field_delete_instance($field) {
       ->condition("field_name", $field['field_name'])
       ->execute();
   }
-}
-
-function drealty_form_alter(&$form, &$form_state, $form_id) {
-// TODO: Add method body.
-  $blah = $form_id;
 }
 
 function drealty_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id) {

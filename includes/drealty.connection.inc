@@ -254,9 +254,9 @@ class dRealtyConnectionEntity extends Entity {
    * @param string $field_api_type
    * @param array $data 
    */
-  public function CreateFieldMapMapping($rid, $field_name, $systemname, $class, $field_api_type = 'drealty', $data = NULL, $hash_exclude = FALSE) {
+  public function CreateFieldMapMapping($rid, $field_name, $systemname, $class_id, $field_api_type = 'drealty', $data = NULL, $hash_exclude = 0) {
     // remove any mapping and create a new one
-    $this->RemoveFieldMapping($rid, $field_name, $class);
+    $this->RemoveFieldMapping($rid, $field_name, $class_id);
 
     db_insert('drealty_field_mappings')
       ->fields(array(
@@ -266,7 +266,7 @@ class dRealtyConnectionEntity extends Entity {
         'systemname' => $systemname,
         'field_api_type' => $field_api_type,
         'data' => isset($data) ? serialize($data) : NULL,
-        'cid' => $class,
+        'cid' => $class_id,
         'hash_exclude' => $hash_exclude,
       ))
       ->execute();

@@ -191,6 +191,7 @@ function drealty_schema() {
       'field_api_type' => array('type' => 'varchar', 'length' => 32, 'not null' => TRUE, 'default' => 'drealty'),
       'data' => array('type' => 'blob', 'not null' => FALSE, 'serialize' => TRUE),
       'cid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
+      'hash_exclude' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
     ),
     'primary key' => array('conid', 'field_name', 'resource', 'systemname', 'cid'),
   );

@@ -152,7 +152,17 @@ class drealtyDaemon {
       $count = 0;
       $listings = array();
 
-      unset($options['Select']);
+      $result = db_select('drealty_field_mappings', 'dfm')
+        ->fields('dfm')
+        ->condition('conid', $connection->conid)
+        ->condition('cid', $class->cid)
+        ->execute()
+        ->fetchAllAssoc('systemname');
+
+      $fields = implode(',', array_keys($result));
+
+      $options['Select'] = $fields;
+
       $options['Limit'] = $limit;
 
 
@@ -162,7 +172,7 @@ class drealtyDaemon {
 
         if ($rets->NumRows($search) > 0) {
           while ($listing = $rets->FetchRow($search)) {
-            $listing['hash'] = $this->calculate_hash($listing);
+            $listing['hash'] = $this->calculate_hash($listing, $connection->conid, $class->cid);
             $listings[] = $listing;
             $count++;
           }
@@ -236,7 +246,16 @@ class drealtyDaemon {
       $count = 0;
       $listings = array();
 
-      unset($options['Select']);
+      $result = db_select('drealty_field_mappings', 'dfm')
+        ->fields('dfm')
+        ->condition('conid', $connection->conid)
+        ->condition('cid', $class->cid)
+        ->execute()
+        ->fetchAllAssoc('systemname');
+
+      $fields = implode(',', array_keys($result));
+
+      $options['Select'] = $fields;
 
       while ($count < $total) {
 
@@ -244,7 +263,7 @@ class drealtyDaemon {
 
         if ($rets->NumRows($search) > 0) {
           while ($listing = $rets->FetchRow($search)) {
-            $listing['hash'] = $this->calculate_hash($listing);
+            $listing['hash'] = $this->calculate_hash($listing, $connection->conid, $class->cid);
             $listings[] = $listing;
             $count++;
           }
@@ -291,7 +310,7 @@ class drealtyDaemon {
     $chunks = 0;
 
     if ($this->dc->connect($connection->conid)) {
-    // prepare the query
+      // prepare the query
       $q = implode('),(', $query);
 
       $end = TRUE;
@@ -301,12 +320,22 @@ class drealtyDaemon {
         $end_p = $end ? "FALSE" : "TRUE";
         drush_log("Resource: {$resource->systemname} Class: $class->systemname Limit: $limit Offset: $offset MaxRowsReached: $end_p Chunks: $chunks");
 
+        $result = db_select('drealty_field_mappings', 'dfm')
+          ->fields('dfm')
+          ->condition('conid', $connection->conid)
+          ->condition('cid', $class->cid)
+          ->execute()
+          ->fetchAllAssoc('systemname');
+
+        $fields = implode(',', array_keys($result));
+
 
         $optional_params = array(
           'Format' => 'COMPACT-DECODED',
           'Limit' => "$limit",
           'RestrictedIndicator' => 'xxxx',
           'Count' => '1',
+          'Select' => $fields,
           'Offset' => $offset,
         );
 
@@ -317,8 +346,8 @@ class drealtyDaemon {
 
         // loop through the search results
         while ($item = $rets->FetchRow($search)) {
-        // calculate the hash
-          $item['hash'] = $this->calculate_hash($item);
+          // calculate the hash
+          $listing['hash'] = $this->calculate_hash($listing, $connection->conid, $class->cid);
           $items[] = $item;
         }
 
@@ -350,7 +379,6 @@ class drealtyDaemon {
     }
     return $chunks;
   }
-
 
   /**
    *
@@ -492,10 +520,26 @@ class drealtyDaemon {
    * @param array $listing
    * @return string
    */
-  protected function calculate_hash(array $item) {
+  protected function calculate_hash(array $items, $connection_id, $class_id) {
+
+    $cache = &drupal_static(__FUNCTION__);
+
+    if (empty($cache[$connection_id]) || empty($cache[$connection_id][$class_id])) {
+      $field_mappings = db_select('drealty_field_mappings', 'dfm')
+        ->fields('dfm')
+        ->condition('conid', $connection_id)
+        ->condition('cid', $class_id)
+        ->condition('hash_exclude', FALSE)
+        ->execute()
+        ->fetchAllAssoc('systemname');
+      $cache[$connection_id][$class_id] = $field_mappings;
+    }
+
+    $fields = $cache[$connection_id][$class_id];
+
     $tmp = '';
-    foreach ($item as $key => $value) {
-      $tmp .= drupal_strtolower(trim($value));
+    foreach ($fields as $key => $field) {
+      $tmp .= drupal_strtolower(trim($items[$key]));
     }
     return md5($tmp);
   }

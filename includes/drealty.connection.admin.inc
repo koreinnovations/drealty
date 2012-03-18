@@ -494,7 +494,7 @@ function drealty_resource_overview_form($form, &$form_state, dRealtyConnectionEn
       $form['classes'][$key]['enabled'] = array('#type' => 'checkbox', '#default_value' => $class->enabled, '#attributes' => $class->enabled ? array('checked' => 'checked') : NULL, '#disabled' => $class->configured ? FALSE : TRUE,);
       $form['classes'][$key]['lifetime'] = array('#type' => 'select', '#options' => $life_opts, '#default_value' => isset($class->lifetime) ? $class->lifetime : 28000, '#disabled' => $class->configured ? FALSE : TRUE,);
       $configure_fields_link = l("configure", "admin/drealty/connections/manage/{$connection->name}/resource/{$entity_type}/{$class->cid}");
-      
+
       $form['classes'][$key]['actions'] = array('#markup' => "$configure_fields_link");
       $form['classes'][$key]['rid'] = array('#type' => 'value', '#value' => $class->rid);
       $form['classes'][$key]['conid'] = array('#type' => 'value', '#value' => $class->conid);
@@ -876,22 +876,23 @@ function drealty_resource_configure_form($form, &$form_state, dRealtyConnectionE
   }
 
   /*   * ************************************************************** */
-
+/*
   $form['rets'] = array('#type' => 'fieldset', '#title' => t('Available RETS Fields'), '#collapsible' => TRUE, '#collapsed' => TRUE);
 
   $form['rets']['fields']['#tree'] = TRUE;
   $form['rets']['fields']['#theme'] = 'drealty_field_config_form';
 
+  $field_type_options = field_ui_field_type_options();
+  $widget_type_options = field_ui_widget_type_options(NULL, TRUE);
+
   foreach ($fields as $field) {
-    $form['rets']['fields'][$field->systemname]['system_name'] = array('#markup' => $field->systemname);
-    $form['rets']['fields'][$field->systemname]['standard_name'] = array('#markup' => $field->standardname);
-    $form['rets']['fields'][$field->systemname]['long_name'] = array('#markup' => $field->longname);
-    $form['rets']['fields'][$field->systemname]['data_type'] = array('#markup' => $field->datatype);
-    $form['rets']['fields'][$field->systemname]['interpretation'] = array('#markup' => $field->interpretation);
-    $form['rets']['fields'][$field->systemname]['operation'] = array('#markup' => 'add | remove');
+    $form['rets']['fields'][$field->systemname]['rets_name'] = array('#markup' => '<div style="font-size: .85em;">' . $field->systemname . ' - ' . $field->longname . '</div>');
+    $form['rets']['fields'][$field->systemname]['field_label'] = array('#type' => 'textfield', '#size' => 15);
+    $form['rets']['fields'][$field->systemname]['field_name'] = array('#type' => 'textfield', '#size' => 10, '#field_prefix' => '<span dir="ltr">field_', '#field_suffix' => '</span>&lrm;');
+    $form['rets']['fields'][$field->systemname]['operation'] = array('#markup' => 'add');
   }
 
-
+*/
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
     '#type' => 'submit',
@@ -1034,17 +1035,15 @@ function drealty_test_manual_query($form, &$form_state) {
 }
 
 function theme_drealty_field_config_form(&$variables) {
-  $header = array('System Name', 'Standard Name', 'Long Name', 'Data Type', 'Interpretation', 'Operation');
+  $header = array('Rets Name', 'Label', 'Name', 'Operation');
   $rows = array();
   $form = $variables['form'];
 
   foreach (element_children($form) as $key) {
     $row = array();
-    $row[] = array('data' => drupal_render($form[$key]['system_name']));
-    $row[] = array('data' => drupal_render($form[$key]['standard_name']));
-    $row[] = array('data' => drupal_render($form[$key]['long_name']));
-    $row[] = array('data' => drupal_render($form[$key]['data_type']));
-    $row[] = array('data' => drupal_render($form[$key]['interpretation']));
+    $row[] = array('data' => drupal_render($form[$key]['rets_name']));
+    $row[] = array('data' => drupal_render($form[$key]['field_label']));
+    $row[] = array('data' => drupal_render($form[$key]['field_name']));
     $row[] = array('data' => drupal_render($form[$key]['operation']));
     $rows[] = $row;
   }

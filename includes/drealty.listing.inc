@@ -117,59 +117,6 @@ class DrealtyListingController extends EntityAPIController {
    */
   public function buildContent($entity, $view_mode = 'full', $langcode = NULL, $content = array()) {
     $content = parent::buildContent($entity, $view_mode, $langcode, $content);
-
-    $entity->drealty_path_alias = path_load("drealty_listing/$entity->id");
-
-//    $og_description = array(
-//        '#tag' => 'meta',
-//        '#attributes' => array(
-//            'property' => 'og:description',
-//            'content' => $entity->public_remarks,
-//        ),
-//    );
-//
-//    $meta_description = array(
-//        '#tag' => 'meta',
-//        '#attributes' => array(
-//            'name' => 'description',
-//            'content' => $entity->public_remarks,
-//        ),
-//    );
-
-    $token_string = ($pattern = variable_get("drealty_listing_title_pattern", FALSE)) ? $pattern : DREALTY_LISTING_DEFAULT_TITLE_PATTERN;
-
-    if (extension_loaded("mbstring")) {
-      $title = mb_convert_case(token_replace($token_string, array('drealty_listing' => $entity)), MB_CASE_TITLE);
-    } else {
-      $title = ucwords(drupal_strtolower(token_replace($token_string, array('drealty_listing' => $entity))));
-    }
-
-
-    drupal_set_title($title);
-
-    $og_title = array(
-      '#tag' => 'meta',
-      '#attributes' => array(
-        'property' => 'og:title',
-        'content' => $title,
-      ),
-    );
-
-//    if (isset($entity->mls_images)) {
-//      $og_image = array(
-//          '#tag' => 'meta',
-//          '#attributes' => array(
-//              'property' => 'og:image',
-//              'content' => file_create_url(array_shift($entity->mls_images)->uri),
-//          ),
-//      );
-//      drupal_add_html_head($og_image, 'og_image');
-//    }
-//    drupal_add_html_head($meta_description, 'meta_description');
-//    drupal_add_html_head($og_description, 'og_description');
-    drupal_add_html_head($og_title, 'og_title');
-
-
     return $content;
   }
 

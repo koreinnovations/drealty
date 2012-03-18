@@ -575,9 +575,10 @@ function drealty_form_field_ui_field_edit_form_geofield(&$form, &$form_state) {
 
     foreach ($classes as $class) {
       if (isset($class->bundle) && $class->bundle == $form['#instance']['bundle']) {
-        $fields = $dr->FetchFields($connection->conid, $class->resource);
+        $resource = $dr->FetchResource($class->rid);
+        $fields = $dr->FetchFields($connection->conid, $resource, $class);
 
-        $field_mappings = $dr->fetchfieldmappings($connection->conid, $class->resource, $class->cid);
+        $field_mappings = $dr->fetchfieldmappings($connection->conid, $resource, $class);
         $form['instance']['drealty']['mappings'][$class->systemname]['conid'] = array('#type' => 'value', '#value' => $connection->conid);
         $form['instance']['drealty']['mappings'][$class->systemname]['resource'] = array('#type' => 'value', '#value' => $class->resource);
         $form['instance']['drealty']['mappings'][$class->systemname]['class_id'] = array('#type' => 'value', '#value' => $class->cid);
@@ -620,11 +621,10 @@ function drealty_form_field_ui_field_edit_form_addressfield(&$form, &$form_state
     foreach ($classes as $class) {
 
       if (isset($class->bundle) && $class->bundle == $form['#instance']['bundle']) {
-        $fields = $dr->FetchFields($connection->conid, $class->resource);
+        $resource = $dr->FetchResource($class->rid);
+        $fields = $dr->FetchFields($connection->conid, $resource, $class);
 
-        $field_mappings = $dr->fetchfieldmappings($connection->conid, $class->resource, $class->cid);
-
-
+        $field_mappings = $dr->fetchfieldmappings($connection->conid, $resource, $class);
         $form['instance']['drealty']['mappings'][$class->systemname]['conid'] = array('#type' => 'value', '#value' => $connection->conid);
         $form['instance']['drealty']['mappings'][$class->systemname]['rid'] = array('#type' => 'value', '#value' => $class->rid);
         $form['instance']['drealty']['mappings'][$class->systemname]['class_id'] = array('#type' => 'value', '#value' => $class->cid);

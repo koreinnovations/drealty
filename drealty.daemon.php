@@ -359,7 +359,7 @@ class drealtyDaemon {
         drush_log(dt("caching @count items for resource: @resource | class: @class", array("@count" => count($items), "@resource" => $resource->systemname, "@class" => $class->systemname)));
         cache_set("drealty_chunk_{$resource->systemname}_{$class->systemname}_" . $chunks++, $items);
 
-        $offset += count($items) + 1;
+        $offset += count($items);
 
         if ($limit == 'NONE') {
           $end = FALSE;

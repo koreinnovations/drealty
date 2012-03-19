@@ -513,15 +513,28 @@ class drealtyDaemon {
         ->condition('cid', $class_id)
         ->condition('hash_exclude', FALSE)
         ->execute()
-        ->fetchAllAssoc('systemname');
+        ->fetchAll();
+        
       $cache[$connection_id][$class_id] = $field_mappings;
     }
 
     $fields = $cache[$connection_id][$class_id];
 
     $tmp = '';
-    foreach ($fields as $key => $field) {
-      $tmp .= drupal_strtolower(trim($items[$key]));
+    foreach ($fields as $field) {
+      switch ($field->field_api_type) {
+        case 'addressfield':
+          $data = unserialize($field->data);
+          foreach ($data as $item) {
+            $tmp .= drupal_strtolower(trim($items[$item]));
+          }
+          break;
+        case 'geofield':
+          // in the case of a geofield we don't have anything to map to, so we'll skip it.
+          break;
+        default:
+          $tmp .= drupal_strtolower(trim($items[$field->systemname]));
+      }
     }
     return md5($tmp);
   }
@@ -641,22 +654,25 @@ class drealtyDaemon {
       ->fields('dfm')
       ->condition('conid', $conid)
       ->condition('cid', $class_id)
-      ->execute()
-      ->fetchAllAssoc('systemname');
+      ->execute();
 
 
     $fields = array();
-    foreach ($results as $key => $result) {
-      if ($key == 'drealty_data_mapped') {
-        $data = unserialize($result->data);
-        foreach ($data as $item) {
-          $fields[] = $item;
-        }
-      } else {
-        $fields[] = $key;
+    foreach ($results as $result) {
+      switch ($result->field_api_type) {
+        case 'addressfield':
+          $data = unserialize($result->data);
+          foreach ($data as $item) {
+            $fields[] = $item;
+          }
+          break;
+        case 'geofield':
+          // in the case of a geofield we don't have anything to map to, so we'll skip it.
+          break;
+        default:
+          $fields[] = $result->systemname;
       }
     }
-
     return implode(',', $fields);
   }
 

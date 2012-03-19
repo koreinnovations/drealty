@@ -1,7 +1,51 @@
-Install per normal drupal module.
 
-download/installing phRets
+CONTENTS OF THIS FILE
+---------------------
 
-1. Download phRETS from http://troda.com/projects/phrets/index.php?title=Download
-2. Place in your libraries folder [sites/all/libraries/phRets/phRets.php] typically.. the important part is: phRets/phRets.php
-3. ... tbd
+ * Introduction
+ * Installation
+ * Geocoding
+
+INTRODUCTION
+------------
+
+dRealty is a comprehensive module for Drupal 7 that provides RETS integration capabilities for your Drupal site.
+
+Lead maintainer: Chris (drupal.org link)
+Co-maintainer: Kevin Quillen (drupal.org link)
+
+
+INSTALLATION
+------------
+
+REQUIRED MODULES: Field, Entity API (dev)
+
+1. Download and copy dRealty to your sites/SITENAME/modules directory. Do the same for Entity API.
+
+2. Enable Entity API module, and all Field modules.
+
+3. Download phRETS from http://troda.com/projects/phrets/index.php?title=Download. phRETS is a php wrapper required to talk to RETS servers.
+
+4. Place phRETS in your libraries folder like so: sites/all/libraries/phRets/phRets.php.
+
+5. Enable dRealty module.
+
+6. Go to admin/drealty and select Drealty Connections.
+
+7. Configure your initial connection (your RETS provider) and Activate it.
+
+8. Go back to admin/drealty/ and select Drealty Property Types. 'Property Types' are actually bundles we are creating, like Content Types.
+
+9. Create a Property Type, for example, Residential.
+
+10. The following screen looks just like a Content Type screen. dRealty works with Fields in core, so simply start adding the fields you want to have on this property type bundle. For example, create a Price field as Integer. On the next screen, dRealty will allow you to 'map' the field to its RETS equivalent. Start typing 'price' in the mapping input- it will autocomplete and find results for you, and select the Price field. For example, in Innovia systems, it will be ListPrice. 
+
+11. Repeat step 10 for all relevant fields you want to capture.
+
+12. 
+
+
+GEOCODING
+---------
+
+The Location module for Drupal 7 does not support entities other than nodes (link). We recommend using AddressField, GeoField, and Geocoder modules to have listings geocoded when imported. These modules work great with Views and OpenLayers.

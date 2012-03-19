@@ -152,16 +152,7 @@ class drealtyDaemon {
       $count = 0;
       $listings = array();
 
-      $result = db_select('drealty_field_mappings', 'dfm')
-        ->fields('dfm')
-        ->condition('conid', $connection->conid)
-        ->condition('cid', $class->cid)
-        ->execute()
-        ->fetchAllAssoc('systemname');
-
-      $fields = implode(',', array_keys($result));
-
-      $options['Select'] = $fields;
+      $options['Select'] = $this->get_fields($connection->conid, $class->cid);
 
       $options['Limit'] = $limit;
 
@@ -246,16 +237,7 @@ class drealtyDaemon {
       $count = 0;
       $listings = array();
 
-      $result = db_select('drealty_field_mappings', 'dfm')
-        ->fields('dfm')
-        ->condition('conid', $connection->conid)
-        ->condition('cid', $class->cid)
-        ->execute()
-        ->fetchAllAssoc('systemname');
-
-      $fields = implode(',', array_keys($result));
-
-      $options['Select'] = $fields;
+      $options['Select'] = $this->get_fields($connection->conid, $class->cid);
 
       while ($count < $total) {
 
@@ -327,7 +309,7 @@ class drealtyDaemon {
           ->execute()
           ->fetchAllAssoc('systemname');
 
-        $fields = implode(',', array_keys($result));
+        $fields = $this->get_fields($connection->conid, $class->cid);
 
 
         $optional_params = array(
@@ -652,6 +634,30 @@ class drealtyDaemon {
       }
     }
     cache_clear_all("prop_images_to_process", "cache");
+  }
+
+  protected function get_fields($conid, $class_id) {
+    $results = db_select('drealty_field_mappings', 'dfm')
+      ->fields('dfm')
+      ->condition('conid', $conid)
+      ->condition('cid', $class_id)
+      ->execute()
+      ->fetchAllAssoc('systemname');
+
+
+    $fields = array();
+    foreach ($results as $key => $result) {
+      if ($key == 'drealty_data_mapped') {
+        $data = unserialize($result->data);
+        foreach ($data as $item) {
+          $fields[] = $item;
+        }
+      } else {
+        $fields[] = $key;
+      }
+    }
+
+    return implode(',', $fields);
   }
 
 }

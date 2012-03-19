@@ -458,7 +458,7 @@ class drealtyDaemon {
               case 'number_float':
                 $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = empty($rets_item[$mapping->systemname]) ? 0 : is_numeric($rets_item[$mapping->systemname]) ? $rets_item[$mapping->systemname] : 0;
                 break;
-              case 'boolean':
+              case 'list_boolean':
                 $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = in_array($rets_item[$mapping->systemname], array('true', 'True', 'TRUE', 'yes', 'Yes', 'y', 'Y', '1', 'on', 'On', 'ON', true, 1), true) ? TRUE : FALSE;
                 break;
               case 'drealty':

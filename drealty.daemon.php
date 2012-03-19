@@ -444,7 +444,6 @@ class drealtyDaemon {
               case 'geofield':
                 // check to see if we already have already geocoded this address
                 if (!isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lat']) && !isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lon'])) {
-                  drush_log('******Geocoding*****');
                   $item->{$mapping->field_name}[LANGUAGE_NONE][0]['wkt'] = GEOCODER_DUMMY_WKT;
                   $item->{$mapping->field_name}[LANGUAGE_NONE][0]['geocode'] = TRUE;
                 }

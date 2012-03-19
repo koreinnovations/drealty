@@ -11,8 +11,8 @@ INTRODUCTION
 
 dRealty is a comprehensive module for Drupal 7 that provides RETS integration capabilities for your Drupal site.
 
-Lead maintainer: Chris (drupal.org link)
-Co-maintainer: Kevin Quillen (drupal.org link)
+Lead maintainer: Chris Lewis (http://drupal.org/user/172849)
+Co-maintainer: Kevin Quillen (http://drupal.org/user/317279)
 
 
 INSTALLATION

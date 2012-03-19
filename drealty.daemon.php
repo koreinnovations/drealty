@@ -1,5 +1,7 @@
 <?php
 
+define('GEOCODER_DUMMY_WKT', 'POINT(0, 0)');
+
 class drealtyDaemon {
 
   /**
@@ -456,6 +458,9 @@ class drealtyDaemon {
               case 'number_float':
                 $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = empty($rets_item[$mapping->systemname]) ? 0 : is_numeric($rets_item[$mapping->systemname]) ? $rets_item[$mapping->systemname] : 0;
                 break;
+              case 'boolean':
+                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = in_array($rets_item[$mapping->systemname], array('true', 'True', 'TRUE', 'yes', 'Yes', 'y', 'Y', '1', 'on', 'On', 'ON', true, 1), true) ? TRUE : FALSE;
+                break;
               case 'drealty':
                 $item->{$mapping->field_name} = $rets_item[$mapping->systemname];
                 break;
@@ -514,7 +519,7 @@ class drealtyDaemon {
         ->condition('hash_exclude', FALSE)
         ->execute()
         ->fetchAll();
-        
+
       $cache[$connection_id][$class_id] = $field_mappings;
     }
 

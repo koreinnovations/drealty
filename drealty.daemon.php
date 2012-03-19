@@ -444,7 +444,6 @@ class drealtyDaemon {
               case 'geofield':
                 // check to see if we already have already geocoded this address
                 if (!isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lat']) && !isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lon'])) {
-                  drush_log('******Geocoding*****');
                   $item->{$mapping->field_name}[LANGUAGE_NONE][0]['wkt'] = GEOCODER_DUMMY_WKT;
                   $item->{$mapping->field_name}[LANGUAGE_NONE][0]['geocode'] = TRUE;
                 }
@@ -459,7 +458,6 @@ class drealtyDaemon {
                 $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = empty($rets_item[$mapping->systemname]) ? 0 : is_numeric($rets_item[$mapping->systemname]) ? $rets_item[$mapping->systemname] : 0;
                 break;
               case 'list_boolean':
-                drush_log($rets_item[$mapping->systemname]);
                 $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = in_array($rets_item[$mapping->systemname], array('true', 'True', 'TRUE', 'yes', 'Yes', 'y', 'Y', '1', 'on', 'On', 'ON', true, 1), true) ? 1 : 0;
                 break;
               case 'drealty':

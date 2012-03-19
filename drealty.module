@@ -711,16 +711,17 @@ function drealty_field_ui_field_edit_form_geofield_submit($form, &$form_state) {
   $mappings = $form_state['values']['instance']['drealty']['mappings'];
   $hash_exclude = $form_state['values']['instance']['drealty']['hash_exclude'];
   $connection = new dRealtyConnectionEntity();
-
+  $dc = new dRealtyConnection();
+  
   foreach ($mappings as $mapping) {
     if (isset($mapping['rets_field']) && !empty($mapping['rets_field'])) {
       // load the connection
-      $connection = reset(entity_load('drealty_connection_entity', array($mapping['conid'])));
+      $connection = $dc->FetchConnection($mapping['conid']);
       $field_name = $form_state['values']['instance']['field_name'];
 
       $data = array('enabled' => $mapping['rets_field'] ? TRUE : FALSE);
 
-      $connection->CreateFieldMapMapping($mapping['resource'], $field_name, 'drealty_data_mapped', $mapping['class_id'], $form['#field']['type'], $data, $hash_exclude);
+      $connection->CreateFieldMapMapping($mapping['rid'], $field_name, 'drealty_data_mapped', $mapping['class_id'], $form['#field']['type'], $data, $hash_exclude);
     }
   }
 }
@@ -729,7 +730,8 @@ function drealty_field_ui_field_edit_form_address_submit($form, &$form_state) {
   $mappings = $form_state['values']['instance']['drealty']['mappings'];
   $hash_exclude = $form_state['values']['instance']['drealty']['hash_exclude'];
   $connection = new dRealtyConnectionEntity();
-
+  $dc = new dRealtyConnection();
+  
   foreach ($mappings as $mapping) {
 
     //make sure there is something in at least one field
@@ -748,10 +750,10 @@ function drealty_field_ui_field_edit_form_address_submit($form, &$form_state) {
           $data[$key] = $systemname;
         }
       }
-      $connection = reset(entity_load('drealty_connection_entity', array($mapping['conid'])));
+      $connection = $dc->FetchConnection($mapping['conid']);
       $field_name = $form_state['values']['instance']['field_name'];
       $systemname = 'drealty_data_mapped';
-      $connection->CreateFieldMapMapping($mapping['resource'], $field_name, $systemname, $mapping['class_id'], $form['#field']['type'], $data, $hash_exclude);
+      $connection->CreateFieldMapMapping($mapping['rid'], $field_name, $systemname, $mapping['class_id'], $form['#field']['type'], $data, $hash_exclude);
     }
   }
 }
@@ -761,11 +763,12 @@ function drealty_field_ui_field_edit_form_submit($form, &$form_state) {
   $mappings = $form_state['values']['instance']['drealty']['mappings'];
   $hash_exclude = $form_state['values']['instance']['drealty']['hash_exclude'];
   $connection = new dRealtyConnectionEntity();
-
+  $dc = new dRealtyConnection();
+  
   foreach ($mappings as $mapping) {
     if (isset($mapping['rets_field']) && !empty($mapping['rets_field'])) {
       // load the connection
-      $dc = new dRealtyConnection();
+      
       
       $connection = $dc->FetchConnection($mapping['conid']);
       $field_name = $form_state['values']['instance']['field_name'];

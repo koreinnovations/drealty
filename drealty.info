@@ -10,15 +10,9 @@ dependencies[] = libraries
 
 
 files[] = includes/drealty.listing.inc
-files[] = includes/drealty.openhouse.inc
-files[] = includes/drealty.agent.inc
-files[] = includes/drealty.office.inc
 
 files[] = includes/drealty.connection.admin.inc
 files[] = includes/drealty.listing.admin.inc
-files[] = includes/drealty.openhouse.admin.inc
-files[] = includes/drealty.agent.admin.inc
-files[] = includes/drealty.office.admin.inc
 files[] = includes/drealty.connection.inc
 files[] = includes/drealty.resources.inc
 

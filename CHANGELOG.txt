@@ -1,0 +1,10 @@
+
+7.x-3.0-alpha2
+
+Issue #1457300 by stockliasteroid - fixed an issue with the import offset tracking method, was skipping 1 listing every iteration.
+Issue #1461768 by stockliasteroid - Added an exclude this field mapping from the hash calculation so that you can mark various fields as not 'hashable' .
+Changed the import process only to return the fields that have been mapped.
+
+
+7.x-3.0-alpha1
+initial 3.x release

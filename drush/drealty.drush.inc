@@ -92,7 +92,7 @@ function drush_drealty_rets_reprocess_images() {
 function drush_drealty_rets_flush() {
   set_time_limit(0);
 
-  $entity_types = array('drealty_listing', 'drealty_office', 'drealty_agent', 'drealty_openhouse');
+  $entity_types = array('drealty_listing');
 
   foreach ($entity_types as $entity_type) {
 

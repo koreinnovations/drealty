@@ -59,10 +59,6 @@ function drealty_uninstall() {
     entity_delete('drealty_listing', $id);
   }
 
-  field_attach_delete_bundle('drealty_openhouse', 'drealty_openhouse');
-  field_attach_delete_bundle('drealty_agent', 'drealty_agent');
-  field_attach_delete_bundle('drealty_office', 'drealty_office');
-
   // Bypass entity_load() as we cannot use it here.
   $types = db_select('drealty_listing_type', 'dlt')
     ->fields('dlt')
@@ -104,8 +100,7 @@ function drealty_schema() {
     'use_compression' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
     'use_interealty_auth' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
     'active' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
-    'office_id' => array('type' => 'varchar', 'length' => 12, 'not null' => FALSE),
-    'debug_mode' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => FALSE),
+    'debug_mode' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
     ) + entity_exportable_schema_fields(),
     'primary key' => array('conid'),
   );
@@ -119,9 +114,7 @@ function drealty_schema() {
       'systemname' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
       'description' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
       'lastupdate' => array('type' => 'int', 'not null' => TRUE),
-      'selection_values' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => ''),
       'keyfield' => array('type' => 'varchar', 'length' => 128, 'not null' => TRUE, 'default' => ''),
-      'chunk_size' => array('type' => 'int', 'not null' => TRUE, 'default' => 250),
     ),
     'primary key' => array('rid'),
   );
@@ -191,8 +184,9 @@ function drealty_schema() {
       'field_api_type' => array('type' => 'varchar', 'length' => 32, 'not null' => TRUE, 'default' => 'drealty'),
       'data' => array('type' => 'blob', 'not null' => FALSE, 'serialize' => TRUE),
       'cid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
+      'hash_exclude' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
     ),
-    'primary key' => array('conid', 'field_name', 'resource', 'systemname', 'cid'),
+    'primary key' => array('conid', 'field_name', 'rid', 'systemname', 'cid'),
   );
 
   $schema['drealty_resource_mappings'] = array(
@@ -204,58 +198,6 @@ function drealty_schema() {
       'entity_type' => array('type' => 'varchar', 'length' => 128, 'not null' => TRUE, 'default' => ''),
     ),
     'primary key' => array('mid'),
-  );
-
-  $schema['drealty_agent'] = array(
-    'description' => 'Table to hold Agents',
-    'fields' => array(
-      'id' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The internal Id', 'group' => 'hidden'),
-      'conid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The connection Id', 'group' => 'hidden'),
-      'hash' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => '', 'description' => 'MD5 Hash used to determine if a listing has changed.', 'group' => 'hidden'),
-      'class' => array('type' => 'int', 'not null' => FALSE, 'default' => 0, 'description' => 'The Resource Class from the MLS', 'group' => 'hidden'),
-      'created' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Date the listing was created in the system.', 'group' => 'hidden'),
-      'changed' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Last date the listing was changed/updated in the system', 'group' => 'hidden'),
-      'rets_id' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 50, 'description' => 'Agent Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
-      'rets_key' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'big', 'not null' => TRUE, 'description' => 'Agent Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
-      'type' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The type of agent.', 'group' => 'required', 'required' => FALSE),
-    ),
-    'primary key' => array('id'),
-  );
-
-
-  $schema['drealty_office'] = array(
-    'description' => 'Table to hold Offices or Brokers',
-    'fields' => array(
-      'id' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The internal Id', 'group' => 'hidden'),
-      'conid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The connection Id', 'group' => 'hidden'),
-      'hash' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => '', 'description' => 'MD5 Hash used to determine if a listing has changed.', 'group' => 'hidden'),
-      'class' => array('type' => 'int', 'not null' => FALSE, 'default' => 0, 'description' => 'The Resource Class from the MLS', 'group' => 'hidden'),
-      'created' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Date the listing was created in the system.', 'group' => 'hidden'),
-      'changed' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Last date the listing was changed/updated in the system', 'group' => 'hidden'),
-      'rets_id' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'Broker or Office Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
-      'rets_key' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'big', 'not null' => TRUE, 'description' => 'Agent Identifier from the MLS system', 'group' => 'required', 'required' => TRUE),
-      'type' => array('type' => 'varchar', 'not null' => FALSE, 'length' => 25, 'description' => 'The type of office.', 'group' => 'required', 'required' => FALSE),
-    ),
-    'primary key' => array('id'),
-  );
-
-
-  $schema['drealty_openhouse'] = array(
-    'description' => 'Table to hold open houses',
-    'fields' => array(
-      'id' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The internal Id', 'group' => 'hidden'),
-      'name' => array('type' => 'varchar', 'length' => 50, 'not null' => TRUE, 'default' => '', 'description' => "Name or Title of the Listing", 'group' => 'hidden'),
-      'conid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The connection Id', 'group' => 'hidden'),
-      'hash' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => '', 'description' => 'MD5 Hash used to determine if a listing has changed.', 'group' => 'hidden'),
-      'class' => array('type' => 'int', 'not null' => FALSE, 'default' => 0, 'description' => 'The Resource Class from the MLS', 'group' => 'hidden'),
-      'created' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Date the listing was created in the system.', 'group' => 'hidden'),
-      'changed' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Last date the listing was changed/updated in the system', 'group' => 'hidden'),
-      'rets_imported' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'tiny', 'not null' => FALSE, 'default' => 1, 'description' => 'Is this a user submitted listing or mls imported', 'group' => 'hidden'),
-      'openhouse_id' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => 'The unique Open House Id # used to look up an individual open house listing listing.', 'group' => 'required', 'required' => TRUE, 'weight' => 1),
-      'rets_id' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => 'The unique MLS # used to look up an individual listing.', 'group' => 'required', 'required' => TRUE, 'weight' => 1),
-      'rets_key' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => 'A unique identifier for this record from the source system. Typically this is the MLS #, however systems like Interealty use a sysid field. Select the apporpriate field.', 'group' => 'required', 'required' => TRUE, 'weight' => 0),
-    ),
-    'primary key' => array('id'),
   );
 
   $schema['drealty_listing'] = array(
@@ -341,7 +283,6 @@ function drealty_schema() {
       'type' => array('type'),
     ),
   );
-  $schema['cache_drealty'] = drupal_get_schema_unprocessed('system', 'cache');
 
   return $schema;
 }

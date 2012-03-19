@@ -1,5 +1,7 @@
 <?php
 
+define('GEOCODER_DUMMY_WKT', 'POINT(0, 0)');
+
 class drealtyDaemon {
 
   /**
@@ -152,7 +154,8 @@ class drealtyDaemon {
       $count = 0;
       $listings = array();
 
-      unset($options['Select']);
+      $options['Select'] = $this->get_fields($connection->conid, $class->cid);
+
       $options['Limit'] = $limit;
 
 
@@ -162,7 +165,7 @@ class drealtyDaemon {
 
         if ($rets->NumRows($search) > 0) {
           while ($listing = $rets->FetchRow($search)) {
-            $listing['hash'] = $this->calculate_hash($listing);
+            $listing['hash'] = $this->calculate_hash($listing, $connection->conid, $class->cid);
             $listings[] = $listing;
             $count++;
           }
@@ -236,7 +239,7 @@ class drealtyDaemon {
       $count = 0;
       $listings = array();
 
-      unset($options['Select']);
+      $options['Select'] = $this->get_fields($connection->conid, $class->cid);
 
       while ($count < $total) {
 
@@ -244,7 +247,7 @@ class drealtyDaemon {
 
         if ($rets->NumRows($search) > 0) {
           while ($listing = $rets->FetchRow($search)) {
-            $listing['hash'] = $this->calculate_hash($listing);
+            $listing['hash'] = $this->calculate_hash($listing, $connection->conid, $class->cid);
             $listings[] = $listing;
             $count++;
           }
@@ -291,7 +294,7 @@ class drealtyDaemon {
     $chunks = 0;
 
     if ($this->dc->connect($connection->conid)) {
-    // prepare the query
+      // prepare the query
       $q = implode('),(', $query);
 
       $end = TRUE;
@@ -301,12 +304,22 @@ class drealtyDaemon {
         $end_p = $end ? "FALSE" : "TRUE";
         drush_log("Resource: {$resource->systemname} Class: $class->systemname Limit: $limit Offset: $offset MaxRowsReached: $end_p Chunks: $chunks");
 
+        $result = db_select('drealty_field_mappings', 'dfm')
+          ->fields('dfm')
+          ->condition('conid', $connection->conid)
+          ->condition('cid', $class->cid)
+          ->execute()
+          ->fetchAllAssoc('systemname');
+
+        $fields = $this->get_fields($connection->conid, $class->cid);
+
 
         $optional_params = array(
           'Format' => 'COMPACT-DECODED',
           'Limit' => "$limit",
           'RestrictedIndicator' => 'xxxx',
           'Count' => '1',
+          'Select' => $fields,
           'Offset' => $offset,
         );
 
@@ -317,8 +330,8 @@ class drealtyDaemon {
 
         // loop through the search results
         while ($item = $rets->FetchRow($search)) {
-        // calculate the hash
-          $item['hash'] = $this->calculate_hash($item);
+          // calculate the hash
+          $listing['hash'] = $this->calculate_hash($listing, $connection->conid, $class->cid);
           $items[] = $item;
         }
 
@@ -330,7 +343,7 @@ class drealtyDaemon {
         drush_log(dt("caching @count items for resource: @resource | class: @class", array("@count" => count($items), "@resource" => $resource->systemname, "@class" => $class->systemname)));
         cache_set("drealty_chunk_{$resource->systemname}_{$class->systemname}_" . $chunks++, $items);
 
-        $offset += count($items) + 1;
+        $offset += count($items);
 
         if ($limit == 'NONE') {
           $end = FALSE;
@@ -350,7 +363,6 @@ class drealtyDaemon {
     }
     return $chunks;
   }
-
 
   /**
    *
@@ -446,6 +458,10 @@ class drealtyDaemon {
               case 'number_float':
                 $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = empty($rets_item[$mapping->systemname]) ? 0 : is_numeric($rets_item[$mapping->systemname]) ? $rets_item[$mapping->systemname] : 0;
                 break;
+              case 'list_boolean':
+                drush_log($rets_item[$mapping->systemname]);
+                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = in_array($rets_item[$mapping->systemname], array('true', 'True', 'TRUE', 'yes', 'Yes', 'y', 'Y', '1', 'on', 'On', 'ON', true, 1), true) ? 1 : 0;
+                break;
               case 'drealty':
                 $item->{$mapping->field_name} = $rets_item[$mapping->systemname];
                 break;
@@ -492,10 +508,39 @@ class drealtyDaemon {
    * @param array $listing
    * @return string
    */
-  protected function calculate_hash(array $item) {
+  protected function calculate_hash(array $items, $connection_id, $class_id) {
+
+    $cache = &drupal_static(__FUNCTION__);
+
+    if (empty($cache[$connection_id]) || empty($cache[$connection_id][$class_id])) {
+      $field_mappings = db_select('drealty_field_mappings', 'dfm')
+        ->fields('dfm')
+        ->condition('conid', $connection_id)
+        ->condition('cid', $class_id)
+        ->condition('hash_exclude', FALSE)
+        ->execute()
+        ->fetchAll();
+
+      $cache[$connection_id][$class_id] = $field_mappings;
+    }
+
+    $fields = $cache[$connection_id][$class_id];
+
     $tmp = '';
-    foreach ($item as $key => $value) {
-      $tmp .= drupal_strtolower(trim($value));
+    foreach ($fields as $field) {
+      switch ($field->field_api_type) {
+        case 'addressfield':
+          $data = unserialize($field->data);
+          foreach ($data as $item) {
+            $tmp .= drupal_strtolower(trim($items[$item]));
+          }
+          break;
+        case 'geofield':
+          // in the case of a geofield we don't have anything to map to, so we'll skip it.
+          break;
+        default:
+          $tmp .= drupal_strtolower(trim($items[$field->systemname]));
+      }
     }
     return md5($tmp);
   }
@@ -608,6 +653,33 @@ class drealtyDaemon {
       }
     }
     cache_clear_all("prop_images_to_process", "cache");
+  }
+
+  protected function get_fields($conid, $class_id) {
+    $results = db_select('drealty_field_mappings', 'dfm')
+      ->fields('dfm')
+      ->condition('conid', $conid)
+      ->condition('cid', $class_id)
+      ->execute();
+
+
+    $fields = array();
+    foreach ($results as $result) {
+      switch ($result->field_api_type) {
+        case 'addressfield':
+          $data = unserialize($result->data);
+          foreach ($data as $item) {
+            $fields[] = $item;
+          }
+          break;
+        case 'geofield':
+          // in the case of a geofield we don't have anything to map to, so we'll skip it.
+          break;
+        default:
+          $fields[] = $result->systemname;
+      }
+    }
+    return implode(',', $fields);
   }
 
 }

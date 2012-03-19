@@ -877,21 +877,6 @@ function drealty_resource_configure_form($form, &$form_state, dRealtyConnectionE
 
   /*   * ************************************************************** */
 
-  $form['rets'] = array('#type' => 'fieldset', '#title' => t('Available RETS Fields'), '#collapsible' => TRUE, '#collapsed' => TRUE);
-
-  $form['rets']['fields']['#tree'] = TRUE;
-  $form['rets']['fields']['#theme'] = 'drealty_field_config_form';
-
-  foreach ($fields as $field) {
-    $form['rets']['fields'][$field->systemname]['system_name'] = array('#markup' => $field->systemname);
-    $form['rets']['fields'][$field->systemname]['standard_name'] = array('#markup' => $field->standardname);
-    $form['rets']['fields'][$field->systemname]['long_name'] = array('#markup' => $field->longname);
-    $form['rets']['fields'][$field->systemname]['data_type'] = array('#markup' => $field->datatype);
-    $form['rets']['fields'][$field->systemname]['interpretation'] = array('#markup' => $field->interpretation);
-    $form['rets']['fields'][$field->systemname]['operation'] = array('#markup' => 'add | remove');
-  }
-
-
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
     '#type' => 'submit',

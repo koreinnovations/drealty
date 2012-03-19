@@ -87,7 +87,6 @@ function drealty_listing_admin_overview($form, &$form_state, $arg) {
   $header = array(
       'id' => array('data' => t('Listing Id'), 'field' => 'id'),
       'mls_id' => array('data' => t('MLS #'), 'field' => 'rets_id'),
-      'address' => array('data' => t('Address')),
       'operations' => array('data' => t('Operations')),
   );
 
@@ -108,14 +107,12 @@ function drealty_listing_admin_overview($form, &$form_state, $arg) {
   $options = array();
 
   foreach ($listings as $listing) {
-    $address = "{$listing->street_number} {$listing->street_dir_prefix} {$listing->street_name} {$listing->street_dir_suffix} {$listing->street_suffix}, {$listing->city}, {$listing->state_or_province} {$listing->postal_code}";
-    $address = str_replace("  ", " ", $address);
-    $links = menu_contextual_links('drealty', 'admin/content/drealty_listings', array($listing->rets_id));
+    
+    $links = menu_contextual_links('drealty', 'admin/content/drealty_listings', array($listing->id));
 
     $options[$listing->id] = array(
         'id' => $listing->id,
-        'mls_id' => array('data' => array('#type' => 'link', '#title' => $listing->rets_id, '#href' => 'listings/' . $listing->rets_id)),
-        'address' => $address,
+        'mls_id' => array('data' => array('#type' => 'link', '#title' => $listing->rets_id, '#href' => 'drealty_listing/' . $listing->id)),
         'operations' => theme('links', array('links' => $links, 'attributes' => array('class' => array('links', 'inline', 'operations')))),
     );
   }
@@ -140,63 +137,6 @@ function drealty_listing_edit_form($form, &$form_state, $op, $listing) {
 
 
   if ($listing->rets_imported) {
-
-    ctools_add_css('drealty.admin', 'drealty');
-
-    $address = "{$listing->street_number} {$listing->street_dir_prefix} {$listing->street_name} {$listing->street_dir_suffix} {$listing->street_suffix}, {$listing->city}, {$listing->state_or_province} {$listing->postal_code}";
-    $address = str_replace("  ", " ", $address);
-    $price = number_format($listing->list_price);
-    $form['address'] = array('#markup' => "<div><strong>Address: </strong>$address</div>", '#prefix' => '<div class="section">');
-    $form['mlsid'] = array('#markup' => "<div><strong>MSL#: </strong> {$listing->rets_id}</div>");
-    $form['mlskey'] = array('#markup' => "<div><strong>MLS Key: </strong> {$listing->rets_key}</div>");
-    $form['price'] = array('#markup' => "<div><strong>Price: </strong>$$price</div>", '#suffix' => '</div>');
-  } else {
-    $listing_info = entity_get_property_info('drealty_listing');
-    $props = $listing_info['properties'];
-
-    $pattern = '/(.*?[a-z]{1})([A-Z]{1}.*?)/';
-    $replace = '${1} ${2}';
-
-    foreach ($props as &$prop) {
-      $prop['label'] = preg_replace($pattern, $replace, $prop['label']);
-    }
-
-    $form['sections']['required'] = array('#type' => 'fieldset', '#title' => 'Required', '#collapsible' => TRUE, '#collapsed' => FALSE);
-    $form['sections']['general'] = array('#type' => 'fieldset', '#title' => 'General', '#collapsible' => TRUE, '#collapsed' => TRUE);
-    $form['sections']['Listing:Location:Address'] = array('#type' => 'fieldset', '#title' => 'Address', '#collapsible' => TRUE, '#collapsed' => TRUE);
-    $form['sections']['Listing:Location:School'] = array('#type' => 'fieldset', '#title' => 'School', '#collapsible' => TRUE, '#collapsed' => TRUE);
-    $form['sections']['Listing:Location:Area'] = array('#type' => 'fieldset', '#title' => 'Area', '#collapsible' => TRUE, '#collapsed' => TRUE);
-    $form['sections']['Listing:Location:GIS'] = array('#type' => 'fieldset', '#title' => 'GIS / Mapping', '#collapsible' => TRUE, '#collapsed' => TRUE);
-    $form['sections']['Listing:AgentOffice:ListAgent'] = array('#type' => 'fieldset', '#title' => 'Listing Agent', '#collapsible' => TRUE, '#collapsed' => TRUE);
-    $form['sections']['Listing:AgentOffice:ListOffice'] = array('#type' => 'fieldset', '#title' => 'Listing Office', '#collapsible' => TRUE, '#collapsed' => TRUE);
-    $form['sections']['Listing:AgentOffice:CoListAgent'] = array('#type' => 'fieldset', '#title' => 'Co-Listing Agent', '#collapsible' => TRUE, '#collapsed' => TRUE);
-    $form['sections']['Listing:AgentOffice:CoListOffice'] = array('#type' => 'fieldset', '#title' => 'Co-Listing Office', '#collapsible' => TRUE, '#collapsed' => TRUE);
-    $form['sections']['Listing:Property'] = array('#type' => 'fieldset', '#title' => 'Property Information', '#collapsible' => TRUE, '#collapsed' => TRUE);
-    $form['sections']['Listing:Property:Structure'] = array('#type' => 'fieldset', '#title' => 'Structure', '#collapsible' => TRUE, '#collapsed' => TRUE);
-    $form['sections']['Listing:Property:Rooms'] = array('#type' => 'fieldset', '#title' => 'Individual Rooms', '#collapsible' => TRUE, '#collapsed' => TRUE);
-
-
-    asort($props);
-    foreach ($props as $key => $property) {
-      if (isset($property['group']) && $property['group'] != 'hidden') {
-
-        $type = 'textfield';
-        switch ($property['schema_type']) {
-          case 'text':
-            $type = 'textarea';
-            break;
-          default:
-            $type = 'textfield';
-        }
-
-        $form['sections'][$property['group']][$key] = array(
-            '#type' => $type,
-            '#title' => $property['label'],
-            '#description' => $property['description'],
-            '#default_value' => isset($listing->{$key}) ? $listing->{$key} : NULL,
-        );
-      }
-    }
   }
 
   field_attach_form('drealty_listing', $listing, $form, $form_state);

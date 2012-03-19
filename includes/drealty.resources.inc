@@ -420,6 +420,7 @@ class drealtyFieldMapping {
   public $field_api_type;
   public $data;
   public $cid;
+  public $hash_exclude;
 
 }
 

@@ -1,3 +1,5 @@
+DREALTY - DRUPAL REAL ESTATE INTEGRATION
+Project Page: http://drupal.org/project/drealty
 
 CONTENTS OF THIS FILE
 ---------------------
@@ -34,15 +36,17 @@ REQUIRED MODULES: Field, Entity API (dev)
 
 7. Configure your initial connection (your RETS provider) and Activate it.
 
-8. Go back to admin/drealty/ and select Drealty Property Types. 'Property Types' are actually bundles we are creating, like Content Types.
+8. On the Connections page, click on Properties to configure it, and add the resource "Property" from the drop down list.
 
-9. Create a Property Type, for example, Residential.
+9. We need to map required keys (MLS number, Status, and Key Field) to their Drupal counterparts. Select one of the Property Classes after step 8 and configure it, and map it to 'Basic Drealty Listing' (you will have more options later).
 
-10. The following screen looks just like a Content Type screen. dRealty works with Fields in core, so simply start adding the fields you want to have on this property type bundle. For example, create a Price field as Integer. On the next screen, dRealty will allow you to 'map' the field to its RETS equivalent. Start typing 'price' in the mapping input- it will autocomplete and find results for you, and select the Price field. For example, in Innovia systems, it will be ListPrice. 
+10. For Offset settings, check with your provider to determine what you need. Select a Chunk Size that will work for you. If performance during import is not working well, lower this value. Finally, if you want to import images, check off the 'Process Images' option.
 
-11. Repeat step 10 for all relevant fields you want to capture.
+11. Go back to admin/drealty/ and select Drealty Property Types. 'Property Types' are actually bundles we are creating, like Content Types. You can create as many as you like, or just use the provided 'Basic Drealty Listing'.
 
-12. 
+12. Select 'Manage Fields' on the bundle of your choice (either Basic Drealty Listing or the one you created). The following screen looks just like a Content Type screen. dRealty works with Fields in core, so simply start adding the fields you want to have on this property type bundle. For example, create a Price field as Integer. On the next screen, dRealty will allow you to 'map' the field to its RETS equivalent. Start typing 'price' in the mapping input- it will autocomplete and find results for you, and select the Price field. For example, in Innovia systems, it will be ListPrice. 
+
+You now have the basics setup to begin importing listings. If you have Drush, fire up console and do 'drush -d rets-import' to see it work. Repeat the steps above to setup additional property type bundles for different property classes.
 
 
 GEOCODING

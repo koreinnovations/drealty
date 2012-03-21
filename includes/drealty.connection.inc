@@ -1,10 +1,10 @@
 <?php
 
-function drealty_connection_entity_save(dRealtyConnectionEntity $connection) {
+function drealty_connection_entity_save(drealtyConnectionEntity $connection) {
   return $connection->save();
 }
 
-class dRealtyConnection {
+class drealtyConnection {
 
   /**
    *
@@ -26,7 +26,7 @@ class dRealtyConnection {
 
   /**
    *
-   * @var dRealtyConnectionEntity 
+   * @var drealtyConnectionEntity 
    */
   private $current_connection = NULL;
 
@@ -135,7 +135,7 @@ class dRealtyConnection {
 
   /**
    *
-   * @return dRealtyConnectionEntity[] 
+   * @return drealtyConnectionEntity[] 
    */
   public function FetchConnections() {
     return entity_load('drealty_connection_entity');
@@ -144,7 +144,7 @@ class dRealtyConnection {
   /**
    *
    * @param int $id
-   * @return dRealtyConnectionEntity 
+   * @return drealtyConnectionEntity 
    */
   public function FetchConnection($id) {
     $connection = entity_load('drealty_connection_entity', array($id));
@@ -153,7 +153,7 @@ class dRealtyConnection {
 
 }
 
-class dRealtyConnectionEntity extends Entity {
+class drealtyConnectionEntity extends Entity {
 
   public $conid = 0;
   public $name;
@@ -294,7 +294,7 @@ class dRealtyConnectionEntity extends Entity {
 
 }
 
-class dRealtyConnectionEntityContoller extends EntityAPIControllerExportable {
+class drealtyConnectionEntityContoller extends EntityAPIControllerExportable {
 
   public function __construct($entityType) {
     parent::__construct($entityType);
@@ -317,8 +317,8 @@ class dRealtyConnectionEntityContoller extends EntityAPIControllerExportable {
       'active' => FALSE,
       'debug_mode' => FALSE,
     );
-    $dRealtyConnectionEntity = parent::create($values);
-    return $dRealtyConnectionEntity;
+    $drealtyConnectionEntity = parent::create($values);
+    return $drealtyConnectionEntity;
   }
 
   public function export($entity, $prefix = '') {

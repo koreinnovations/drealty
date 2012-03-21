@@ -151,7 +151,7 @@ function drealty_resource_overview_title_callback($type) {
   return $title;
 }
 
-function drealty_connection_entity_edit_form($form, &$form_state, dRealtyConnectionEntity $connection) {
+function drealty_connection_entity_edit_form($form, &$form_state, drealtyConnectionEntity $connection) {
   $form['conid'] = array('#type' => 'value', '#value' => $connection->conid);
 
   $form['label'] = array(
@@ -345,13 +345,13 @@ function drealty_activate_connection_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/drealty/connections';
 }
 
-function drealty_deactivate_connection(dRealtyConnectionEntity $connection = NULL) {
+function drealty_deactivate_connection(drealtyConnectionEntity $connection = NULL) {
   $connection->active = FALSE;
   $connection->save();
   drupal_goto('admin/drealty/connections');
 }
 
-function drealty_connection_delete_form($form, &$form_state, dRealtyConnectionEntity $connection) {
+function drealty_connection_delete_form($form, &$form_state, drealtyConnectionEntity $connection) {
   $form_state['connection'] = $connection;
 
   $form['#submit'][] = 'drealty_connection_delete_form_submit';
@@ -364,7 +364,7 @@ function drealty_connection_delete_form($form, &$form_state, dRealtyConnectionEn
 
 function drealty_connection_delete_form_submit($form, &$form_state) {
 
-  $connection = new dRealtyConnectionEntity();
+  $connection = new drealtyConnectionEntity();
   $connection = $form_state['connection'];
 
   // this will also clear out the resources, classes, fieldmappings, and resourcemappings
@@ -376,7 +376,7 @@ function drealty_connection_delete_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/drealty/connections';
 }
 
-function drealty_connection_delete_form_wrapper(dRealtyConnectionEntity $connection = NULL) {
+function drealty_connection_delete_form_wrapper(drealtyConnectionEntity $connection = NULL) {
   return drupal_get_form('drealty_connection_delete_form', $connection);
 }
 
@@ -407,7 +407,7 @@ function drealty_select_resource_type($form, &$form_state) {
   drupal_set_message(t('The resource type selection has been saved.'));
 }
 
-function drealty_resource_overview_form($form, &$form_state, dRealtyConnectionEntity $connection = NULL, $entity_type = NULL) {
+function drealty_resource_overview_form($form, &$form_state, drealtyConnectionEntity $connection = NULL, $entity_type = NULL) {
 
 
   if (!isset($connection)) {
@@ -545,7 +545,7 @@ function drealty_resource_overview_form_submit($form, &$form_state) {
   drupal_set_message(t('The Configuration options have been Saved.'));
 }
 
-function drealty_resource_configure_form($form, &$form_state, dRealtyConnectionEntity $connection = NULL, $entity_type = NULL, $class = NULL) {
+function drealty_resource_configure_form($form, &$form_state, drealtyConnectionEntity $connection = NULL, $entity_type = NULL, $class = NULL) {
 
 
   $form_state['connection'] = $connection;
@@ -651,7 +651,7 @@ function drealty_resource_configure_form($form, &$form_state, dRealtyConnectionE
     }
   }
 
-  $dc = new dRealtyConnection();
+  $dc = new drealtyConnection();
 
 
   if ($dc->connect($connection->conid)) {
@@ -914,7 +914,7 @@ function drealty_resource_configure_form_submit($form, &$form_state) {
   $entity_type = $form_state['entity_type'];
   $class = $form_state['class'];
 
-  $connection = new dRealtyConnectionEntity();
+  $connection = new drealtyConnectionEntity();
   $connection = $form_state['connection'];
 
   $mappings = $connection->resourceMappings();
@@ -982,13 +982,13 @@ function drealty_test_manual_query($form, &$form_state) {
 
   drupal_set_message("Testing the DMQL Query.");
 
-  $connection = new dRealtyConnectionEntity();
+  $connection = new drealtyConnectionEntity();
   $connection = $form_state['connection'];
   $resource = $form_state['resource'];
   $query = $form_state['values']['status_override_query'];
   $class = $form_state['class'];
 
-  $dc = new dRealtyConnection();
+  $dc = new drealtyConnection();
 
   if ($dc->connect($connection->conid)) {
 

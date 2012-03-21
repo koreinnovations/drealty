@@ -106,7 +106,7 @@ class drealtyResources {
     $fields = $query->execute()->fetchAllAssoc('systemname');
 
     if (empty($fields)) {
-      $dc = new dRealtyConnection();
+      $dc = new drealtyConnection();
 
       if ($dc->connect($conid)) {
 
@@ -193,7 +193,7 @@ class drealtyResources {
 
     if (empty($classes)) {
       // we didn't find any classes so we'll need to get the metadata from the RETS provider
-      $dc = new dRealtyConnection();
+      $dc = new drealtyConnection();
       if ($dc->connect($conid)) {
         $metadata = $dc->rets->GetMetadataClasses($resource->systemname);
         if ($metadata) {
@@ -262,7 +262,7 @@ class drealtyResources {
 
     if (empty($resources)) {
       // we didn't find any classes so we'll need to get the metadata from the RETS provider
-      $dc = new dRealtyConnection();
+      $dc = new drealtyConnection();
       if ($dc->connect($conid)) {
         $metadata = $dc->rets->GetMetadataResources();
         if ($metadata) {

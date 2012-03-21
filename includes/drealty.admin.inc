@@ -5,7 +5,7 @@ function drealty_settings_form($form, &$form_state) {
   $form['general_settings'] = array('#type' => 'fieldset', '#title' => 'General Settings', '#collapsible' => TRUE, '#collapsed' => FALSE);
 
 
-  $dc = new dRealtyConnection();
+  $dc = new drealtyConnection();
   $connections = $dc->FetchConnections();
 
   $dr = new drealtyResources();
@@ -96,7 +96,7 @@ function drealty_settings_form($form, &$form_state) {
 
 function drealty_settings_form_submit($form, &$form_state) {
 
-  $dc = new dRealtyConnection();
+  $dc = new drealtyConnection();
 
   if (isset($form_state['values']['connections'])) {
     foreach ($form_state['values']['connections'] as $key => $value) {

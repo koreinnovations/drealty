@@ -46,12 +46,12 @@ class drealtyDaemon {
 
   /**
    *
-   * @param dRealtyConnectionEntity $connection
+   * @param drealtyConnectionEntity $connection
    * @param drealtyRetsResource $resource
    * @param drealtyRetsClass $class
    * @param string $entity_type 
    */
-  private function ProcessRetsClass(dRealtyConnectionEntity $connection, $resource, $class, $entity_type) {
+  private function ProcessRetsClass(drealtyConnectionEntity $connection, $resource, $class, $entity_type) {
 
     $mappings = $connection->ResourceMappings();
     $resources = $connection->Resources();
@@ -115,13 +115,13 @@ class drealtyDaemon {
 
   /**
    *
-   * @param dRealtyConnectionEntity $connection
+   * @param drealtyConnectionEntity $connection
    * @param drealtyRetsResource $resource
    * @param drealtyRetsClass $class
    * @param string $key_field
    * @return int 
    */
-  function fetch_listings_offset_not_supported_key(dRealtyConnectionEntity $connection, $resource, $class, $key_field) {
+  function fetch_listings_offset_not_supported_key(drealtyConnectionEntity $connection, $resource, $class, $key_field) {
     $rets = $this->dc->rets;
 
     $chunks = 0;
@@ -200,13 +200,13 @@ class drealtyDaemon {
 
   /**
    *
-   * @param dRealtyConnectionEntity $connection
+   * @param drealtyConnectionEntity $connection
    * @param drealtyRetsResource $resource
    * @param drealtyRetsClass $class
    * @param string $key_field
    * @return int 
    */
-  function fetch_listings_offset_not_supported_price(dRealtyConnectionEntity $connection, $resource, $class, $key_field) {
+  function fetch_listings_offset_not_supported_price(drealtyConnectionEntity $connection, $resource, $class, $key_field) {
     $rets = $this->dc->rets;
 
     $chunks = 0;
@@ -278,13 +278,13 @@ class drealtyDaemon {
 
   /**
    *
-   * @param dRealtyConnectionEntity $connection
+   * @param drealtyConnectionEntity $connection
    * @param drealtyRetsResource $resource
    * @param drealtyRetsClass $class
    * @param string $query
    * @return int 
    */
-  function fetch_listings_offset_supported_default(dRealtyConnectionEntity $connection, $resource, $class, $query) {
+  function fetch_listings_offset_supported_default(drealtyConnectionEntity $connection, $resource, $class, $query) {
     $offset = 0;
     $rets = $this->dc->rets;
     $limit = $class->chunk_size;
@@ -366,13 +366,13 @@ class drealtyDaemon {
 
   /**
    *
-   * @param dRealtyConnectionEntity $connection
+   * @param drealtyConnectionEntity $connection
    * @param drealtyRetsResource $resource
    * @param drealtyRetsClass $class
    * @param string $entity_type
    * @param int $chunk_count 
    */
-  protected function process_results(dRealtyConnectionEntity $connection, $resource, $class, $entity_type, $chunk_count) {
+  protected function process_results(drealtyConnectionEntity $connection, $resource, $class, $entity_type, $chunk_count) {
 
     drush_log('processing results');
     $chunk_idx = 0;

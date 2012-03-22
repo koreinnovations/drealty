@@ -900,3 +900,26 @@ function drealty_field_ui_field_overview_form_submit($form, &$form_state) {
     drupal_set_message(t('Your settings have been saved.'));
   }
 }
+/**
+ * Implementation of hook_ctools_plugin_api().
+ */
+function drealty_ctools_plugin_api() {
+  return array('version' => 1);
+}
+
+/**
+ * Implementation of hook_ctools_plugin_dierctory() to let the system know
+ * we implement plugins.
+ */
+function drealty_ctools_plugin_directory($module, $plugin) {
+  return 'plugins/' . $plugin;
+}
+
+/**
+ * Implements hook_ctools_plugin_type
+ */
+function drealty_ctools_plugin_type() {
+  return array(
+    'geocoder_handler' => array(),
+  );
+}

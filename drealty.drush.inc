@@ -11,6 +11,9 @@ function drealty_drush_command() {
 
   $items['rets-import'] = array(
       'description' => 'Import RETS Listings.',
+      'options' => array(
+        'connections' => t('Restrict import to specific connections'),
+      ),
   );
 
   $items['rets-flush'] = array(
@@ -55,16 +58,24 @@ function drealty_drush_help($section) {
   }
 }
 
-function drush_drealty_rets_import() {
+function drush_drealty_rets_import($additional_options = array()) {
   // set the time out to infinite
   set_time_limit(0);
 
+  drush_log(dt('Args: !dump', array('!dump' => print_r($additional_options, TRUE))));
+  
+  $connections_filter = array();
+  if ($additional_options['connections']) {
+    $connections_filter += explode(',', $additional_options['connections']);
+  }
+  
+  
   $max_before = db_query("SELECT MAX(created) as max_created, MAX(changed) as max_changed FROM drealty_listing")->fetchObject();  
   $start_time = time();
   watchdog('message', 'RETS Import Starts at !start.', array('!start' => $start_time));
   module_load_include('php', 'drealty', 'drealtyDaemon');
   $daemon = new drealtyDaemon();
-  $daemon->run();
+  $daemon->run($connections_filter);
   $max_after = db_query("SELECT MAX(created) as max_created, MAX(changed) as max_changed FROM drealty_listing")->fetchObject();  
   $end_time = time();
   watchdog('message', 'RETS Import Ends at !end.', array('!end' => $end_time));

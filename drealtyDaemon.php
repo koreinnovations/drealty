@@ -10,25 +10,38 @@ class drealtyDaemon {
     $this->dr = new drealtyResources();
   }
 
-  public function run() {
+  public function run($connections_filter = array()) {
     $connections = $this->dc->FetchConnections();
     foreach ($connections as $connection) {
-      $mappings = $connection->ResourceMappings();
-      foreach ($mappings as $mapping) {
-        $classes = $connection->FetchClasses($mapping->resource);
-        foreach ($classes as $class) {
+
+      if (empty($connections_filter) || in_array($connection->conid, $connections_filter)) {
+
+
+        $mappings = $connection->ResourceMappings();
+        foreach ($mappings as $mapping) {
+          $classes = $connection->FetchClasses($mapping->resource);
+          foreach ($classes as $class) {
 //          drush_log(print_r($class, TRUE));
-          if ($class->enabled && $class->lifetime <= time() - ($class->lastupdate + 60)) {
-            $this->ProcessRetsClass($connection, $mapping->resource, $class, $mapping->entity_type);
-            $class->lastupdate = time();
-            drupal_write_record('drealty_classes', $class, 'cid');
+            if ($class->enabled && $class->lifetime <= time() - ($class->lastupdate + 60)) {
+              $this->ProcessRetsClass($connection, $mapping->resource, $class, $mapping->entity_type);
+              $class->lastupdate = time();
+              drupal_write_record('drealty_classes', $class, 'cid');
+            }
           }
         }
       }
+      else {
+        drush_log(dt("Skipping connection {$connection->name}, ID {$connection->conid}"));
+      }
+      
     }
     unset($connections, $mappings, $classes);
     cache_clear_all();
     return TRUE;
+  }
+
+  public function RawQuery(dRealtyConnectionEntity $connection) {
+    
   }
 
   private function ProcessRetsClass(dRealtyConnectionEntity $connection, $resource, $class, $entity_type) {
@@ -232,6 +245,10 @@ class drealtyDaemon {
 
         drush_log(dt("Item @idx of @total", array("@idx" => $j + 1, "@total" => $rets_results_count)));
         $rets_item = $rets_results->data[$j];
+
+
+        drush_log(dt('Raw item dump: !dump', array('!dump' => print_r($rets_item, TRUE))));
+
         $in_rets[] = $rets_item[$id];
 
         $force = FALSE;
@@ -469,7 +486,6 @@ class drealtyDaemon {
               drush_log(dt('MLS Key: !m', array('!m' => $mlskey)));
               drush_log(dt('Connection ID: !m', array('!m' => $conid->conid)));
               drush_log(dt('Photo: !m', array('!m' => print_r($photo, TRUE))));
-              
             }
           }
           unset($photos);

@@ -742,6 +742,12 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
         '#description' => t('Process images/metadata objects for this resource type?'),
         '#default_value' => $class->process_images,
     );
+    $form['images']['download_images'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Download Images?'),
+        '#description' => t('If checked, images will be downloaded locally. Otherwise, images will be linked externally'),
+        '#default_value' => $class->download_images,
+    );
 
     $form['images']['object_type'] = array(
         '#type' => 'select',
@@ -784,9 +790,11 @@ function drealty_configure_resource_limits_form_submit($form, &$form_state) {
 
   if ($form_state['has_images']) {
     $class->process_images = $form_state['values']['process_images'];
+    $class->download_images = $form_state['values']['download_images'];
     $class->object_type = $form_state['values']['object_type'];
   } else {
     $class->process_images = FALSE;
+    $class->download_images = FALSE;
     $class->object_type = NULL;
   }
   $class->configured = TRUE;

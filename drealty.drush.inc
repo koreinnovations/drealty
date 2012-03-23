@@ -12,7 +12,7 @@ function drealty_drush_command() {
   $items['rets-import'] = array(
       'description' => 'Import RETS Listings.',
       'options' => array(
-        'connections' => t('Restrict import to specific connections'),
+          'connections' => t('Restrict import to specific connections'),
       ),
   );
 
@@ -63,25 +63,24 @@ function drush_drealty_rets_import($additional_options = array()) {
   set_time_limit(0);
 
   drush_log(dt('Args: !dump', array('!dump' => print_r($additional_options, TRUE))));
-  
+
   $connections_filter = array();
   if ($additional_options['connections']) {
-    $connections_filter += explode(',', $additional_options['connections']);
+    $connections_filter += explode(',', $additional_options); //['connections']);
   }
-  
-  
-  $max_before = db_query("SELECT MAX(created) as max_created, MAX(changed) as max_changed FROM drealty_listing")->fetchObject();  
+
+
+  $max_before = db_query("SELECT MAX(created) as max_created, MAX(changed) as max_changed FROM drealty_listing")->fetchObject();
   $start_time = time();
   watchdog('message', 'RETS Import Starts at !start.', array('!start' => $start_time));
   module_load_include('php', 'drealty', 'drealtyDaemon');
   $daemon = new drealtyDaemon();
   $daemon->run($connections_filter);
-  $max_after = db_query("SELECT MAX(created) as max_created, MAX(changed) as max_changed FROM drealty_listing")->fetchObject();  
+  $max_after = db_query("SELECT MAX(created) as max_created, MAX(changed) as max_changed FROM drealty_listing")->fetchObject();
   $end_time = time();
   watchdog('message', 'RETS Import Ends at !end.', array('!end' => $end_time));
   module_load_include('inc', 'reman', 'includes/pages');
   realtsoft_listing_import_manipulation($start_time, $end_time, $max_before, $max_after);
-  
 }
 
 function drush_drealty_rets_reprocess_images() {
@@ -95,23 +94,24 @@ function drush_drealty_rets_reprocess_images() {
 
   foreach ($listings as $listing) {
     $result = db_select('file_managed', 'f')
-      ->fields('f', array('fid'))
-      ->condition('filename', $listing->listing_id . '%', "LIKE")
-      ->execute()
-      ->fetchAllAssoc('fid');
+            ->fields('f', array('fid'))
+            ->condition('filename', $listing->listing_id . '%', "LIKE")
+            ->execute()
+            ->fetchAllAssoc('fid');
 
     $listing->process_images = FALSE;
+    $listing->download_images = FALSE;
     $listing->save();
-    
+
     $fids = array_keys($result);
     $files = file_load_multiple($fids);
 
     foreach ($files as $file) {
       file_usage_add($file, 'drealty', 'drealty_listing', $listing->id);
       drush_log(dt("Adding usage for @filename to listing: @id", array("@filename" => $file->filename, "@id" => $listing->id)), 'success');
-    }    
+    }
     unset($fids, $result, $files, $file);
-      }
+  }
 }
 
 function drush_drealty_rets_flush() {

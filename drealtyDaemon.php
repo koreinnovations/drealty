@@ -14,7 +14,7 @@ class drealtyDaemon {
     $connections = $this->dc->FetchConnections();
     foreach ($connections as $connection) {
 
-      if (empty($connections_filter) || in_array($connection->conid, $connections_filter)) {
+      if (empty($connections_filter) || in_array((string)$connection->conid, $connections_filter)) {
 
 
         $mappings = $connection->ResourceMappings();
@@ -275,6 +275,7 @@ class drealtyDaemon {
 
           if ($entity_type == 'drealty_listing') {
             $item->process_images = TRUE;
+            $item->download_images = $class->download_images;
           }
 
           //drush_log(dt('Field_mappings: !map', array('!map' => print_r($field_mappings, TRUE))));

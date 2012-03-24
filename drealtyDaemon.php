@@ -15,11 +15,17 @@ class drealtyDaemon {
     foreach ($connections as $connection) {
 
       if (empty($connections_filter) || in_array((string)$connection->conid, $connections_filter)) {
-
+        drush_log(dt("Importing for connection {$connection->name}, ID {$connection->conid}"));
 
         $mappings = $connection->ResourceMappings();
+        
+        drush_log(dt('Resource mappings !dump', array('!dump' => print_r($mappings, TRUE))));
+        
         foreach ($mappings as $mapping) {
           $classes = $connection->FetchClasses($mapping->resource);
+          
+          drush_log(dt('Classes !dump', array('!dump' => print_r($classes, TRUE))));
+          
           foreach ($classes as $class) {
 //          drush_log(print_r($class, TRUE));
             if ($class->enabled && $class->lifetime <= time() - ($class->lastupdate + 60)) {

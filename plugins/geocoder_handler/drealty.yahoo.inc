@@ -33,7 +33,7 @@ function drealty_geocoder_yahoo($address, $options = array()) {
 }
 
 function drealty_geocoder_yahoo_field($field, $field_item) {
-  if ($field_item['changed']) {
+  if (isset($field_item['changed']) && $field_item['changed']) {
     if ($field['type'] == 'text' || $field['type'] == 'text_long' || $field['type'] == 'text_with_summary' || $field['type'] == 'computed') {
       return drealty_geocoder_yahoo($field_item['value']);
     }

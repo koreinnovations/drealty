@@ -474,10 +474,10 @@ class drealtyDaemon {
                   $rets_item[$mapping->data['zip']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code']) {
                   $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
                 }
-                if($is_new) {
+                if ($is_new) {
                   $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
                 }
-                
+
                 $item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare'] = isset($rets_item[$mapping->data['address_1']]) ? $rets_item[$mapping->data['address_1']] : NULL;
                 $item->{$mapping->field_name}[LANGUAGE_NONE][0]['premise'] = isset($mapping->data['address_2']) ? $rets_item[$mapping->data['address_2']] : NULL;
                 $item->{$mapping->field_name}[LANGUAGE_NONE][0]['locality'] = isset($mapping->data['city']) ? $rets_item[$mapping->data['city']] : NULL;
@@ -587,6 +587,12 @@ class drealtyDaemon {
     return md5($tmp);
   }
 
+  public function formatBytes($size, $precision = 2) {
+    $base = log($size) / log(1024);
+    $suffixes = array('', 'k', 'M', 'G', 'T');
+    return round(pow(1024, $base - floor($base)), $precision) . $suffixes[floor($base)];
+  }
+
   /**
    *
    * @global type $user
@@ -600,7 +606,7 @@ class drealtyDaemon {
     if (!$class->process_images) {
       return;
     }
-    global $user;
+
     $img_field = $class->image_field_name;
     $dir = $class->image_dir;
 
@@ -642,7 +648,7 @@ class drealtyDaemon {
       foreach ($process_array as $chunk) {
 
         $listings = entity_load($entity_type, $chunk);
-        
+
         $ids = array();
         $rekeyed_listings = array();
         foreach ($listings as $key => $listing) {
@@ -656,7 +662,7 @@ class drealtyDaemon {
           $id_string = implode(',', $ids);
           drush_log("id string: " . $id_string);
 
-          $photos = $rets->GetObject($resource->systemname, $class->object_type, $id_string, '*');
+          $results = $rets->GetObject($resource->systemname, $class->object_type, $id_string, '*');
 
           if ($rets->Error()) {
             $error = $rets->Error();
@@ -664,40 +670,64 @@ class drealtyDaemon {
             return;
           }
 
+          if ($results) {
+            $length = 0;
+            $total = 0;
+            $photos = array();
+
+            foreach ($results as $item) {
+
+              $total++;
+              $length += strlen($item['Data']);
+
+              if (!isset($photos[$item['Content-ID']])) {
+                $photos[$item['Content-ID']] = array();
+              }
+              $photos[$item['Content-ID']][$item['Object-ID']] = $item;
+            }
+
+            ksort($photos, SORT_NUMERIC);
+            foreach ($photos as &$set) {
+              ksort($set, SORT_NUMERIC);
+            }
+            drush_log(dt("Downloaded a total of @total images for @count Listings. [@size of data].", array("@total" => $total, "@count" => count($ids), "@size" => $this->formatBytes($length, 1))));
+          }
+
           $this->dc->disconnect();
 
-          unset($ids);
+          unset($ids, $results);
+
           $id_string = "";
           $counter = 0;
 
-          foreach ($photos as $photo) {
-            $mlskey = $photo['Content-ID'];
-            $number = $photo['Object-ID'];
-            $filename = "{$mlskey}-{$number}.jpg";
-            $filepath = "{$img_dir}/{$filename}";
+          foreach ($photos as $list_id => $set) {
+            
+            $listing = $listings[$list_id];
 
-
-            $fid = db_query('SELECT fid FROM {file_managed} WHERE filename = :filename', array(':filename' => $filename))->fetchField();
-
-            if (!empty($fid)) {
-              $file_object = file_load($fid);
-              file_delete($file_object, TRUE);
+            // delete out any existing images
+            if (isset($listing->{$img_field}[LANGUAGE_NONE])) {
+              foreach ($listing->{$img_field}[LANGUAGE_NONE] as $img) {
+                file_delete($img, TRUE);
+              }
             }
 
-            drush_log(dt("Saving @filename", array("@filename" => $filepath)));
+            foreach ($set as $key => $photo) {
 
-            $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
-            $file->alt = '';
-            $file->title = '';
+              $mlskey = $photo['Content-ID'];
+              $number = $photo['Object-ID'];
+              $filename = "{$mlskey}-{$number}.jpg";
+              $filepath = "{$img_dir}/{$filename}";
 
-            $listing = $listings[$mlskey];
-
-            $listing->{$img_field}[LANGUAGE_NONE][] = (array) $file;
+              $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
+              $file->alt = '';
+              $file->title = '';
+              $listing->{$img_field}[LANGUAGE_NONE][] = (array) $file;
+            }
 
             $listing->process_images = 0;
             $listing->save();
-            
-            unset($listing, $file);
+            drush_log(dt("Saved @count images for @listing", array("@count" => count($set), "@listing" => $list_id)), "success");
+            unset($photos[$list_id]);
           }
           unset($photos, $listings);
         }

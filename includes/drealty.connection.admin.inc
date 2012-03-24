@@ -245,6 +245,7 @@ function drealty_connection_entity_edit_form($form, &$form_state, drealtyConnect
   $form['debug_mode'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable Debug Mode'),
+    '#description' => t('Writes phRets debug messages to drealty_debug_log.txt in the private files folder.'),
     '#default_value' => isset($connection->debug_mode) ? $connection->debug_mode : FALSE,
   );
 

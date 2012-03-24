@@ -74,7 +74,12 @@ class drealtyConnection {
 
         if ($this->current_connection->debug_mode) {
           $this->rets->SetParam('debug_mode', true);
-          $this->rets->SetParam("debug_file", "debug_log.txt");
+          $path = variable_get('file_private_path', FALSE);
+          if($path && !empty($path)) {
+            $this->rets->SetParam("debug_file", "private://drealty_debug_log.txt");
+          } else {
+            $this->rets->SetParam("debug_file", "public://drealty_debug_log.txt");
+          }
         }
         // add some headers
         $this->rets->AddHeader("User-Agent", $this->current_connection->ua_string);

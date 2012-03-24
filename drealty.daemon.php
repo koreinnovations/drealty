@@ -587,6 +587,14 @@ class drealtyDaemon {
     return md5($tmp);
   }
 
+  /**
+   *
+   * @global type $user
+   * @param int $conid
+   * @param drealtyRetsResource $resource
+   * @param drealtyRetsClass $class
+   * @return type 
+   */
   public function process_images($conid, $resource, $class) {
 
     if (!$class->process_images) {
@@ -603,7 +611,7 @@ class drealtyDaemon {
     $query = new EntityFieldQuery();
     $result = $query
       ->entityCondition('entity_type', $entity_type)
-      ->propertyCondition('process_images', TRUE)
+      ->propertyCondition('process_images', 1)
       ->execute();
 
     if (!empty($result[$entity_type])) {
@@ -643,7 +651,7 @@ class drealtyDaemon {
           $id_string = implode(',', $ids);
           drush_log("id string: " . $id_string);
 
-          $photos = $rets->GetObject($resource, $class->object_type, $id_string, '*');
+          $photos = $rets->GetObject($resource->systemname, $class->object_type, $id_string, '*');
 
           if ($rets->Error()) {
             $error = $rets->Error();
@@ -674,7 +682,8 @@ class drealtyDaemon {
             drush_log(dt("Saving @filename", array("@filename" => $filepath)));
 
             $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
-
+            $file->alt = '';
+            $file->title = '';
 
 
             // load the entity that is associated with the image

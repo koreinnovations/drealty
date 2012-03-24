@@ -615,7 +615,7 @@ class drealtyDaemon {
       ->execute();
 
     if (!empty($result[$entity_type])) {
-      $items = entity_load($entity_type, array_keys($result[$entity_type]));
+      $items = array_keys($result[$entity_type]); //entity_load($entity_type, array_keys($result[$entity_type]));
     } else {
       drush_log("No images to process.");
       return;
@@ -641,11 +641,16 @@ class drealtyDaemon {
 
       foreach ($process_array as $chunk) {
 
+        $listings = entity_load($entity_type, $chunk);
+        
         $ids = array();
-
-        foreach ($chunk as $item) {
-          $ids[] = $item->rets_key;
+        $rekeyed_listings = array();
+        foreach ($listings as $key => $listing) {
+          $ids[] = $listing->rets_key;
+          $listings[$listing->rets_key] = $listing;
+          unset($listings[$key]);
         }
+
 
         if ($this->dc->connect($conid)) {
           $id_string = implode(',', $ids);
@@ -685,21 +690,16 @@ class drealtyDaemon {
             $file->alt = '';
             $file->title = '';
 
-
-            // load the entity that is associated with the image
-            $query = new EntityFieldQuery();
-            $result = $query
-              ->entityCondition('entity_type', 'drealty_listing')
-              ->propertyCondition('rets_key', $mlskey)
-              ->execute();
-            $listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
+            $listing = $listings[$mlskey];
 
             $listing->{$img_field}[LANGUAGE_NONE][] = (array) $file;
 
             $listing->process_images = 0;
             $listing->save();
+            
+            unset($listing, $file);
           }
-          unset($photos);
+          unset($photos, $listings);
         }
       }
     }

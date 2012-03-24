@@ -707,7 +707,8 @@ class drealtyDaemon {
             // delete out any existing images
             if (isset($listing->{$img_field}[LANGUAGE_NONE])) {
               foreach ($listing->{$img_field}[LANGUAGE_NONE] as $img) {
-                file_delete($img, TRUE);
+                $file = (object) $img;
+                file_delete($file, TRUE);
               }
             }
 

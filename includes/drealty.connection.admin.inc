@@ -956,6 +956,7 @@ function drealty_resource_configure_form_submit($form, &$form_state) {
     $class->process_images = $form_state['values']['process_images'];
     $class->object_type = $form_state['values']['object_type'];
     $class->image_field_name = $form_state['values']['image_field_name'];
+    $class->image_chunk_size = $form_state['values']['image_chunk_size'];
     $field = field_read_instance($entity_type, $class->image_field_name, $class->bundle);
     $class->image_dir = isset($field['settings']['file_directory']) ? $field['settings']['file_directory'] : "rets_images";
   } else {

@@ -14,7 +14,7 @@ class drealtyResources {
    */
   private function handleRetsError(phRETS $rets) {
     $error = $rets->Error();
-    drupal_set_message($error, 'error');
+    drupal_set_message(t("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text'])), 'error');
   }
 
   /**

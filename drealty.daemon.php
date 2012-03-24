@@ -647,7 +647,7 @@ class drealtyDaemon {
 
           if ($rets->Error()) {
             $error = $rets->Error();
-            drush_log($error['text']);
+            drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
             return;
           }
 

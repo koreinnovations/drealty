@@ -325,7 +325,8 @@ function drealty_activate_connection_form($form, &$form_state, $connection = NUL
         '#value' => t('Activate'),
       );
     } else {
-      drupal_set_message($rets->error_string, 'error');
+      $error= $dc->rets->Error();
+      drupal_set_message(t("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text'])), 'error');
       $form['markup'] = array(
         '#markup' => '<div>There was an error activating the current connection. Please check the settings and attempt to activate the connection again.</div>'
       );
@@ -1002,7 +1003,7 @@ function drealty_test_manual_query($form, &$form_state) {
 
     if ($dc->get_phrets()->Error()) {
       $error = $dc->get_phrets()->Error();
-      drupal_set_message("Rets Error: {$error['code']}: {$error['text']}.", 'error');
+      drupal_set_message(t("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text'])), 'error');
     } else {
       $num_rows_returned = $dc->get_phrets()->NumRows($search);
       $total_records = $dc->get_phrets()->TotalRecordsFound($search);

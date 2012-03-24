@@ -392,6 +392,8 @@ class drealtyDaemon {
 // set $id to the systemname of the entity's corresponding key from the rets feed to make the code easier to read
     $id = $field_mappings[$key_field]->systemname;
 
+    $item_context = array('field_mappings' => $field_mappings, 'connection' => $connection, 'resource' => $resource, 'key_field' => $key_field);
+
     for ($i = 0; $i < $chunk_count; $chunk_idx++, $i++) {
       $chunk_name = "drealty_chunk_{$resource->systemname}_{$class->systemname}_{$chunk_idx}";
       $rets_results = cache_get($chunk_name);
@@ -512,9 +514,9 @@ class drealtyDaemon {
 
 
           try {
-            drupal_alter('drealty_import_presave', $item);
+            drupal_alter('drealty_import_presave', $item, $item_context);
             $item->save();
-            module_invoke_all('drealty_entity_save', array(&$item));
+            module_invoke_all('drealty_entity_save', array(&$item, $item_context));
           } catch (Exception $e) {
             drush_log($e->getMessage());
           }

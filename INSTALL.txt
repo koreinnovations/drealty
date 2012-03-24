@@ -8,7 +8,7 @@ CONTENTS OF THIS FILE
  * Installation
  * Geocoding
 
-INTRODUCTION
+INTRODUCTION 
 ------------
 
 dRealty is a comprehensive module for Drupal 7 that provides RETS integration capabilities for your Drupal site.

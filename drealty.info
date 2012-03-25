@@ -14,7 +14,7 @@ files[] = includes/drealty.listing.inc
 files[] = includes/drealty.connection.admin.inc
 files[] = includes/drealty.listing.admin.inc
 files[] = includes/drealty.connection.inc
-files[] = includes/drealty.resources.inc
+files[] = includes/drealty.metadata.inc
 
 files[] = drealty.daemon.php
 

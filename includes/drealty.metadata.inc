@@ -1,6 +1,6 @@
 <?php
 
-class drealtyResources {
+class drealtyMetaData {
 
   private $defaultCache = 'cache';
 

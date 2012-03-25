@@ -275,8 +275,8 @@ function drealty_connection_entity_form($form, &$form_state, $connection, $op = 
  * Form API submit callback for the type form.
  */
 function drealty_connection_entity_form_submit(&$form, &$form_state) {
-  $drealty_connection = entity_ui_form_submit_build_entity($form, $form_state);
-  $drealty_connection->save();
+  $dmealty_connection = entity_ui_form_submit_build_entity($form, $form_state);
+  $dmealty_connection->save();
   $form_state['redirect'] = 'admin/drealty/connections';
 }
 
@@ -386,8 +386,8 @@ function drealty_select_resource_type($form, &$form_state) {
   $connection = $form_state['connection'];
   $entity_type = $form_state['entity_type'];
 
-  $dr = new drealtyResources();
-  $selected_resource = $dr->FetchResource($form_state['values']['prop_resource']);
+  $dm = new drealtyMetaData();
+  $selected_resource = $dm->FetchResource($form_state['values']['prop_resource']);
 
 // update the resource mapping for this connection
   $mapping = array(
@@ -448,13 +448,13 @@ function drealty_resource_overview_form($form, &$form_state, drealtyConnectionEn
 
   if (isset($form_state['input']['prop_resource']) || isset($mappings[$entity_type])) {
 
-    $dr = new drealtyResources();
+    $dm = new drealtyMetaData();
     if (isset($form_state['input']['prop_resource'])) {
 
-      $selected_resource = $dr->FetchResource($form_state['input']['prop_resource']);
+      $selected_resource = $dm->FetchResource($form_state['input']['prop_resource']);
       $results = $connection->fetchClasses($selected_resource);
     } else {
-      $selected_resource = $dr->FetchResource($mappings[$entity_type]->rid);
+      $selected_resource = $dm->FetchResource($mappings[$entity_type]->rid);
       $results = $connection->fetchClasses($selected_resource);
     }
 
@@ -572,8 +572,8 @@ function drealty_resource_configure_form($form, &$form_state, drealtyConnectionE
   }
 
 
-  $dr = new drealtyResources();
-  $resource = $dr->FetchResource($mappings[$entity_type]->rid);
+  $dm = new drealtyMetaData();
+  $resource = $dm->FetchResource($mappings[$entity_type]->rid);
 
   $field_mappings = $connection->FetchFieldMappings($resource, $class);
   $fields = $connection->FetchFields($resource, $class);
@@ -892,8 +892,8 @@ function drealty_resource_configure_form_validate($form, &$form_state) {
   $entity_type = $form_state['entity_type'];
   $class = $form_state['class'];
 
-  $dr = new drealtyResources();
-  $resource = $dr->FetchResource($class->rid);
+  $dm = new drealtyMetaData();
+  $resource = $dm->FetchResource($class->rid);
 
   $mappings = $connection->resourceMappings();
 

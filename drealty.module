@@ -164,6 +164,12 @@ function drealty_connections_get_all() {
   return $connections;
 }
 
+function drealty_listing_type_name_exists($value) {
+  
+  $exists = db_query_range('SELECT 1 FROM {drealty_listing_type} WHERE type = :type', 0, 1, array(':type' => $value))->fetchField();
+
+  return $exists;
+}
 
 function drealty_admin_menu_block_page() {
   $item = menu_get_item();
@@ -176,8 +182,8 @@ function drealty_admin_menu_block_page() {
 }
 
 function drealty_class_load($cid) {
-  $dr = new drealtyResources();
-  return $dr->FetchClass($cid);
+  $dm = new drealtyMetaData();
+  return $dm->FetchClass($cid);
 }
 
 function drealty_fields_autocomplete($conid, $class, $string) {
@@ -407,7 +413,7 @@ function drealty_access($op, $entity = NULL, $type = NULL, $account = NULL) {
  * @param $reset
  *   A boolean indicating that the internal cache should be reset.
  * @return
- *   A fully-loaded $drealty_listing object or FALSE if it cannot be loaded.
+ *   A fully-loaded $dmealty_listing object or FALSE if it cannot be loaded.
  *
  * @see drealty_listing_load_multiple()
  */
@@ -559,7 +565,7 @@ function drealty_form_field_ui_field_edit_form_geofield(&$form, &$form_state) {
   $form['instance']['drealty']['mappings']['#tree'] = TRUE;
 
   $dc = new drealtyConnection();
-  $dr = new drealtyResources();
+  $dm = new drealtyMetaData();
 
   $connections = $dc->FetchConnections();
   foreach ($connections as $connection) {
@@ -575,10 +581,10 @@ function drealty_form_field_ui_field_edit_form_geofield(&$form, &$form_state) {
 
     foreach ($classes as $class) {
       if (isset($class->bundle) && $class->bundle == $form['#instance']['bundle']) {
-        $resource = $dr->FetchResource($class->rid);
-        $fields = $dr->FetchFields($connection->conid, $resource, $class);
+        $resource = $dm->FetchResource($class->rid);
+        $fields = $dm->FetchFields($connection->conid, $resource, $class);
 
-        $field_mappings = $dr->fetchfieldmappings($connection->conid, $resource, $class);
+        $field_mappings = $dm->fetchfieldmappings($connection->conid, $resource, $class);
         $form['instance']['drealty']['mappings'][$class->systemname]['conid'] = array('#type' => 'value', '#value' => $connection->conid);
         $form['instance']['drealty']['mappings'][$class->systemname]['rid'] = array('#type' => 'value', '#value' => $class->rid);
         $form['instance']['drealty']['mappings'][$class->systemname]['class_id'] = array('#type' => 'value', '#value' => $class->cid);
@@ -605,7 +611,7 @@ function drealty_form_field_ui_field_edit_form_addressfield(&$form, &$form_state
 
 
   $dc = new drealtyConnection();
-  $dr = new drealtyResources();
+  $dm = new drealtyMetaData();
 
   $connections = $dc->FetchConnections();
   foreach ($connections as $connection) {
@@ -621,10 +627,10 @@ function drealty_form_field_ui_field_edit_form_addressfield(&$form, &$form_state
     foreach ($classes as $class) {
 
       if (isset($class->bundle) && $class->bundle == $form['#instance']['bundle']) {
-        $resource = $dr->FetchResource($class->rid);
-        $fields = $dr->FetchFields($connection->conid, $resource, $class);
+        $resource = $dm->FetchResource($class->rid);
+        $fields = $dm->FetchFields($connection->conid, $resource, $class);
 
-        $field_mappings = $dr->fetchfieldmappings($connection->conid, $resource, $class);
+        $field_mappings = $dm->fetchfieldmappings($connection->conid, $resource, $class);
         $form['instance']['drealty']['mappings'][$class->systemname]['conid'] = array('#type' => 'value', '#value' => $connection->conid);
         $form['instance']['drealty']['mappings'][$class->systemname]['rid'] = array('#type' => 'value', '#value' => $class->rid);
         $form['instance']['drealty']['mappings'][$class->systemname]['class_id'] = array('#type' => 'value', '#value' => $class->cid);
@@ -676,7 +682,7 @@ function drealty_form_field_ui_field_edit_form_default(&$form, &$form_state) {
   $form['instance']['drealty']['mappings']['#tree'] = TRUE;
 
   $dc = new drealtyConnection();
-  $dr = new drealtyResources();
+  $dm = new drealtyMetaData();
 
   $connections = $dc->FetchConnections();
   foreach ($connections as $connection) {
@@ -685,10 +691,10 @@ function drealty_form_field_ui_field_edit_form_default(&$form, &$form_state) {
     
     foreach ($classes as $class) {
       if (isset($class->bundle) && $class->bundle == $form['#instance']['bundle']) {
-        $resource = $dr->FetchResource($class->rid);
-        $fields = $dr->FetchFields($connection->conid, $resource, $class);
+        $resource = $dm->FetchResource($class->rid);
+        $fields = $dm->FetchFields($connection->conid, $resource, $class);
 
-        $field_mappings = $dr->fetchfieldmappings($connection->conid, $resource, $class);
+        $field_mappings = $dm->fetchfieldmappings($connection->conid, $resource, $class);
         $form['instance']['drealty']['mappings'][$class->systemname]['conid'] = array('#type' => 'value', '#value' => $connection->conid);
         $form['instance']['drealty']['mappings'][$class->systemname]['rid'] = array('#type' => 'value', '#value' => $class->rid);
         $form['instance']['drealty']['mappings'][$class->systemname]['class_id'] = array('#type' => 'value', '#value' => $class->cid);

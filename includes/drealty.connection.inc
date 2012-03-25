@@ -197,8 +197,8 @@ class drealtyConnectionEntity extends Entity {
    * @return drealtyRetsResource[] 
    */
   public function Resources() {
-    $dr = new drealtyResources();
-    return $dr->FetchResources($this->conid);
+    $dm = new drealtyMetaData();
+    return $dm->FetchResources($this->conid);
   }
 
   /**
@@ -206,8 +206,8 @@ class drealtyConnectionEntity extends Entity {
    * @return drealtyResourceMapping[] 
    */
   public function ResourceMappings() {
-    $dr = new drealtyResources();
-    return $dr->GetResourceMappings($this->conid);
+    $dm = new drealtyMetaData();
+    return $dm->GetResourceMappings($this->conid);
   }
 /**
  *
@@ -215,8 +215,8 @@ class drealtyConnectionEntity extends Entity {
  * @return drealtyRetsClass[] 
  */
   public function FetchClasses($resource = NULL) {
-    $dr = new drealtyResources();
-    return $dr->FetchClasses($this->conid, $resource);
+    $dm = new drealtyMetaData();
+    return $dm->FetchClasses($this->conid, $resource);
   }
   
   /**
@@ -224,8 +224,8 @@ class drealtyConnectionEntity extends Entity {
    * @return drealtyRetsClass[] 
    */
   public function FetchEnabledClasses() {
-    $dr = new drealtyResources();
-    return $dr->FetchEnabledClasses($this->conid);
+    $dm = new drealtyMetaData();
+    return $dm->FetchEnabledClasses($this->conid);
   }
   
 /**
@@ -234,8 +234,8 @@ class drealtyConnectionEntity extends Entity {
  * @return drealtyRetsField[] 
  */
   public function FetchFields($resource, $class) {
-    $dr = new drealtyResources();
-    return $dr->FetchFields($this->conid, $resource, $class);
+    $dm = new drealtyMetaData();
+    return $dm->FetchFields($this->conid, $resource, $class);
   }
 
     /**
@@ -246,8 +246,8 @@ class drealtyConnectionEntity extends Entity {
    * @return drealtyFieldMapping[]
    */
   public function FetchFieldMappings($resource = NULL, $class = NULL) {
-    $dr = new drealtyResources();
-    return $dr->FetchFieldMappings($this->conid, $resource, $class);
+    $dm = new drealtyMetaData();
+    return $dm->FetchFieldMappings($this->conid, $resource, $class);
   }
 
   /**
@@ -287,13 +287,13 @@ class drealtyConnectionEntity extends Entity {
   }
 
   public function delete() {
-    $dr = new drealtyResources();
+    $dm = new drealtyMetaData();
 
-    $dr->RemoveFields($this->conid);
-    $dr->RemoveFieldMappings($this->conid);
-    $dr->RemoveClasses($this->conid);
-    $dr->RemoveResourceMappings($this->conid);
-    $dr->RemoveResources($this->conid);
+    $dm->RemoveFields($this->conid);
+    $dm->RemoveFieldMappings($this->conid);
+    $dm->RemoveClasses($this->conid);
+    $dm->RemoveResourceMappings($this->conid);
+    $dm->RemoveResources($this->conid);
     parent::delete();
   }
 
@@ -322,13 +322,18 @@ class drealtyConnectionEntityContoller extends EntityAPIControllerExportable {
       'active' => FALSE,
       'debug_mode' => FALSE,
     );
-    $drealtyConnectionEntity = parent::create($values);
-    return $drealtyConnectionEntity;
+    $dmealtyConnectionEntity = parent::create($values);
+    return $dmealtyConnectionEntity;
   }
 
   public function export($entity, $prefix = '') {
     $entity->active = 0;
-    return parent::export($entity, $prefix);
+
+    
+    
+
+    
+    
   }
 
 }

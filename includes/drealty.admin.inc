@@ -8,7 +8,7 @@ function drealty_settings_form($form, &$form_state) {
   $dc = new drealtyConnection();
   $connections = $dc->FetchConnections();
 
-  $dr = new drealtyResources();
+  $dm = new drealtyMetaData();
 
 
   $form['general_settings']['connections'] = array();
@@ -19,7 +19,7 @@ function drealty_settings_form($form, &$form_state) {
 
     $form['general_settings']['connections'][$key]['name'] = array('#markup' => $connection->name);
 
-    $resource_mappings = $dr->GetResourceMappings($connection->conid);
+    $resource_mappings = $dm->GetResourceMappings($connection->conid);
 
     //check to see if we actually have the office resource type setup, if not then this config option won't have any effect.
     if (isset($resource_mappings['drealty_office'])) {

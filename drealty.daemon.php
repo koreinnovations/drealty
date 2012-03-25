@@ -12,13 +12,13 @@ class drealtyDaemon {
 
   /**
    *
-   * @var drealtyResources 
+   * @var drealtyMetaData 
    */
-  protected $dr;
+  protected $dm;
 
   public function __construct() {
     $this->dc = new drealtyConnection();
-    $this->dr = new drealtyResources();
+    $this->dr = new drealtyMetaData();
   }
 
   public function run() {

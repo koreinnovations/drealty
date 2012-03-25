@@ -145,6 +145,12 @@ class DrealtyListingType extends Entity {
   public function isLocked() {
     return isset($this->status) && empty($this->is_new) && (($this->status & ENTITY_IN_CODE) || ($this->status & ENTITY_FIXED));
   }
+  
+  public function delete() {
+    parent::delete();
+    field_attach_delete_bundle('drealty_listing', $this->type);
+    field_purge_batch(10);
+  }
 
 }
 
@@ -159,6 +165,59 @@ class DrealtyListingTypeController extends EntityAPIControllerExportable {
         ->condition('bundle', $id)
         ->fields(array('bundle' => 'none', 'enabled' => 0))
         ->execute();
+    }
+  }
+
+  /**
+   *
+   * @param DrealtyListingType $entity
+   * @param string $prefix
+   * @return string 
+   */
+  public function export($entity, $prefix = '') {
+    $vars = get_object_vars($entity);
+    unset($vars[$this->statusKey], $vars[$this->moduleKey], $vars['is_new'], $vars['type'], $vars['label']);
+    if ($this->nameKey != $this->idKey) {
+      unset($vars[$this->idKey]);
+    }
+    $info = $entity->entityInfo();
+    $instances = field_info_instances($info['bundle of'], $entity->type);
+
+    $fields = array();
+    foreach ($instances as &$instance) {
+      $field = field_info_field($instance['field_name']);
+      unset($field['id'], $field['bundles'], $field['storage']);
+      $fields[$instance['field_name']] = $field;
+      unset($instance['bundle']);
+    }
+
+    $vars['fields'] = $fields;
+    $vars['field_instances'] = $instances;
+
+    return entity_var_json_export($vars, $prefix);
+  }
+  
+
+  public function save($entity, DatabaseTransaction $transaction = NULL) {
+    parent::save($entity, $transaction);
+
+    if (isset($entity->fields)) {
+      foreach ($entity->fields as $field) {
+        if (!field_read_field($field['field_name'], array('include_inactive' => TRUE))) {
+          field_create_field($field);
+        } else {
+          drupal_set_message(t('Skipped creating field %field. A field with this name already exists.', array('%field' => $field['field_name'])), 'warning');
+        }
+      }
+      
+      if(isset($entity->field_instances)) {
+        foreach($entity->field_instances as $instance) {
+          $instance['bundle'] = $entity->type;
+          field_create_instance($instance);
+        }
+      }
+      
+      
     }
   }
 

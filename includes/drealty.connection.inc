@@ -57,7 +57,7 @@ class drealtyConnection {
       } else {
 
         $this->current_connection = $this->FetchConnection($conid);
-        
+
         $error = FALSE;
         // force basic authentication
         if ($this->current_connection->force_basic_auth) {
@@ -75,7 +75,7 @@ class drealtyConnection {
         if ($this->current_connection->debug_mode) {
           $this->rets->SetParam('debug_mode', true);
           $path = variable_get('file_private_path', FALSE);
-          if($path && !empty($path)) {
+          if ($path && !empty($path)) {
             $this->rets->SetParam("debug_file", "private://drealty_debug_log.txt");
           } else {
             $this->rets->SetParam("debug_file", "public://drealty_debug_log.txt");
@@ -209,16 +209,17 @@ class drealtyConnectionEntity extends Entity {
     $dm = new drealtyMetaData();
     return $dm->GetResourceMappings($this->conid);
   }
-/**
- *
- * @param drealtyRetsResource $resource
- * @return drealtyRetsClass[] 
- */
+
+  /**
+   *
+   * @param drealtyRetsResource $resource
+   * @return drealtyRetsClass[] 
+   */
   public function FetchClasses($resource = NULL) {
     $dm = new drealtyMetaData();
     return $dm->FetchClasses($this->conid, $resource);
   }
-  
+
   /**
    *
    * @return drealtyRetsClass[] 
@@ -227,18 +228,18 @@ class drealtyConnectionEntity extends Entity {
     $dm = new drealtyMetaData();
     return $dm->FetchEnabledClasses($this->conid);
   }
-  
-/**
- *
- * @param drealtyRetsResource $resource
- * @return drealtyRetsField[] 
- */
+
+  /**
+   *
+   * @param drealtyRetsResource $resource
+   * @return drealtyRetsField[] 
+   */
   public function FetchFields($resource, $class) {
     $dm = new drealtyMetaData();
     return $dm->FetchFields($this->conid, $resource, $class);
   }
 
-    /**
+  /**
    *
    * @param int $conid
    * @param drealtyRetsResource $resource
@@ -326,14 +327,81 @@ class drealtyConnectionEntityContoller extends EntityAPIControllerExportable {
     return $dmealtyConnectionEntity;
   }
 
+  /**
+   *
+   * @param drealtyConnectionEntity $entity
+   * @param string $prefix 
+   */
   public function export($entity, $prefix = '') {
     $entity->active = 0;
 
-    
-    
+    $dm = new drealtyMetaData();
+    $resources = $dm->FetchResources($entity->conid);
+    $bundles = array();
 
+    foreach ($resources as &$resource) {
+
+      $resource->classes = $dm->FetchClasses($entity->conid, $resource);
+
+      foreach ($resource->classes as &$class) {
+
+        $class->resource = $resource->systemname;
+        $class->fields = $dm->FetchFields($entity->conid, $resource, $class);
+        $bundles[] = $class->bundle;
+
+        foreach ($class->fields as &$field) {
+          $field->resource = $resource->systemname;
+          unset($field->fid, $field->conid, $field->rid);
+        }
+
+        unset($class->cid, $class->conid, $class->rid);
+      }
+      unset($resource->rid, $resource->conid);
+    }
+
+    $resource_mappings = $dm->GetResourceMappings($entity->conid);
+
+    foreach ($resource_mappings as &$resource_mapping) {
+      $resource_mapping->resource_name = $dm->FetchResource($resource_mapping->rid);
+      unset($resource_mapping->mid, $resource_mapping->conid, $resource_mapping->rid);
+    }
+
+    $entity->field_instances = array();
+    $entity->field_fields = array();
+    foreach ($bundles as $bundle) {
+
+      $field_instances = field_info_instances('drealty_listing', $bundle);
+      $entity->field_instances += $field_instances;
+
+      foreach ($field_instances as &$instance) {
+        $field = field_info_field($instance['field_name']);
+        unset($field['id'], $field['bundles'], $field['storage']);
+        $entity->field_fields[$instance['field_name']] = $field;
+        unset($instance['bundle']);
+      }
+    }
+
+    $field_mappings = $dm->FetchFieldMappings($entity->conid);
+    foreach ($field_mappings as &$field_mapping) {
+      $field_mapping->resource_name = $dm->FetchResource($field_mapping->rid)->systemname;
+      $field_mapping->class_name = $dm->FetchClass($field_mapping->cid)->systemname;
+      unset($field_mapping->conid, $field_mapping->rid, $field_mapping->cid);
+    }
     
-    
+    $entity->field_mappings = $field_mappings;
+    $entity->resource_mappings = $resource_mappings;
+    $entity->resources = $resources;
+
+
+    $vars = get_object_vars($entity);
+    return entity_var_json_export($vars, $prefix);
+  }
+  
+  public function import($export) {
+     //parent::import($export);
+      $vars = drupal_json_decode($export);
+      
+      
   }
 
 }

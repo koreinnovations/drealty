@@ -19,8 +19,3 @@ files[] = includes/drealty.metadata.inc
 files[] = drealty.daemon.php
 
 package = Real Estate
-
-
-
-
-

@@ -25,25 +25,22 @@ function drealty_lead_info(){
 		'uri callback' => 'entity_class_uri',
 		'exportable' => TRUE,
 		'fieldable' => TRUE,
-		'bundles' => array(
-			'isilink_property' => array(
-				'label' => t('ISILink Property'),
-				'admin' => array(
-					'path' => 'admin/isilink/structure/isilink-property',
-				),
-			),
-		),
+		'bundles' => array(),
+    'bundle keys' => array(
+      'bundle' => 'type',
+    ),
 		'entity keys' => array(
 			'id' => 'id',
+      'bundle' => 'type',
 		),
 		'admin ui' => array(
-			'path' => 'admin/content/isilink-property',
-			'file' => 'includes/isilink.property.admin.inc',
-			'controller class' => 'ISILinkPropertyUIController',
-			'menu wildcard' => '%isilink_property',
+			'path' => 'admin/content/drealty-leads',
+			'file' => 'includes/drealty_lead.lead.admin.inc',
+			'controller class' => 'DrealtyLeadUIController',
+			'menu wildcard' => '%drealty_lead',
 		),
-		'module' => 'isilink',
-		'access callback' => 'isilink_property_access',
+		'module' => 'drealty_lead',
+		'access callback' => 'drealty_lead_access',
   );
   
   return $entities;

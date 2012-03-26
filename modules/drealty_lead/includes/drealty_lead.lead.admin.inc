@@ -172,11 +172,11 @@ function drealty_lead_edit_form($form, &$form_state, $op, $listing) {
 
 function drealty_lead_edit_form_submit($form, &$form_state) {
   // grab the listing
-  $listing = $form_state['listing'];
+  $lead = $form_state['lead'];
   // attach any fields from the field api
   field_attach_submit('drealty_lead', $listing, $form, $form_state);
   // save the listing
-  $listing->save();
+  $lead->save();
   // redirect back to the content list
   $form_state['redirect'] = 'admin/content/drealty_leads';
 }
@@ -223,20 +223,20 @@ class DrealtyListingTypeUIController extends EntityDefaultUIController {
       case 'import':
         $form['label'] = array(
           '#type' => 'textfield',
-          '#title' => t('Property Type Label'),
-          '#description' => t('The human-readable name of this property type.'),
+          '#title' => t('Lead Type Label'),
+          '#description' => t('The human-readable name of this lead type.'),
           '#required' => TRUE,
           '#size' => 80,
           '#default_value' => '',
         );
         $form['type'] = array(
           '#type' => 'machine_name',
-          '#title' => t('Property Type Name'),
+          '#title' => t('Lead Type Name'),
           '#machine_name' => array(
             'exists' => 'drealty_lead_type_name_exists',
             'source' => array('label'),
           ),
-          '#description' => t('A unique machine-readable name for this Property Type. It must only contain lowercase letters, numbers, and underscores.'),
+          '#description' => t('A unique machine-readable name for this Lead Type. It must only contain lowercase letters, numbers, and underscores.'),
           '#size' => 80,
           '#default_value' => '',
         );        
@@ -288,34 +288,33 @@ class DrealtyListingTypeUIController extends EntityDefaultUIController {
 /**
  * Generates the listing type editing form.
  */
-function drealty_lead_type_form($form, &$form_state, DrealtyListingType $dmealty_listing_type, $op = 'edit') {
+function drealty_lead_type_form($form, &$form_state, DrealtyLeadType $drealty_lead_type, $op = 'edit') {
 
   if ($op == 'clone') {
-    $dmealty_listing_type->label .= ' (cloned)';
-    $dmealty_listing_type->type = '';
+    $drealty_lead_type->label .= ' (cloned)';
+    $drealty_lead_type->type = '';
   }
 
   $form['label'] = array(
     '#title' => t('Label'),
     '#type' => 'textfield',
-    '#default_value' => $dmealty_listing_type->label,
-    '#description' => t('The human-readable name of this drealty listing type.'),
+    '#default_value' => $drealty_lead_type->label,
+    '#description' => t('The human-readable name of this drealty lead type.'),
     '#required' => TRUE,
     '#size' => 30,
   );
   // Machine-readable type name.
   $form['type'] = array(
     '#type' => 'machine_name',
-    '#default_value' => isset($dmealty_listing_type->type) ? $dmealty_listing_type->type : '',
+    '#default_value' => isset($drealty_lead_type->type) ? $drealty_lead_type->type : '',
     '#maxlength' => 32,
-    '#disabled' => $dmealty_listing_type->isLocked() && $op != 'clone',
+    '#disabled' => $drealty_lead_type->isLocked() && $op != 'clone',
     '#machine_name' => array(
       'exists' => 'drealty_leads_get_types',
       'source' => array('label'),
     ),
-    '#description' => t('A unique machine-readable name for this drealty listing type. It must only contain lowercase letters, numbers, and underscores.'),
+    '#description' => t('A unique machine-readable name for this drealty lead type. It must only contain lowercase letters, numbers, and underscores.'),
   );
-
 
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
@@ -324,7 +323,7 @@ function drealty_lead_type_form($form, &$form_state, DrealtyListingType $dmealty
     '#weight' => 40,
   );
 
-  if (!$dmealty_listing_type->isLocked() && $op != 'add' && $op != 'clone') {
+  if (!$drealty_lead_type->isLocked() && $op != 'add' && $op != 'clone') {
     $form['actions']['delete'] = array(
       '#type' => 'submit',
       '#value' => t('Delete listing type'),
@@ -340,9 +339,9 @@ function drealty_lead_type_form($form, &$form_state, DrealtyListingType $dmealty
  * Form API submit callback for the type form.
  */
 function drealty_lead_type_form_submit(&$form, &$form_state) {
-  $dmealty_listing_type = entity_ui_form_submit_build_entity($form, $form_state);
+  $drealty_lead_type = entity_ui_form_submit_build_entity($form, $form_state);
   // Save and go back.
-  $dmealty_listing_type->save();
+  $drealty_lead_type->save();
   $form_state['redirect'] = 'admin/drealty/drealty_leads';
 }
 

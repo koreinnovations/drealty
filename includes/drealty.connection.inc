@@ -361,7 +361,9 @@ class drealtyConnectionEntityContoller extends EntityAPIControllerExportable {
 
         $class->resource = $resource->systemname;
         $class->fields = $dm->FetchFields($entity->conid, $resource, $class);
-        $bundles[] = $class->bundle;
+        if (!empty($class->bundle) && $class->bundle != 'none') {
+          $bundles[] = $class->bundle;
+        }
 
         foreach ($class->fields as &$field) {
           $field->resource = $resource->systemname;
@@ -385,7 +387,7 @@ class drealtyConnectionEntityContoller extends EntityAPIControllerExportable {
     foreach ($bundles as $bundle) {
 
       $field_instances = field_info_instances('drealty_listing', $bundle);
-      $entity->field_instances += $field_instances;
+      $entity->field_instances[$bundle] = $field_instances;
 
       foreach ($field_instances as &$instance) {
         $field = field_info_field($instance['field_name']);
@@ -441,8 +443,9 @@ class drealtyConnectionEntityContoller extends EntityAPIControllerExportable {
           drupal_write_record('drealty_classes', $class);
 
           $classes[$class['systemname']] = $class;
-          $bundles[$class['bundle']] = $class['bundle'];
-
+          if (!empty($class['bundle'])) {
+            $bundles[$class['bundle']] = $class['bundle'];
+          }
 
           foreach ($class['fields'] as &$field) {
             $field['conid'] = $entity->conid;
@@ -483,11 +486,13 @@ class drealtyConnectionEntityContoller extends EntityAPIControllerExportable {
       }
 
       if (isset($entity->field_instances)) {
-        foreach ($entity->field_instances as $instance) {
-          if (!field_read_instance($instance['entity_type'], $instance['field_name'], $instance['bundle'])) {
-            field_create_instance($instance);
-          } else {
-            drupal_set_message(t('Skipped creating instance %instance. An instance with this name already exists.', array('%field' => $instance['label'])), 'warning');
+        foreach ($entity->field_instances as $bundle) {
+          foreach ($bundle as $instance) {
+            if (!field_read_instance($instance['entity_type'], $instance['field_name'], $instance['bundle'])) {
+              field_create_instance($instance);
+            } else {
+              drupal_set_message(t('Skipped creating instance %instance. An instance with this name already exists.', array('%field' => $instance['label'])), 'warning');
+            }
           }
         }
       }

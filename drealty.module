@@ -480,7 +480,7 @@ function drealty_listing_page_title(DrealtyListing $listing) {
  * @param type $page
  * @return type
  */
-function drealty_listing_page_view($listing, $view_mode = 'full', $langcode = NULL, $page = NULL) {
+function drealty_listing_view($listing, $view_mode = 'full', $langcode = NULL, $page = NULL) {
   $controller = entity_get_controller('drealty_listing');
   $content = $controller->view(array($listing->id => $listing), $view_mode, $langcode, $page);
 

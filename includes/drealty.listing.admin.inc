@@ -42,7 +42,7 @@ class DrealtyListingUIController extends EntityDefaultUIController {
     $items['drealty_listing/' . $wildcard] = array(
       'title callback' => 'drealty_listing_page_title',
       'title arguments' => array(1),
-      'page callback' => 'drealty_listing_page_view',
+      'page callback' => 'drealty_listing_view',
       'page arguments' => array(1),
       'access callback' => 'drealty_access',
       'access arguments' => array('view', 1),
@@ -82,7 +82,32 @@ class DrealtyListingUIController extends EntityDefaultUIController {
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
     );
 
-
+    if (module_exists('devel')) {
+      $items['drealty_listing/' . $wildcard . '/devel'] = array(
+        'title' => 'Devel',
+        'page callback' => 'devel_load_object',
+        'page arguments' => array('node', 1),
+        'access arguments' => array('access devel information'),
+        'type' => MENU_LOCAL_TASK,
+        'file' => 'devel.pages.inc',
+        'file path' => drupal_get_path('module', 'devel'),
+        'weight' => 100,
+      );
+      $items['drealty_listing/' . $wildcard . '/devel/load'] = array(
+        'title' => 'Load',
+        'type' => MENU_DEFAULT_LOCAL_TASK,
+      );
+      $items['drealty_listing/' . $wildcard . '/devel/render'] = array(
+        'title' => 'Render',
+        'page callback' => 'devel_render_object',
+        'page arguments' => array('drealty_listing', 1),
+        'access arguments' => array('access devel information'),
+        'file' => 'devel.pages.inc',
+        'file path' => drupal_get_path('module', 'devel'),
+        'type' => MENU_LOCAL_TASK,
+        'weight' => 100,
+      );
+    }
 
 
     return $items;

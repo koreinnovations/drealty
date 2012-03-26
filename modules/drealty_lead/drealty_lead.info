@@ -7,4 +7,5 @@ hidden = TRUE
 dependencies[] = drealty
 dependencies[] = elements
 
-;files[] = drealty_lead.admin.inc
+files[] = includes/drealty_lead.lead.inc
+files[] = includes/drealty_lead.lead.admin.inc

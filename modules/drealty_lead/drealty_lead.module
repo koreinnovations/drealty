@@ -4,15 +4,7 @@
  * 
  */
 
-function drealty_lead_init() {
-	
-}
-
-function drealty_lead_menu() {
-	
-}
-
-function drealty_lead_info(){
+function drealty_lead_entity_info(){
 	$entities = array();
 	
   $entities['drealty_lead'] = array(
@@ -23,12 +15,16 @@ function drealty_lead_info(){
 		'token type' => 'drealty_lead',
 		'base table' => 'drealty_lead',
 		'uri callback' => 'entity_class_uri',
-		'exportable' => TRUE,
+		'exportable' => FALSE,
 		'fieldable' => TRUE,
-		'bundles' => array(),
-    'bundle keys' => array(
-      'bundle' => 'type',
-    ),
+		'bundles' => array(
+			'drealty_lead' => array(
+				'label' => t('Drealty Lead'),
+				'admin' => array(
+					'path' => 'admin/drealty/drealty_lead/manage/drealty_lead',
+				),
+			),
+		),
 		'entity keys' => array(
 			'id' => 'id',
       'bundle' => 'type',
@@ -44,6 +40,54 @@ function drealty_lead_info(){
   );
   
   return $entities;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function drealty_lead_permission() {
+  $permissions = array(
+		'administer drealty leads' => array(
+      'title' => t('Administer dRealty Leads'),
+    ),
+		'view drealty leads' => array(
+      'title' => t('View dRealty Leads'),
+    ),
+		'create drealty leads' => array(
+      'title' => t('Create dRealty Leads'),
+    ),
+		'edit drealty leads' => array(
+      'title' => t('Edit dRealty Leads'),
+    ),
+		'delete drealty leads' => array(
+      'title' => t('Delete dRealty Leads'),
+    ),
+  );
+
+  return $permissions;
+}
+
+function drealty_lead_access($op, $listing = NULL, $account = NULL) {
+  if (user_access('administer drealty leads', $account)) {
+    return TRUE;
+  }
+	
+	if ($op == 'create' || $op == 'update') {
+    $op = 'edit';
+  }
+
+  $access = module_invoke_all('drealty_lead_access', $op, $listing, $account);
+
+  // Only grant access if at least one module granted access and no one denied
+  // access.
+	
+  if (in_array(FALSE, $access, TRUE)) {
+    return FALSE;
+  } elseif (in_array(TRUE, $access, TRUE)) {
+    return TRUE;
+  }
+	
+  return FALSE;
 }
 
 function drealty_lead_uri(drealtyLead $lead) {

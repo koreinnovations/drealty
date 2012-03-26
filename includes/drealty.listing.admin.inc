@@ -8,56 +8,36 @@ class DrealtyListingUIController extends EntityDefaultUIController {
     $wildcard = isset($this->entityInfo['admin ui']['menu wildcard']) ? $this->entityInfo['admin ui']['menu wildcard'] : '%' . $this->entityType;
 
     $items[$this->path] = array(
-      'title' => 'dRealty Listings',
+      'title' => 'Drealty Listings',
+      'description' => t('Manage Drealty Listing Content'),
       'page callback' => 'drealty_listing_admin',
       'access arguments' => array('access drealty admin'),
       'type' => MENU_LOCAL_TASK | MENU_NORMAL_ITEM,
       'file' => 'drealty.listing.admin.inc',
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
     );
-    $items[$this->path . '/add'] = array(
+
+    $items['drealty_listing/add'] = array(
       'title' => 'Add dRealty Listing',
-      'page callback' => 'drealty_listing_form_wrapper',
-      'page arguments' => array('add', drealty_listing_create(array('rets_imported' => FALSE))),
+      'page callback' => 'drealty_listing_add_page',
       'access arguments' => array('create drealty listing'),
       'file' => 'drealty.listing.admin.inc',
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
-      'type' => MENU_LOCAL_ACTION,
+      'type' => MENU_NORMAL_ITEM,
     );
-    // Loading and editing model entities
-    $items[$this->path . '/' . $wildcard] = array(
-      'title' => t('Edit Listing'),
-      'page callback' => 'drealty_listing_form_wrapper',
-      'page arguments' => array('edit', $id_count),
-      'access callback' => 'drealty_access',
-      'access arguments' => array('edit', $id_count),
-      'weight' => 0,
-      'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
-      'file' => 'drealty.listing.admin.inc',
-      'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
-    );
-
-
-    $items[$this->path . '/' . $wildcard . '/edit'] = array(
-      'title' => 'Edit',
-      'type' => MENU_DEFAULT_LOCAL_TASK,
-      'weight' => -10,
-      'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
-    );
-
-    $items[$this->path . '/' . $wildcard . '/delete'] = array(
-      'title' => 'Delete',
-      'page callback' => 'drealty_listing_form_wrapper',
-      'page arguments' => array('delete', $id_count),
-      'access callback' => 'drealty_access',
-      'access arguments' => array('delete', $id_count),
-      'type' => MENU_LOCAL_TASK,
-      'context' => MENU_CONTEXT_INLINE,
-      'weight' => 10,
-      'file' => 'drealty.listing.admin.inc',
-      'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
-    );
-
+    foreach (drealty_listings_get_types() as $type) {
+      $type_url_str = str_replace('_', '-', $type->type);
+      $items['drealty_listing/add/' . $type_url_str] = array(
+        'title' => $type->label,
+        'title callback' => 'check_plain',
+        'page callback' => 'drealty_listing_form_wrapper',
+        'page arguments' => array('add', drealty_listing_create(array('rets_imported' => FALSE, 'type' => $type->type))),
+        'access arguments' => array('create drealty listing'),
+        'file' => 'drealty.listing.admin.inc',
+        'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
+        'type' => MENU_NORMAL_ITEM,
+      );
+    }
 
     $items['drealty_listing/' . $wildcard] = array(
       'title callback' => 'drealty_listing_page_title',
@@ -69,9 +49,55 @@ class DrealtyListingUIController extends EntityDefaultUIController {
       'type' => MENU_CALLBACK,
     );
 
+    $items['drealty_listing/' . $wildcard . '/view'] = array(
+      'title' => 'View',
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'weight' => -10,
+    );
+
+    // Loading and editing model entities
+    $items['drealty_listing/' . $wildcard . '/edit'] = array(
+      'title' => t('Edit Listing'),
+      'page callback' => 'drealty_listing_form_wrapper',
+      'page arguments' => array('edit', 1),
+      'access callback' => 'drealty_access',
+      'access arguments' => array('edit', 1),
+      'weight' => 0,
+      'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+      'type' => MENU_LOCAL_TASK,
+      'file' => 'drealty.listing.admin.inc',
+      'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
+    );
+
+    $items['drealty_listing/' . $wildcard . '/delete'] = array(
+      'title' => 'Delete',
+      'page callback' => 'drealty_listing_form_wrapper',
+      'page arguments' => array('delete', 1),
+      'access callback' => 'drealty_access',
+      'access arguments' => array('delete', 1),
+      'type' => MENU_LOCAL_TASK,
+      'context' => MENU_CONTEXT_INLINE,
+      'weight' => 10,
+      'file' => 'drealty.listing.admin.inc',
+      'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
+    );
+
+
+
+
     return $items;
   }
 
+}
+
+function drealty_listing_add_page() {
+  $item = menu_get_item();
+  if ($content = system_admin_menu_block($item)) {
+    $output = theme('admin_block_content', array('content' => $content));
+  } else {
+    $output = t('You do not have any administrative items.');
+  }
+  return $output;
 }
 
 function drealty_listing_admin($type = 'new') {
@@ -244,8 +270,8 @@ class DrealtyListingTypeUIController extends EntityDefaultUIController {
           '#description' => t('A unique machine-readable name for this Property Type. It must only contain lowercase letters, numbers, and underscores.'),
           '#size' => 80,
           '#default_value' => '',
-        );        
-        
+        );
+
         $form['import'] = array(
           '#type' => 'textarea',
           '#title' => t('Import'),

@@ -166,7 +166,7 @@ function drealty_listing_edit_form($form, &$form_state, $op, $listing) {
     $form['actions']['delete'] = array(
       '#type' => 'submit',
       '#value' => t('Delete listing'),
-      '#suffix' => l(t('Cancel'), 'admin/content/listings'),
+      '#suffix' => l(t('Cancel'), 'admin/content/drealty_listings'),
       '#submit' => $submit + array('drealty_listing_form_submit_delete'),
       '#weight' => 45,
     );

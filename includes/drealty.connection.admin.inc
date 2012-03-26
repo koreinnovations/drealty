@@ -324,6 +324,7 @@ function drealty_activate_connection_form($form, &$form_state, $connection = NUL
         '#type' => 'submit',
         '#value' => t('Activate'),
       );
+      $dc->disconnect();
     } else {
       $error= $dc->rets->Error();
       drupal_set_message(t("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text'])), 'error');
@@ -332,8 +333,6 @@ function drealty_activate_connection_form($form, &$form_state, $connection = NUL
       );
     }
 
-
-    $dc->rets->disconnect();
   }
   return $form;
 }
@@ -671,6 +670,7 @@ function drealty_resource_configure_form($form, &$form_state, drealtyConnectionE
       }
     }
   }
+  $dc->disconnect();
 
   $form_state['has_images'] = $has_images;
 

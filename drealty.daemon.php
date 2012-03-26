@@ -43,6 +43,26 @@ class drealtyDaemon {
     module_invoke_all('drealty_rets_import_complete');
     return TRUE;
   }
+  
+  
+    public function import_images() {
+    $connections = $this->dc->FetchConnections();
+    foreach ($connections as $connection) {
+      $mappings = $connection->ResourceMappings();
+      foreach ($mappings as $mapping) {
+        $resource = $this->dr->FetchResource($mapping->rid);
+        $classes = $connection->FetchClasses($resource);
+        foreach ($classes as $class) {
+          if ($class->enabled && $class->process_images) {
+            $this->process_images($connection->conid, $resource, $class);
+          }
+        }
+      }
+    }
+
+    unset($connections, $mappings, $classes);
+    return TRUE;
+  }
 
   /**
    *
@@ -512,6 +532,7 @@ class drealtyDaemon {
             }
           }
 
+          $item_context['rets_item'] = $rets_item;
 
           try {
             drupal_alter('drealty_import_presave', $item, $item_context);
@@ -521,7 +542,7 @@ class drealtyDaemon {
             drush_log($e->getMessage());
           }
           drush_log(dt('Saving item @name', array('@name' => $rets_item[$id])));
-          unset($item);
+          unset($item, $item_context);
         } else {
           // skipping this item
           drush_log(dt("Skipping item @name", array("@name" => $rets_item[$id])));

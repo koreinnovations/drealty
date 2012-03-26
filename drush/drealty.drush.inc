@@ -23,6 +23,10 @@ function drealty_drush_command() {
       'description' => "Force the (re)downloading of images.",
       'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
   );
+  $items['rets-process-images'] = array(
+    'description' => "Process any images that are marked for download.",
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
+  );
   return $items;
 }
 
@@ -57,6 +61,14 @@ function drush_drealty_rets_import() {
   module_load_include('php', 'drealty', 'drealtyDaemon');
   $daemon = new drealtyDaemon();
   $daemon->run();
+}
+
+function drush_drealty_rets_process_images() {
+  set_time_limit(0);
+
+  module_load_include('php', 'drealty', 'drealtyDaemon');
+  $daemon = new drealtyDaemon();
+  $daemon->import_images();
 }
 
 function drush_drealty_rets_reprocess_images() {

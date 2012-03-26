@@ -81,6 +81,21 @@ class drealtyMetaData {
     return empty($mappings) ? FALSE : $mappings;
   }
 
+  function ExportFieldMappings($conid) {
+    $mappings = db_select('drealty_field_mappings', 'm')
+      ->fields('m')
+      ->condition('conid', $conid)
+      ->execute()
+      ->fetchAll();
+    
+    if (!empty($mappings)) {
+      foreach ($mappings as $mapping) {
+        $mapping->data = unserialize($mapping->data);
+      }
+    }
+    return empty($mappings) ? FALSE : $mappings;
+  }
+
   /**
    * Function to return drealtyRetsFeilds from the database
    * 
@@ -173,7 +188,7 @@ class drealtyMetaData {
       ->fetchAllAssoc('systemname');
     return $classes;
   }
-  
+
   /**
    *
    * @param integer $conid
@@ -399,6 +414,7 @@ class drealtyRetsClass {
 }
 
 class drealtyRetsResource {
+
   //TODO: Remove chunk_size and selection_values from the schema as they are not used.
   public $rid;
   public $conid;

@@ -394,7 +394,7 @@ class drealtyConnectionEntityContoller extends EntityAPIControllerExportable {
       }
     }
 
-    $field_mappings = $dm->FetchFieldMappings($entity->conid);
+    $field_mappings = $dm->ExportFieldMappings($entity->conid);
     foreach ($field_mappings as &$field_mapping) {
       $field_mapping->resource_name = $dm->FetchResource($field_mapping->rid)->systemname;
       $field_mapping->class_name = $dm->FetchClass($field_mapping->cid)->systemname;

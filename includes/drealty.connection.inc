@@ -35,6 +35,15 @@ class drealtyConnection {
     $this->rets = new phRETS();
   }
 
+  public function __destruct() {
+    // If we're still connected, someone forgot to disconnect.
+    if ($this->rets && $this->connected) {
+      $backtrace = debug_backtrace();
+      watchdog('drealty', 'Connection to server still active, someone forgot it open in @func(). Attempting to disconnect.', array('@func' => $backtrace[1]['function']));
+      $this->disconnect();
+    }
+  }
+
   /**
    *
    * @param int $conid
@@ -115,6 +124,7 @@ class drealtyConnection {
       }
     } else {
       // connection was successful!
+      $this->connected = TRUE;
       return TRUE;
     }
   }
@@ -130,10 +140,13 @@ class drealtyConnection {
     if ($this->rets && $this->connected) {
       if ($this->rets->Disconnect()) {
         $this->connected = FALSE;
-        drush_log("Disconnected from RETS server.");
+        if (function_exists('drush_log')) {
+          drush_log("Disconnected from RETS server.");
+        }
         return TRUE;
       } else {
-        throw new drealty_rets_disconnect_exception('Error Disconnecting from the RETS Server.');
+        $error = $this->rets->Error();
+        throw new drealty_rets_disconnect_exception("Error Disconnecting from the RETS Server: (Type: {$error['type']} Code: {$error['code']} Msg: {$error['text']})");
       }
     }
   }
@@ -335,6 +348,7 @@ class drealtyConnectionEntityContoller extends EntityAPIControllerExportable {
   public function export($entity, $prefix = '') {
     $entity->active = 0;
 
+
     $dm = new drealtyMetaData();
     $resources = $dm->FetchResources($entity->conid);
     $bundles = array();
@@ -362,7 +376,7 @@ class drealtyConnectionEntityContoller extends EntityAPIControllerExportable {
     $resource_mappings = $dm->GetResourceMappings($entity->conid);
 
     foreach ($resource_mappings as &$resource_mapping) {
-      $resource_mapping->resource_name = $dm->FetchResource($resource_mapping->rid);
+      $resource_mapping->resource_name = $dm->FetchResource($resource_mapping->rid)->systemname;
       unset($resource_mapping->mid, $resource_mapping->conid, $resource_mapping->rid);
     }
 
@@ -377,7 +391,6 @@ class drealtyConnectionEntityContoller extends EntityAPIControllerExportable {
         $field = field_info_field($instance['field_name']);
         unset($field['id'], $field['bundles'], $field['storage']);
         $entity->field_fields[$instance['field_name']] = $field;
-        unset($instance['bundle']);
       }
     }
 
@@ -387,21 +400,101 @@ class drealtyConnectionEntityContoller extends EntityAPIControllerExportable {
       $field_mapping->class_name = $dm->FetchClass($field_mapping->cid)->systemname;
       unset($field_mapping->conid, $field_mapping->rid, $field_mapping->cid);
     }
-    
+
     $entity->field_mappings = $field_mappings;
     $entity->resource_mappings = $resource_mappings;
     $entity->resources = $resources;
 
-
+    //unset($entity->conid);
     $vars = get_object_vars($entity);
+    unset($vars['conid']);
     return entity_var_json_export($vars, $prefix);
   }
-  
+
   public function import($export) {
-     //parent::import($export);
-      $vars = drupal_json_decode($export);
-      
-      
+    if (($entity = parent::import($export)) !== FALSE) {
+      $entity->imported = true;
+      return $entity;
+    }
+    return FALSE;
+  }
+
+  public function save($entity, DatabaseTransaction $transaction = NULL) {
+    parent::save($entity, $transaction);
+
+    if ($entity->imported) {
+      $bundles = array();
+      $resources = array();
+      $classes = array();
+
+
+      foreach ($entity->resources as &$resource) {
+
+        $resource['conid'] = $entity->conid;
+        drupal_write_record('drealty_resources', $resource);
+        $resources[$resource['systemname']] = $resource;
+
+        foreach ($resource['classes'] as &$class) {
+
+          $class['rid'] = $resource['rid'];
+          $class['conid'] = $entity->conid;
+          drupal_write_record('drealty_classes', $class);
+
+          $classes[$class['systemname']] = $class;
+          $bundles[$class['bundle']] = $class['bundle'];
+
+
+          foreach ($class['fields'] as &$field) {
+            $field['conid'] = $entity->conid;
+            $field['rid'] = $resource['rid'];
+            drupal_write_record('drealty_fields', $field);
+          }
+        }
+      }
+
+      foreach ($bundles as $bundle) {
+
+        // check to see if there is already a drealty_listing_type with this name
+        if (!drealty_listing_type_name_exists($bundle)) {          
+          $type = entity_create('drealty_listing_type', array(
+            'type' => $bundle,
+            'label' => t($bundle),
+            'weight' => 0,
+            'locked' => 0,
+            ));
+          $type->save();
+        }
+      }
+
+      foreach ($entity->resource_mappings as $resource_mapping) {
+        $resource_mapping['conid'] = $entity->conid;
+        $resource_mapping['rid'] = $resources[$resource_mapping['resource_name']]['rid'];
+        drupal_write_record('drealty_resource_mappings', $resource_mapping);
+      }
+
+      if (isset($entity->fields)) {
+        foreach ($entity->fields as $field) {
+          if (!field_read_field($field['field_name'], array('include_inactive' => TRUE))) {
+            field_create_field($field);
+          } else {
+            drupal_set_message(t('Skipped creating field %field. A field with this name already exists.', array('%field' => $field['field_name'])), 'warning');
+          }
+        }
+      }
+
+      if (isset($entity->field_instances)) {
+        foreach ($entity->field_instances as $instance) {
+          field_create_instance($instance);
+        }
+      }
+
+      foreach ($entity->field_mappings as &$field_mapping) {
+        $field_mapping['conid'] = $entity->conid;
+        $field_mapping['rid'] = $resources[$field_mapping['resource_name']]['rid'];
+        $field_mapping['cid'] = $classes[$field_mapping['class_name']]['cid'];
+        drupal_write_record('drealty_field_mappings', $field_mapping);
+      }
+    }
   }
 
 }

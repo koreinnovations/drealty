@@ -422,7 +422,7 @@ class drealtyConnectionEntityContoller extends EntityAPIControllerExportable {
   public function save($entity, DatabaseTransaction $transaction = NULL) {
     parent::save($entity, $transaction);
 
-    if ($entity->imported) {
+    if (isset($entity->imported) && $entity->imported) {
       $bundles = array();
       $resources = array();
       $classes = array();

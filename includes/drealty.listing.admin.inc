@@ -344,17 +344,17 @@ class DrealtyListingTypeUIController extends EntityDefaultUIController {
 /**
  * Generates the listing type editing form.
  */
-function drealty_listing_type_form($form, &$form_state, DrealtyListingType $dmealty_listing_type, $op = 'edit') {
+function drealty_listing_type_form($form, &$form_state, DrealtyListingType $drealty_listing_type, $op = 'edit') {
 
   if ($op == 'clone') {
-    $dmealty_listing_type->label .= ' (cloned)';
-    $dmealty_listing_type->type = '';
+    $drealty_listing_type->label .= ' (cloned)';
+    $drealty_listing_type->type = '';
   }
 
   $form['label'] = array(
     '#title' => t('Label'),
     '#type' => 'textfield',
-    '#default_value' => $dmealty_listing_type->label,
+    '#default_value' => $drealty_listing_type->label,
     '#description' => t('The human-readable name of this drealty listing type.'),
     '#required' => TRUE,
     '#size' => 30,
@@ -362,9 +362,9 @@ function drealty_listing_type_form($form, &$form_state, DrealtyListingType $dmea
   // Machine-readable type name.
   $form['type'] = array(
     '#type' => 'machine_name',
-    '#default_value' => isset($dmealty_listing_type->type) ? $dmealty_listing_type->type : '',
+    '#default_value' => isset($drealty_listing_type->type) ? $drealty_listing_type->type : '',
     '#maxlength' => 32,
-    '#disabled' => $dmealty_listing_type->isLocked() && $op != 'clone',
+    '#disabled' => $drealty_listing_type->isLocked() && $op != 'clone',
     '#machine_name' => array(
       'exists' => 'drealty_listings_get_types',
       'source' => array('label'),
@@ -380,7 +380,7 @@ function drealty_listing_type_form($form, &$form_state, DrealtyListingType $dmea
     '#weight' => 40,
   );
 
-  if (!$dmealty_listing_type->isLocked() && $op != 'add' && $op != 'clone') {
+  if (!$drealty_listing_type->isLocked() && $op != 'add' && $op != 'clone') {
     $form['actions']['delete'] = array(
       '#type' => 'submit',
       '#value' => t('Delete listing type'),
@@ -396,9 +396,9 @@ function drealty_listing_type_form($form, &$form_state, DrealtyListingType $dmea
  * Form API submit callback for the type form.
  */
 function drealty_listing_type_form_submit(&$form, &$form_state) {
-  $dmealty_listing_type = entity_ui_form_submit_build_entity($form, $form_state);
+  $drealty_listing_type = entity_ui_form_submit_build_entity($form, $form_state);
   // Save and go back.
-  $dmealty_listing_type->save();
+  $drealty_listing_type->save();
   $form_state['redirect'] = 'admin/drealty/drealty_listings';
 }
 

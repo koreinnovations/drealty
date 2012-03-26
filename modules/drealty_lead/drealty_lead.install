@@ -1,0 +1,112 @@
+<?php
+
+/**
+ * Implementation of hook_install()
+ */
+
+function drealty_lead_install() {
+  if (!drupal_installation_attempted()) {
+    $type = entity_create('drealty_lead_type', array(
+      'type' => 'basic_drealty_lead',
+      'label' => t('Basic Drealty Lead'),
+      'weight' => 0,
+      'locked' => 0,
+      ));
+    $type->save();
+  }
+	
+  menu_rebuild();
+}
+
+/**
+ * Implementation of hook_uninstall()
+ */
+
+function drealty_lead_uninstall() {
+	
+}
+
+/**
+ * Implementation of hook_schema()
+ */
+
+function drealty_lead_schema() {
+	$schema['drealty_lead'] = array(
+		'description' => 'Base table to store dRealty Leads.',
+		'fields' => array(
+			'id' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'Lead primary key.'),
+			'name' => array('type' => 'varchar', 'length' => 128, 'not null' => TRUE, 'default' => '', 'description' => 'The submitted name of the lead.'),
+			'email' => array('type' => 'varchar', 'length' => 128, 'not null' => TRUE, 'default' => '', 'description' => 'The submitted email of the lead.'),
+			'phone' => array('type' => 'varchar', 'length' => 64, 'not null' => TRUE, 'default' => '', 'description' => 'The submitted phone number of the lead.'),
+			'comment' => array('type' => 'text', 'not null' => TRUE, 'default' => '', 'description' => 'The submitted comment about the listing.'),
+		) + entity_exportable_schema_fields(),
+    'primary key' => array('id'),
+	);
+	
+	$schema['drealty_lead_type'] = array(
+    'description' => 'Stores information about all defined drealty_lead_type types.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique drealty_lead_type type ID.',
+      ),
+      'type' => array(
+        'description' => 'The machine-readable name of this drealty_lead_type type.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => 'The human-readable name of this drealty_lead_type type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'The weight of this drealty_lead_type type in relation to others.',
+      ),
+      'locked' => array(
+        'description' => 'A boolean indicating whether the administrator may delete this type.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data related to this drealty_lead_type type.',
+        'merge' => TRUE,
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        // Set the default to ENTITY_CUSTOM without using the constant as it is
+        // not safe to use it at this point.
+        'default' => 0x01,
+        'size' => 'tiny',
+        'description' => 'The exportable status of the entity.',
+      ),
+      'module' => array(
+        'description' => 'The name of the providing module if the entity has been defined in code.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'type' => array('type'),
+    ),
+  );
+	
+	return $schema;
+}

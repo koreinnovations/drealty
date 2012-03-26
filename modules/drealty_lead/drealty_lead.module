@@ -1,0 +1,72 @@
+<?php
+
+/** File
+ * 
+ */
+
+function drealty_lead_init() {
+	
+}
+
+function drealty_lead_menu() {
+	
+}
+
+function drealty_lead_info(){
+	$entities = array();
+	
+  $entities['drealty_lead'] = array(
+		'label' => t('Drealty Lead'),
+		'plural label' => t('Drealty Leads'),
+		'entity class' => 'DrealtyLead',
+		'controller class' => 'DrealtyLeadController',
+		'token type' => 'drealty_lead',
+		'base table' => 'drealty_lead',
+		'uri callback' => 'entity_class_uri',
+		'exportable' => TRUE,
+		'fieldable' => TRUE,
+		'bundles' => array(
+			'isilink_property' => array(
+				'label' => t('ISILink Property'),
+				'admin' => array(
+					'path' => 'admin/isilink/structure/isilink-property',
+				),
+			),
+		),
+		'entity keys' => array(
+			'id' => 'id',
+		),
+		'admin ui' => array(
+			'path' => 'admin/content/isilink-property',
+			'file' => 'includes/isilink.property.admin.inc',
+			'controller class' => 'ISILinkPropertyUIController',
+			'menu wildcard' => '%isilink_property',
+		),
+		'module' => 'isilink',
+		'access callback' => 'isilink_property_access',
+  );
+  
+  return $entities;
+}
+
+function drealty_lead_uri(drealtyLead $lead) {
+  return array('path' => 'drealty_lead/' . $lead->id);
+}
+
+function drealty_lead_block_info() {
+	$blocks['drealty_lead_form'] = array(
+    'info'   => t('dRealty Leads Listing Form'),
+		'region' => -1,
+    'cache'  => DRUPAL_NO_CACHE,
+  );
+
+	return $blocks;
+}
+
+function drealty_lead_block_view($delta = '') {
+	if ($delta == 'drealty_lead_form') {
+    $block['subject'] = isset($block['title']) ? $block['title'] : t('Request More Information');
+    $block['content'] = drupal_get_form('drealty_lead_listing_form');
+    return $block;
+  }
+}

@@ -1,0 +1,9 @@
+name = dRealty Leads
+description = Provides a lightweight leads system for dRealty.
+core = 7.x
+package = Real Estate
+
+dependencies[] = drealty
+dependencies[] = elements
+
+;files[] = drealty_lead.admin.inc

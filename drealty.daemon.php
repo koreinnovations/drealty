@@ -512,6 +512,7 @@ class drealtyDaemon {
             }
           }
 
+          $item_context['rets_item'] = $rets_item;
 
           try {
             drupal_alter('drealty_import_presave', $item, $item_context);
@@ -521,7 +522,7 @@ class drealtyDaemon {
             drush_log($e->getMessage());
           }
           drush_log(dt('Saving item @name', array('@name' => $rets_item[$id])));
-          unset($item);
+          unset($item, $item_context);
         } else {
           // skipping this item
           drush_log(dt("Skipping item @name", array("@name" => $rets_item[$id])));

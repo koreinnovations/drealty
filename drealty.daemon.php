@@ -542,7 +542,7 @@ class drealtyDaemon {
             drush_log($e->getMessage());
           }
           drush_log(dt('Saving item @name', array('@name' => $rets_item[$id])));
-          unset($item, $item_context);
+          unset($item);
         } else {
           // skipping this item
           drush_log(dt("Skipping item @name", array("@name" => $rets_item[$id])));

@@ -17,23 +17,17 @@ function drealty_lead_entity_info(){
 		'uri callback' => 'entity_class_uri',
 		'exportable' => FALSE,
 		'fieldable' => TRUE,
-		'bundles' => array(
-			'drealty_lead' => array(
-				'label' => t('Drealty Lead'),
-				'admin' => array(
-					'path' => 'admin/drealty/drealty-lead/manage/drealty_lead',
-					'real path' => 'admin/drealty/drealty-lead/manage/drealty-lead',
-					'bundle argument' => 4,
-					'access arguments' => array('administer drealty leads'),
-				),
-			),
-		),
 		'admin ui' => array(
-			'path' => 'admin/content/drealty-lead',
+			'path' => 'admin/drealty/drealty_lead',
 			'file' => 'includes/drealty_lead.lead.admin.inc',
 			'controller class' => 'DrealtyLeadUIController',
 			'menu wildcard' => '%drealty_lead',
 		),
+    'bundles' => array(
+      'drealty_lead' => array(
+        'label' => 'Drealty Lead',
+      ),
+    ),
 		'entity keys' => array(
 			'id' => 'id',
 		),
@@ -90,6 +84,10 @@ function drealty_lead_access($op, $listing = NULL, $account = NULL) {
   }
 	
   return FALSE;
+}
+
+function drealty_lead_create($values = array()) {
+  return entity_get_controller('drealty_lead')->create($values);
 }
 
 function drealty_lead_uri(DrealtyLead $lead) {

@@ -731,6 +731,7 @@ class drealtyDaemon {
                 $file = (object) $img;
                 file_delete($file, TRUE);
               }
+              unset($listing->{$img_field}[LANGUAGE_NONE]);
             }
 
             foreach ($set as $key => $photo) {

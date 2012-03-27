@@ -70,7 +70,7 @@ function drealty_lead_install() {
 		field_create_instance(array(
 			'field_name' => 'field_drealty_lead_name',
 			'label' => 'Name',
-			'description' => 'Please enter your full name.',
+			'description' => 'The full name of the lead.',
 			'entity_type' => 'drealty_lead',
 			'bundle' => 'drealty_lead',
 		));
@@ -80,7 +80,7 @@ function drealty_lead_install() {
 		field_create_instance(array(
 			'field_name' => 'field_drealty_lead_email',
 			'label' => 'Email Address',
-			'description' => 'Please enter your email address.',
+			'description' => 'The email address of the lead.',
 			'entity_type' => 'drealty_lead',
 			'bundle' => 'drealty_lead',
 		));
@@ -90,7 +90,7 @@ function drealty_lead_install() {
 		field_create_instance(array(
 			'field_name' => 'field_drealty_lead_phone',
 			'label' => 'Phone Number',
-			'description' => 'Please enter your phone number.',
+			'description' => 'The phone number of the lead.',
 			'entity_type' => 'drealty_lead',
 			'bundle' => 'drealty_lead',
 		));
@@ -110,7 +110,7 @@ function drealty_lead_install() {
 		field_create_instance(array(
 			'field_name' => 'field_drealty_lead_question',
 			'label' => 'Questions/Comments',
-			'description' => 'Please let us know how we can help you with this listing.',
+			'description' => 'The questions/concerns this lead had about the MLS listing.',
 			'entity_type' => 'drealty_lead',
 			'bundle' => 'drealty_lead',
 		));

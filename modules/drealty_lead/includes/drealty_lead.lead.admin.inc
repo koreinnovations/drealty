@@ -62,8 +62,8 @@ class DrealtyLeadUIController extends EntityDefaultUIController {
 
     $items['drealty_lead/' . $wildcard . '/delete'] = array(
       'title' => 'Delete',
-      'page callback' => 'drealty_lead_form_wrapper',
-      'page arguments' => array('delete', 1),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('drealty_lead_delete_confirm', 1),
       'access callback' => 'drealty_lead_access',
       'access arguments' => array('delete', 1),
       'type' => MENU_LOCAL_TASK,
@@ -184,12 +184,11 @@ function drealty_lead_edit_form($form, &$form_state, $op, $lead) {
     '#submit' => $submit + array('drealty_lead_edit_form_submit'),
   );
 
-	if ($op != 'create') {
+	if (isset($lead->id) && drealty_lead_access('delete')) {
 		$form['actions']['delete'] = array(
 			'#type' => 'submit',
 			'#value' => t('Delete lead'),
-			'#suffix' => l(t('Cancel'), 'admin/content/drealty_leads'),
-			'#submit' => $submit + array('drealty_lead_form_submit_delete'),
+			'#submit' => $submit + array('drealty_lead_delete_confirm'),
 			'#weight' => 45,
 		);
 	}
@@ -206,6 +205,43 @@ function drealty_lead_edit_form_submit($form, &$form_state) {
   $lead->save();
   // redirect back to the content list
   $form_state['redirect'] = 'admin/content/drealty-leads';
+}
+
+/**
+ * Menu callback -- ask for confirmation of lead deletion
+ */
+function drealty_lead_delete_confirm($form, &$form_state) {
+	if (!$form_state['lead']) {
+		$form_state['lead'] = drealty_lead_load(arg(1));
+	}
+  // Always provide entity id in the same form key as in the entity edit form.
+  $form['lead'] = $form_state['lead'];
+  
+	return confirm_form($form,
+    t('Are you sure you want to delete the lead "%title"?', array('%title' => 'aaa')), 'drealty_lead/' . $form_state['lead']->id,
+    t('This action cannot be undone.'),
+    t('Delete'),
+    t('Cancel')
+  );
+}
+
+/**
+ * Execute lead deletion
+ */
+function drealty_lead_delete_submit($form, &$form_state) {
+	$lead = drealty_lead_load($form_state['lead']->id);
+	$lead->delete();
+	global $user;
+	watchdog('drealty_lead', '@user: deleted lead @id (@name).', array('@user' => $user->name, '@id' => $lead->id, '@name' => $lead->field_drealty_lead_name[LANGUAGE_NONE][0]['value']));
+	drupal_set_message(t('Lead ID @lead_id (@name - @mls_id) has been deleted.', array('@lead_id' => $lead->id, '@name' => $lead->field_drealty_lead_name[LANGUAGE_NONE][0]['value'], '@mls_id' => $lead->field_drealty_lead_mls_id[LANGUAGE_NONE][0]['value'])));
+	$form_state['redirect'] = 'admin/drealty/drealty-leads';
+}
+
+/**
+ * Form API submit callback for the delete button.
+ */
+function drealty_lead_form_submit_delete(&$form, &$form_state) {
+  $form_state['redirect'] = 'admin/drealty/drealty-leads/';
 }
 
 /**

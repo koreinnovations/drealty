@@ -96,24 +96,6 @@ function drealty_lead_uri(DrealtyLead $lead) {
   return array('path' => 'drealty_lead/' . $lead->id);
 }
 
-function drealty_lead_block_info() {
-	$blocks['drealty_lead_form'] = array(
-    'info'   => t('dRealty Leads Listing Form'),
-		'region' => -1,
-    'cache'  => DRUPAL_NO_CACHE,
-  );
-
-	return $blocks;
-}
-
-function drealty_lead_block_view($delta = '') {
-	if ($delta == 'drealty_lead_form') {
-    $block['subject'] = isset($block['title']) ? $block['title'] : t('Request More Information');
-    $block['content'] = drupal_get_form('drealty_lead_listing_form');
-    return $block;
-  }
-}
-
 function drealty_lead_load($id, $conditions = array(), $reset = FALSE) {
   $ids = (isset($id) ? array($id) : array());
   $entity = drealty_lead_load_multiple($ids, $conditions, $reset);

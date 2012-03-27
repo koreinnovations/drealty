@@ -7,7 +7,7 @@ class DrealtyLeadUIController extends EntityDefaultUIController {
     $id_count = count(explode('/', $this->path));
     $wildcard = isset($this->entityInfo['admin ui']['menu wildcard']) ? $this->entityInfo['admin ui']['menu wildcard'] : '%' . $this->entityType;
 
-    $items[$this->path] = array(
+    $items['admin/content/drealty_lead'] = array(
       'title' => 'Drealty Leads',
       'description' => t('Manage Drealty Leads'),
       'page callback' => 'drealty_lead_admin',
@@ -17,7 +17,7 @@ class DrealtyLeadUIController extends EntityDefaultUIController {
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
     );
 
-    $items[$this->path .'/add'] = array(
+    $items['admin/content/drealty_lead/add'] = array(
       'title' => 'Add dRealty Lead',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('drealty_lead_edit_form', 'create', drealty_lead_create()),
@@ -39,7 +39,7 @@ class DrealtyLeadUIController extends EntityDefaultUIController {
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
     );
 
-    $items[$this->path. '/' . $wildcard . '/view'] = array(
+    $items[$this->path . '/' . $wildcard . '/view'] = array(
       'title' => 'View',
       'type' => MENU_DEFAULT_LOCAL_TASK,
       'weight' => -10,
@@ -80,7 +80,7 @@ class DrealtyLeadUIController extends EntityDefaultUIController {
 }
 
 function drealty_lead_add_page() {
-
+  
 }
 
 function drealty_lead_admin($type = 'new') {

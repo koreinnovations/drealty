@@ -21,19 +21,21 @@ function drealty_lead_entity_info(){
 			'drealty_lead' => array(
 				'label' => t('Drealty Lead'),
 				'admin' => array(
-					'path' => 'admin/drealty/drealty_lead/manage/drealty_lead',
+					'path' => 'admin/drealty/drealty-lead/manage/drealty_lead',
+					'real path' => 'admin/drealty/drealty-lead/manage/drealty-lead',
+					'bundle argument' => 4,
+					'access arguments' => array('administer drealty leads'),
 				),
 			),
 		),
-		'entity keys' => array(
-			'id' => 'id',
-      'bundle' => 'type',
-		),
 		'admin ui' => array(
-			'path' => 'admin/content/drealty-leads',
+			'path' => 'admin/content/drealty-lead',
 			'file' => 'includes/drealty_lead.lead.admin.inc',
 			'controller class' => 'DrealtyLeadUIController',
 			'menu wildcard' => '%drealty_lead',
+		),
+		'entity keys' => array(
+			'id' => 'id',
 		),
 		'module' => 'drealty_lead',
 		'access callback' => 'drealty_lead_access',
@@ -90,7 +92,7 @@ function drealty_lead_access($op, $listing = NULL, $account = NULL) {
   return FALSE;
 }
 
-function drealty_lead_uri(drealtyLead $lead) {
+function drealty_lead_uri(DrealtyLead $lead) {
   return array('path' => 'drealty_lead/' . $lead->id);
 }
 
@@ -110,4 +112,14 @@ function drealty_lead_block_view($delta = '') {
     $block['content'] = drupal_get_form('drealty_lead_listing_form');
     return $block;
   }
+}
+
+function drealty_lead_load($id, $conditions = array(), $reset = FALSE) {
+  $ids = (isset($id) ? array($id) : array());
+  $entity = drealty_lead_load_multiple($ids, $conditions, $reset);
+  return $entity ? reset($entity) : FALSE;
+}
+
+function drealty_lead_load_multiple($ids = array(), $conditions = array(), $reset = FALSE) {
+  return entity_load('drealty_lead', $ids, $conditions, $reset);
 }

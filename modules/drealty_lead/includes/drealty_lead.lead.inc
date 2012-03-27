@@ -2,7 +2,12 @@
 
 class DrealtyLead extends Entity {
 	
-	public function __construct($values) {
+	public $id;
+	public $uid;
+	public $created;
+	public $changed;
+	
+	public function __construct($values = array()) {
 		parent::__construct($values, 'drealty_lead');
 	}
 	
@@ -14,28 +19,37 @@ class DrealtyLead extends Entity {
     return $this->name;
   }
 	
-	/**
-   * returns the full url() for this listing
-   *
-   *  @return string
-   */
-  public function url() {
-    $uri = $this->uri();
-    return url($uri['path'], $uri);
+	protected function defaultUri() {
+    return array('path' => 'drealty_lead/' . $this->id);
   }
-
-  /**
-   * Returns the drupal path to this listing
-   *
-   * @return string
-   */
-  public function path() {
+	
+	public function path() {
     $uri = $this->uri();
     return $uri['path'];
   }
+	
+	public function url() {
+    $uri = $this->uri();
+    return url($uri['path'], $uri);
+  }
+	
+	public function save() {
+		if (empty($this->created) && (!empty($this->is_new) || !$this->id)) {
+      $this->created = REQUEST_TIME;
+    }
+		
+		if (empty($this->uid)) {
+			global $user;
+			$this->uid = $user->uid;
+		}
+		
+    $this->changed = REQUEST_TIME;
 
-  public function defaultUri() {
-    return array('path' => 'drealty_lead/' . $this->id);
+    parent::save();
+  }
+	
+	public function delete() {
+    parent::delete();
   }
 }
 
@@ -60,8 +74,25 @@ class DrealtyLeadController extends EntityAPIController {
     $content = parent::buildContent($entity, $view_mode, $langcode, $content);
     return $content;
   }
+	
+	public function create(array $values = array()) {
+    $entity = parent::create($values);
+    return $entity;
+  }
 
   public function save($entity, DatabaseTransaction $transaction = NULL) {
     parent::save($entity, $transaction);
+  }
+	
+	public function delete($ids, DatabaseTransaction $transaction = NULL) {
+
+    $entities = $ids ? $this->load($ids) : FALSE;
+    
+		if (!$entities) {
+      // Do nothing, in case invalid or no ids have been passed.
+      return;
+    }
+
+    parent::delete($ids, $transaction);
   }
 }

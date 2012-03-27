@@ -5,7 +5,116 @@
  */
 
 function drealty_lead_install() {
-
+	
+	if (!field_info_field('field_drealty_lead_name')) {
+		field_create_field(array(
+			'field_name' => 'field_drealty_lead_name',
+			'locked' => TRUE,
+			'settings' => array(
+				'label' => 'Name',
+				'description' => 'The dRealty lead name (ex. John Doe).',
+			),
+			'type' => 'text',
+		));
+	}
+	
+	if (!field_info_field('field_drealty_lead_email')) {
+		field_create_field(array(
+			'field_name' => 'field_drealty_lead_email',
+			'locked' => TRUE,
+			'settings' => array(
+				'label' => 'Email Address',
+				'description' => 'The dRealty lead email address (ex. johndoe@mail.com).',
+			),
+			'type' => 'text',
+		));
+	}
+	
+	if (!field_info_field('field_drealty_lead_phone')) {
+		field_create_field(array(
+			'field_name' => 'field_drealty_lead_phone',
+			'locked' => TRUE,
+			'settings' => array(
+				'label' => 'Email Address',
+				'description' => 'The dRealty lead phone number (ex. 123-456-7890).',
+			),
+			'type' => 'text',
+		));
+	}
+	
+	if (!field_info_field('field_drealty_lead_mls_id')) {
+		field_create_field(array(
+			'field_name' => 'field_drealty_lead_mls_id',
+			'locked' => TRUE,
+			'settings' => array(
+				'label' => 'MLS ID',
+				'description' => 'The dRealty mls listing ID (ex. 567890).',
+			),
+			'type' => 'text',
+		));
+	}
+	
+	if (!field_info_field('field_drealty_lead_question')) {
+		field_create_field(array(
+			'field_name' => 'field_drealty_lead_question',
+			'locked' => TRUE,
+			'settings' => array(
+				'label' => 'Email Address',
+				'description' => 'The dRealty lead email address (ex. johndoe@mail.com).',
+			),
+			'type' => 'text_long',
+		));
+	}
+	
+	if (!field_info_instance('drealty_lead', 'field_drealty_lead_name', 'drealty_lead')) {
+		field_create_instance(array(
+			'field_name' => 'field_drealty_lead_name',
+			'label' => 'Name',
+			'description' => 'Please enter your full name.',
+			'entity_type' => 'drealty_lead',
+			'bundle' => 'drealty_lead',
+		));
+	}
+	
+	if (!field_info_instance('drealty_lead', 'field_drealty_lead_email', 'drealty_lead')) {
+		field_create_instance(array(
+			'field_name' => 'field_drealty_lead_email',
+			'label' => 'Email Address',
+			'description' => 'Please enter your email address.',
+			'entity_type' => 'drealty_lead',
+			'bundle' => 'drealty_lead',
+		));
+	}
+	
+	if (!field_info_instance('drealty_lead', 'field_drealty_lead_phone', 'drealty_lead')) {
+		field_create_instance(array(
+			'field_name' => 'field_drealty_lead_phone',
+			'label' => 'Phone Number',
+			'description' => 'Please enter your phone number.',
+			'entity_type' => 'drealty_lead',
+			'bundle' => 'drealty_lead',
+		));
+	}
+	
+	if (!field_info_instance('drealty_lead', 'field_drealty_lead_mls_id', 'drealty_lead')) {
+		field_create_instance(array(
+			'field_name' => 'field_drealty_lead_mls_id',
+			'label' => 'MLS ID',
+			'description' => 'The MLS ID this lead inquired about.',
+			'entity_type' => 'drealty_lead',
+			'bundle' => 'drealty_lead',
+		));
+	}
+	
+	if (!field_info_instance('drealty_lead', 'field_drealty_lead_question', 'drealty_lead')) {
+		field_create_instance(array(
+			'field_name' => 'field_drealty_lead_question',
+			'label' => 'Questions/Comments',
+			'description' => 'Please let us know how we can help you with this listing.',
+			'entity_type' => 'drealty_lead',
+			'bundle' => 'drealty_lead',
+		));
+	}
 }
 
 /**
@@ -13,7 +122,18 @@ function drealty_lead_install() {
  */
 
 function drealty_lead_uninstall() {
+	$leads = db_select('drealty_lead', 'lead')
+    ->fields('lead', array('id'))
+    ->execute()
+    ->fetchAllAssoc('id');
+
+  // need to delete all the listings this way so that we can clean up the database and remove all the images properly
+  foreach ($leads as $lead) {
+    entity_delete('drealty_lead', $id);
+  }
 	
+	field_attach_delete_bundle('drealty_lead', 'drealty_lead');
+	field_purge_batch(10);
 }
 
 /**
@@ -25,12 +145,10 @@ function drealty_lead_schema() {
 		'description' => 'Base table to store dRealty Leads.',
 		'fields' => array(
 			'id' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'Lead primary key.'),
-			'rets_key' => array('type' => 'varchar', 'length' => 64, 'not null' => TRUE, 'default' => '', 'description' => 'The MLS ID this lead is tied to.'),
-			'name' => array('type' => 'varchar', 'length' => 128, 'not null' => TRUE, 'default' => '', 'description' => 'The submitted name of the lead.'),
-			'email' => array('type' => 'varchar', 'length' => 128, 'not null' => TRUE, 'default' => '', 'description' => 'The submitted email of the lead.'),
-			'phone' => array('type' => 'varchar', 'length' => 64, 'not null' => TRUE, 'default' => '', 'description' => 'The submitted phone number of the lead.'),
-			'comment' => array('type' => 'text', 'not null' => TRUE, 'description' => 'The submitted comment about the listing.'),
-		),
+			'uid' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'The user who created this lead. Defaults to 1 if created by a non Drupal user.'),      
+			'created' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Date the lead was created in the system.'),
+      'changed' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Last date the lead was changed/updated in the system'),
+    ),
     'primary key' => array('id'),
 	);
 	

@@ -3,59 +3,85 @@
 /** File
  * 
  */
+function drealty_lead_entity_info() {
+  $entities = array();
 
-function drealty_lead_entity_info(){
-	$entities = array();
-	
   $entities['drealty_lead'] = array(
-		'label' => t('Drealty Lead'),
-		'plural label' => t('Drealty Leads'),
-		'entity class' => 'DrealtyLead',
-		'controller class' => 'DrealtyLeadController',
-		'token type' => 'drealty_lead',
-		'base table' => 'drealty_lead',
-		'uri callback' => 'entity_class_uri',
-		'exportable' => FALSE,
-		'fieldable' => TRUE,
-		'admin ui' => array(
-			'path' => 'admin/drealty/drealty_lead',
-			'file' => 'includes/drealty_lead.lead.admin.inc',
-			'controller class' => 'DrealtyLeadUIController',
-			'menu wildcard' => '%drealty_lead',
-		),
+    'label' => t('Drealty Lead'),
+    'plural label' => t('Drealty Leads'),
+    'entity class' => 'DrealtyLead',
+    'controller class' => 'DrealtyLeadController',
+    'token type' => 'drealty_lead',
+    'base table' => 'drealty_lead',
+    'uri callback' => 'entity_class_uri',
+    'exportable' => FALSE,
+    'fieldable' => TRUE,
+    'admin ui' => array(
+      'path' => 'drealty_lead',
+      'file' => 'includes/drealty_lead.lead.admin.inc',
+      'controller class' => 'DrealtyLeadUIController',
+      'menu wildcard' => '%drealty_lead',
+    ),
     'bundles' => array(
       'drealty_lead' => array(
         'label' => 'Drealty Lead',
+        'admin' => array(
+          'path' => 'admin/drealty/drealty_lead/manage/drealty_lead',
+          'bundle argument' => 4,
+          'access arguments' => array('administer drealty_lead'),
+        ),
       ),
     ),
-		'entity keys' => array(
-			'id' => 'id',
-		),
-		'module' => 'drealty_lead',
-		'access callback' => 'drealty_lead_access',
+    'entity keys' => array(
+      'id' => 'id',
+    ),
+    'module' => 'drealty_lead',
+    'access callback' => 'drealty_lead_access',
   );
-  
+
   return $entities;
 }
+
+function drealty_lead_menu() {
+  $items = array();
+  $items['admin/drealty/drealty_lead'] = array(
+    'title' => 'Drealty Leads',
+    'description' => 'Manage the dRealty Lead System.',
+    'page callback' => 'drealty_lead_some_function',
+    'access arguments' => array('access drealty admin'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+    $items['admin/drealty/drealty_lead/view'] = array(
+    'title' => 'Edit Settings',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  
+  return $items;
+}
+
+function drealty_lead_some_function() {
+  return "something really cool";
+}
+
 
 /**
  * Implements hook_permission().
  */
 function drealty_lead_permission() {
   $permissions = array(
-		'administer drealty leads' => array(
+    'administer drealty leads' => array(
       'title' => t('Administer dRealty Leads'),
     ),
-		'view drealty leads' => array(
+    'view drealty leads' => array(
       'title' => t('View dRealty Leads'),
     ),
-		'create drealty leads' => array(
+    'create drealty leads' => array(
       'title' => t('Create dRealty Leads'),
     ),
-		'edit drealty leads' => array(
+    'edit drealty leads' => array(
       'title' => t('Edit dRealty Leads'),
     ),
-		'delete drealty leads' => array(
+    'delete drealty leads' => array(
       'title' => t('Delete dRealty Leads'),
     ),
   );
@@ -67,8 +93,8 @@ function drealty_lead_access($op, $listing = NULL, $account = NULL) {
   if (user_access('administer drealty leads', $account)) {
     return TRUE;
   }
-	
-	if ($op == 'create' || $op == 'update') {
+
+  if ($op == 'create' || $op == 'update') {
     $op = 'edit';
   }
 
@@ -76,13 +102,13 @@ function drealty_lead_access($op, $listing = NULL, $account = NULL) {
 
   // Only grant access if at least one module granted access and no one denied
   // access.
-	
+
   if (in_array(FALSE, $access, TRUE)) {
     return FALSE;
   } elseif (in_array(TRUE, $access, TRUE)) {
     return TRUE;
   }
-	
+
   return FALSE;
 }
 

@@ -215,6 +215,7 @@ function drealty_schema() {
       'rets_key' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => 'A unique identifier for this record from the source system. Typically this is the MLS #, however systems like Interealty use a sysid field. Select the apporpriate field.'),
       'rets_id' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => 'The unique MLS # used to look up an individual listing.'),
       'rets_status' => array('type' => 'varchar', 'length' => 64, 'not null' => FALSE, 'default' => NULL, 'description' => 'RETS status field. This status field is used to build the default query.'),
+      'rets_photo_modification_timestamp' => array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => 'RETS field that indicates wether image data has been modified.'),
     ),
     'primary key' => array('id'),
   );
@@ -285,4 +286,9 @@ function drealty_schema() {
   );
 
   return $schema;
+}
+
+
+function drealty_update_7300(&$sandbox) {
+  db_add_field('drealty_listing', 'rets_photo_modification_timestamp', array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => 'RETS field that indicates wether image data has been modified.'));
 }

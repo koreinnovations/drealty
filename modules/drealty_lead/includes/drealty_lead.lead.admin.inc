@@ -6,8 +6,8 @@ class DrealtyLeadUIController extends EntityDefaultUIController {
 
     $id_count = count(explode('/', $this->path));
     $wildcard = isset($this->entityInfo['admin ui']['menu wildcard']) ? $this->entityInfo['admin ui']['menu wildcard'] : '%' . $this->entityType;
-		
-		$items[$this->path] = array(
+
+    $items[$this->path] = array(
       'title' => 'Drealty Leads',
       'description' => t('Manage Drealty Leads'),
       'page callback' => 'drealty_lead_admin',
@@ -16,17 +16,18 @@ class DrealtyLeadUIController extends EntityDefaultUIController {
       'file' => 'drealty_lead.lead.admin.inc',
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
     );
-		
-    $items['drealty_lead/add'] = array(
+
+    $items[$this->path .'/add'] = array(
       'title' => 'Add dRealty Lead',
-      'page callback' => 'drealty_lead_add_page',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('drealty_lead_edit_form', 'create', drealty_lead_create()),
       'access arguments' => array('create drealty lead'),
       'file' => 'drealty_lead.lead.admin.inc',
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
-      'type' => MENU_NORMAL_ITEM,
+      'type' => MENU_NORMAL_ITEM | MENU_LOCAL_ACTION,
     );
-		
-    $items['drealty_lead/' . $wildcard] = array(
+
+    $items[$this->path . '/' . $wildcard] = array(
       'title callback' => 'drealty_lead_page_title',
       'title arguments' => array(1),
       'page callback' => 'drealty_lead_view',
@@ -34,23 +35,23 @@ class DrealtyLeadUIController extends EntityDefaultUIController {
       'access callback' => 'drealty_lead_access',
       'access arguments' => array('view', 1),
       'type' => MENU_CALLBACK,
-			'file' => 'drealty_lead.lead.admin.inc',
+      'file' => 'drealty_lead.lead.admin.inc',
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
     );
 
-    $items['drealty_lead/' . $wildcard . '/view'] = array(
+    $items[$this->path. '/' . $wildcard . '/view'] = array(
       'title' => 'View',
       'type' => MENU_DEFAULT_LOCAL_TASK,
       'weight' => -10,
-			'file' => 'drealty_lead.lead.admin.inc',
+      'file' => 'drealty_lead.lead.admin.inc',
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
     );
 
     // Loading and editing model entities
-    $items['drealty_lead/' . $wildcard . '/edit'] = array(
+    $items[$this->path . '/' . $wildcard . '/edit'] = array(
       'title' => t('Edit Lead'),
       'page callback' => 'drealty_lead_form_wrapper',
-      'page arguments' => array('edit', 1),
+      'page arguments' => array('edit', $id_count + 1),
       'access callback' => 'drealty_lead_access',
       'access arguments' => array('edit', 1),
       'weight' => 0,
@@ -60,10 +61,10 @@ class DrealtyLeadUIController extends EntityDefaultUIController {
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
     );
 
-    $items['drealty_lead/' . $wildcard . '/delete'] = array(
+    $items[$this->path . '/' . $wildcard . '/delete'] = array(
       'title' => 'Delete',
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('drealty_lead_delete_confirm', 1),
+      'page callback' => 'drealty_lead_form_wrapper',
+      'page arguments' => array('delete', $id_count + 1),
       'access callback' => 'drealty_lead_access',
       'access arguments' => array('delete', 1),
       'type' => MENU_LOCAL_TASK,
@@ -72,20 +73,14 @@ class DrealtyLeadUIController extends EntityDefaultUIController {
       'file' => 'drealty_lead.lead.admin.inc',
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
     );
-		
+
     return $items;
   }
 
 }
 
 function drealty_lead_add_page() {
-  $item = menu_get_item();
-  if ($content = system_admin_menu_block($item)) {
-    $output = theme('admin_block_content', array('content' => $content));
-  } else {
-    $output = t('You do not have any administrative items.');
-  }
-  return $output;
+
 }
 
 function drealty_lead_admin($type = 'new') {
@@ -100,10 +95,10 @@ function drealty_lead_admin($type = 'new') {
 function drealty_lead_admin_overview($form, &$form_state, $arg) {
   $header = array(
     'id' => array('data' => t('ID'), 'field' => 'id'),
-		'rets_id' => array('data' => t('MLS #'), 'field' => 'rets_id'),
-		'name' => array('data' => t('Name'), 'field' => 'name'),
-		'phone' => array('data' => t('Phone'), 'field' => 'phone'),
-		'created' => array('data' => t('Created'), 'field' => 'created'),
+    'rets_id' => array('data' => t('MLS #'), 'field' => 'rets_id'),
+    'name' => array('data' => t('Name'), 'field' => 'name'),
+    'phone' => array('data' => t('Phone'), 'field' => 'phone'),
+    'created' => array('data' => t('Created'), 'field' => 'created'),
     'operations' => array('data' => t('Operations')),
   );
 
@@ -125,18 +120,18 @@ function drealty_lead_admin_overview($form, &$form_state, $arg) {
 
   foreach ($leads as $lead) {
 
-    $links = menu_contextual_links('drealty', 'admin/content/drealty-leads', array($lead->id));
+    $links = menu_contextual_links('drealty', 'admin/drealty/drealty_lead', array($lead->id));
 
     $options[$lead->id] = array(
       'id' => $lead->id,
-			'rets_id' => $lead->field_drealty_lead_mls_id[LANGUAGE_NONE][0]['value'],
-			'name' => $lead->field_drealty_lead_name[LANGUAGE_NONE][0]['value'],
-			'phone' => $lead->field_drealty_lead_phone[LANGUAGE_NONE][0]['value'],
-			'created' => date('F j, Y', $lead->created),
+      'rets_id' => $lead->field_drealty_lead_mls_id[LANGUAGE_NONE][0]['value'],
+      'name' => $lead->field_drealty_lead_name[LANGUAGE_NONE][0]['value'],
+      'phone' => $lead->field_drealty_lead_phone[LANGUAGE_NONE][0]['value'],
+      'created' => date('F j, Y', $lead->created),
       'operations' => theme('links', array('links' => $links, 'attributes' => array('class' => array('links', 'inline', 'operations')))),
     );
   }
-	
+
   $form['leads'] = array(
     '#type' => 'tableselect',
     '#header' => $header,
@@ -154,14 +149,8 @@ function drealty_lead_form_wrapper($op, $lead) {
 
 function drealty_lead_edit_form($form, &$form_state, $op, $lead) {
 
-	$lead = end(entity_load('drealty_lead', array($lead->id)));
-	
-	if (!$lead) {
-		$lead = new DrealtyLead;
-	}
-	
-	$form_state['lead'] = $lead;
-	
+  $form_state['lead'] = $lead;
+
   field_attach_form('drealty_lead', $lead, $form, $form_state);
 
   $form['actions'] = array(
@@ -192,7 +181,7 @@ function drealty_lead_edit_form($form, &$form_state, $op, $lead) {
 			'#weight' => 45,
 		);
 	}
-  
+	
   return $form;
 }
 
@@ -204,7 +193,7 @@ function drealty_lead_edit_form_submit($form, &$form_state) {
   // save the listing
   $lead->save();
   // redirect back to the content list
-  $form_state['redirect'] = 'admin/content/drealty-leads';
+  $form_state['redirect'] = 'admin/drealty/drealty_lead';
 }
 
 /**

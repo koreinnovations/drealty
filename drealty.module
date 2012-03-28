@@ -188,6 +188,11 @@ function drealty_connections_get_all() {
   return $connections;
 }
 
+function drealty_connections_get_machine_name($machine_name) {
+  $result = db_query('SELECT name FROM {drealty_connections} WHERE name	= :machine_name', array(':machine_name'	=> $machine_name))->fetchAll();
+  return $result;
+}
+
 function drealty_listing_type_name_exists($value) {
 
   $exists = db_query_range('SELECT 1 FROM {drealty_listing_type} WHERE type = :type', 0, 1, array(':type' => $value))->fetchField();

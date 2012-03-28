@@ -148,6 +148,7 @@ function drealty_schema() {
       'offset_field' => array('type' => 'varchar', 'length' => 50, 'not null' => FALSE),
       'offset_amount' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
       'offset_max' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+      'photo_timestamp_field' => array('type' => 'varchar', 'length' => 50, 'not null' =>FALSE, 'default' => NULL),
     ),
     'primary key' => array('cid'),
   );
@@ -291,4 +292,6 @@ function drealty_schema() {
 
 function drealty_update_7300(&$sandbox) {
   db_add_field('drealty_listing', 'rets_photo_modification_timestamp', array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => 'RETS field that indicates wether image data has been modified.'));
+  db_add_field('drealty_classes', 'photo_timestamp_field', array('type' => 'varchar', 'length' => 50, 'not null' => FALSE, 'default' => NULL));
+  return "Added rets_photo_modification_timestamp and photo_timestamp_field fields to the db.";
 }

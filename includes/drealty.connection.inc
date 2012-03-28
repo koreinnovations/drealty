@@ -156,7 +156,24 @@ class drealtyConnection {
    * @return drealtyConnectionEntity[] 
    */
   public function FetchConnections() {
-    return entity_load('drealty_connection_entity');
+		return entity_load('drealty_connection_entity');
+  }
+	
+	/**
+   *
+   * @return configured drealtyConnectionEntity
+   */
+     
+  public function FetchConfiguredConnections() {
+    $query = db_select('drealty_connections', 'c');
+    $query->distinct();
+    $query->join('drealty_resources', 'dr', 'c.conid = dr.conid');
+    $query->condition('c.active', 1)
+          ->condition('c.status', 1)
+          ->fields('c');
+        		
+    $connections = $query->execute()->fetchAllKeyed();
+    return entity_load('drealty_connection_entity', array_keys($connections));
   }
 
   /**

@@ -188,9 +188,9 @@ function drealty_connections_get_all() {
   return $connections;
 }
 
-function drealty_connections_get_machine_name($machine_name) {
-  $result = db_query('SELECT name FROM {drealty_connections} WHERE name	= :machine_name', array(':machine_name'	=> $machine_name))->fetchAll();
-  return $result;
+function drealty_connections_machine_name_exists($machine_name) {
+  $exists = db_query_range('SELECT 1 FROM {drealty_connections} WHERE name = :machine_name', 0, 1, array(':machine_name'	=> $machine_name))->fetchField();
+  return $exists;
 }
 
 function drealty_listing_type_name_exists($value) {
@@ -713,7 +713,7 @@ function drealty_form_field_ui_field_edit_form_default(&$form, &$form_state) {
   $dc = new drealtyConnection();
   $dm = new drealtyMetaData();
 
-  $connections = $dc->FetchConnections();
+  $connections = $dc->FetchConfiguredConnections();
   foreach ($connections as $connection) {
 
     $classes = $connection->fetchClasses();
@@ -817,7 +817,7 @@ function drealty_field_ui_field_edit_form_submit($form, &$form_state) {
 }
 
 function theme_drealty_field_mapping(&$variables) {
-  $header = array('Connection', 'RETS Classs', 'RETS Field');
+  $header = array('Connection', 'RETS Class', 'RETS Field');
   $rows = array();
   $form = $variables['form'];
 

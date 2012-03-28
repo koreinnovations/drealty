@@ -166,7 +166,7 @@ function drealty_connection_entity_edit_form($form, &$form_state, drealtyConnect
     '#type' => 'machine_name',
     '#title' => t('Connection Name'),
     '#machine_name' => array(
-      'exists' => 'drealty_connections_get_machine_name',
+      'exists' => 'drealty_connections_machine_name_exists',
       'source' => array('label'),
     ),
     '#description' => t('A unique machine-readable name for this connection. It must only contain lowercase letters, numbers, and underscores.'),

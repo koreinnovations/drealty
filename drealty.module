@@ -713,7 +713,7 @@ function drealty_form_field_ui_field_edit_form_default(&$form, &$form_state) {
   $dc = new drealtyConnection();
   $dm = new drealtyMetaData();
 
-  $connections = $dc->FetchConnections();
+  $connections = $dc->FetchConfiguredConnections();
   foreach ($connections as $connection) {
 
     $classes = $connection->fetchClasses();

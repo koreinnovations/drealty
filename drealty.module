@@ -44,24 +44,6 @@ function drealty_entity_info() {
     'access callback' => 'drealty_connection_entity_access',
   );
 
-  // Add bundle info but bypass entity_load() as we cannot use it here.
-  $types = db_select('drealty_listing_type', 'dlt')
-    ->fields('dlt')
-    ->execute()
-    ->fetchAllAssoc('type');
-
-  foreach ($types as $type => $info) {
-    $entities['drealty_listing']['bundles'][$type] = array(
-      'label' => $info->label,
-      'admin' => array(
-        'path' => 'admin/drealty/drealty_listings/manage/%drealty_listing_type',
-        'real path' => 'admin/drealty/drealty_listings/manage/' . $type,
-        'bundle argument' => 4,
-        'access arguments' => array('administer drealty_listings'),
-      ),
-    );
-  }
-
   $entities['drealty_listing_type'] = array(
     'label' => t('Drealty Property Type'),
     'entity class' => 'DrealtyListingType',
@@ -107,6 +89,26 @@ function drealty_entity_info() {
   );
 
   return $entities;
+}
+
+function drealty_entity_info_alter(&$entity_info) {
+  $types = drealty_listing_get_types();
+  foreach ($types as $type => $info) {
+    $entity_info['drealty_listing']['bundles'][$type] = array(
+      'label' => $info->label,
+      'admin' => array(
+        'path' => 'admin/drealty/drealty_listings/manage/%drealty_listing_type',
+        'real path' => 'admin/drealty/drealty_listings/manage/' . $type,
+        'bundle argument' => 4,
+        'access arguments' => array('administer drealty_listings'),
+      ),
+    );
+  }
+}
+
+function drealty_listing_get_types($type_name = NULL) {
+  $types = entity_load_multiple_by_name('drealty_listing_type', isset($type_name) ? array($type_name) : FALSE);
+  return isset($type_name) ? reset($types) : $types;
 }
 
 /**
@@ -192,7 +194,7 @@ function drealty_connections_get_machine_name($machine_name) {
 }
 
 function drealty_listing_type_name_exists($value) {
-  
+
   $exists = db_query_range('SELECT 1 FROM {drealty_listing_type} WHERE type = :type', 0, 1, array(':type' => $value))->fetchField();
 
   return $exists;
@@ -474,7 +476,7 @@ function drealty_listing_load_multiple($ids = array(), $conditions = array(), $r
  * @return type
  */
 function drealty_listing_page_title(DrealtyListing $listing) {
-  return isset($listing->rets_id)?$listing->rets_id:"Drealty Listing - id: {$listing->id}";
+  return isset($listing->rets_id) ? $listing->rets_id : "Drealty Listing - id: {$listing->id}";
 }
 
 /**
@@ -625,7 +627,7 @@ function drealty_form_field_ui_field_edit_form_geofield(&$form, &$form_state) {
       }
     }
   }
-  $form['instance']['drealty']['hash_exclude'] = array('#type' => 'checkbox', '#title' => t('Exclude this field from the update hash.'), '#default_value' => isset($field_mappings[$form['#instance']['field_name']]->hash_exclude)?$field_mappings[$form['#instance']['field_name']]->hash_exclude:FALSE);
+  $form['instance']['drealty']['hash_exclude'] = array('#type' => 'checkbox', '#title' => t('Exclude this field from the update hash.'), '#default_value' => isset($field_mappings[$form['#instance']['field_name']]->hash_exclude) ? $field_mappings[$form['#instance']['field_name']]->hash_exclude : FALSE);
 }
 
 function drealty_form_field_ui_field_edit_form_addressfield(&$form, &$form_state) {
@@ -697,8 +699,8 @@ function drealty_form_field_ui_field_edit_form_addressfield(&$form, &$form_state
       }
     }
   }
-  
-  $form['instance']['drealty']['hash_exclude'] = array('#type' => 'checkbox', '#title' => t('Exclude this field from the update hash.'), '#default_value' => isset($field_mappings[$form['#instance']['field_name']]->hash_exclude)?$field_mappings[$form['#instance']['field_name']]->hash_exclude:FALSE);
+
+  $form['instance']['drealty']['hash_exclude'] = array('#type' => 'checkbox', '#title' => t('Exclude this field from the update hash.'), '#default_value' => isset($field_mappings[$form['#instance']['field_name']]->hash_exclude) ? $field_mappings[$form['#instance']['field_name']]->hash_exclude : FALSE);
 }
 
 function drealty_form_field_ui_field_edit_form_default(&$form, &$form_state) {
@@ -715,7 +717,7 @@ function drealty_form_field_ui_field_edit_form_default(&$form, &$form_state) {
   foreach ($connections as $connection) {
 
     $classes = $connection->fetchClasses();
-    
+
     foreach ($classes as $class) {
       if (isset($class->bundle) && $class->bundle == $form['#instance']['bundle']) {
         $resource = $dm->FetchResource($class->rid);
@@ -736,8 +738,8 @@ function drealty_form_field_ui_field_edit_form_default(&$form, &$form_state) {
       }
     }
   }
-  
-$form['instance']['drealty']['hash_exclude'] = array('#type' => 'checkbox', '#title' => t('Exclude this field from the update hash.'), '#default_value' => isset($field_mappings[$form['#instance']['field_name']]->hash_exclude)?$field_mappings[$form['#instance']['field_name']]->hash_exclude:FALSE);
+
+  $form['instance']['drealty']['hash_exclude'] = array('#type' => 'checkbox', '#title' => t('Exclude this field from the update hash.'), '#default_value' => isset($field_mappings[$form['#instance']['field_name']]->hash_exclude) ? $field_mappings[$form['#instance']['field_name']]->hash_exclude : FALSE);
 }
 
 function drealty_field_ui_field_edit_form_geofield_submit($form, &$form_state) {
@@ -745,7 +747,7 @@ function drealty_field_ui_field_edit_form_geofield_submit($form, &$form_state) {
   $hash_exclude = $form_state['values']['instance']['drealty']['hash_exclude'];
   $connection = new drealtyConnectionEntity();
   $dc = new drealtyConnection();
-  
+
   foreach ($mappings as $mapping) {
     if (isset($mapping['rets_field']) && !empty($mapping['rets_field'])) {
       // load the connection
@@ -764,7 +766,7 @@ function drealty_field_ui_field_edit_form_address_submit($form, &$form_state) {
   $hash_exclude = $form_state['values']['instance']['drealty']['hash_exclude'];
   $connection = new drealtyConnectionEntity();
   $dc = new drealtyConnection();
-  
+
   foreach ($mappings as $mapping) {
 
     //make sure there is something in at least one field
@@ -797,12 +799,12 @@ function drealty_field_ui_field_edit_form_submit($form, &$form_state) {
   $hash_exclude = $form_state['values']['instance']['drealty']['hash_exclude'];
   $connection = new drealtyConnectionEntity();
   $dc = new drealtyConnection();
-  
+
   foreach ($mappings as $mapping) {
     if (isset($mapping['rets_field']) && !empty($mapping['rets_field'])) {
       // load the connection
-      
-      
+
+
       $connection = $dc->FetchConnection($mapping['conid']);
       $field_name = $form_state['values']['instance']['field_name'];
 
@@ -933,6 +935,7 @@ function drealty_field_ui_field_overview_form_submit($form, &$form_state) {
     drupal_set_message(t('Your settings have been saved.'));
   }
 }
+
 /**
  * Implementation of hook_ctools_plugin_api().
  */

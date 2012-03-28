@@ -46,12 +46,12 @@ class DrealtyLeadUIController extends EntityDefaultUIController {
       'file' => 'drealty_lead.lead.admin.inc',
       'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes'
     );
-
+		
     // Loading and editing model entities
     $items[$this->path . '/' . $wildcard . '/edit'] = array(
       'title' => t('Edit Lead'),
       'page callback' => 'drealty_lead_form_wrapper',
-      'page arguments' => array('edit', $id_count + 1),
+      'page arguments' => array('edit', 1),
       'access callback' => 'drealty_lead_access',
       'access arguments' => array('edit', 1),
       'weight' => 0,
@@ -95,7 +95,7 @@ function drealty_lead_admin($type = 'new') {
 function drealty_lead_admin_overview($form, &$form_state, $arg) {
   $header = array(
     'id' => array('data' => t('ID'), 'field' => 'id'),
-    'rets_id' => array('data' => t('MLS #'), 'field' => 'rets_id'),
+    'rets_id' => array('data' => t('Property ID'), 'field' => 'rets_id'),
     'name' => array('data' => t('Name'), 'field' => 'name'),
     'phone' => array('data' => t('Phone'), 'field' => 'phone'),
     'created' => array('data' => t('Created'), 'field' => 'created'),
@@ -120,7 +120,7 @@ function drealty_lead_admin_overview($form, &$form_state, $arg) {
 
   foreach ($leads as $lead) {
 
-    $links = menu_contextual_links('drealty', 'admin/drealty/drealty_lead', array($lead->id));
+    $links = menu_contextual_links('drealty_lead', 'drealty_lead', array($lead->id));
 
     $options[$lead->id] = array(
       'id' => $lead->id,
@@ -150,7 +150,7 @@ function drealty_lead_form_wrapper($op, $lead) {
 function drealty_lead_edit_form($form, &$form_state, $op, $lead) {
 
   $form_state['lead'] = $lead;
-
+	
   field_attach_form('drealty_lead', $lead, $form, $form_state);
 
   $form['actions'] = array(
@@ -193,7 +193,7 @@ function drealty_lead_edit_form_submit($form, &$form_state) {
   // save the listing
   $lead->save();
   // redirect back to the content list
-  $form_state['redirect'] = 'admin/drealty/drealty_lead';
+  $form_state['redirect'] = 'admin/content/drealty_lead';
 }
 
 /**

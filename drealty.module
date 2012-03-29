@@ -189,7 +189,7 @@ function drealty_connections_get_all() {
 }
 
 function drealty_connections_machine_name_exists($machine_name) {
-  $exists = db_query_range('SELECT 1 FROM {drealty_connections} WHERE name = :machine_name', 0, 1, array(':machine_name'	=> $machine_name))->fetchField();
+  $exists = db_query_range('SELECT 1 FROM {drealty_connections} WHERE name = :machine_name', 0, 1, array(':machine_name' => $machine_name))->fetchField();
   return $exists;
 }
 
@@ -689,6 +689,12 @@ function drealty_form_field_ui_field_edit_form_addressfield(&$form, &$form_state
           '#title' => t('State'),
           '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
           '#default_value' => isset($field_mappings[$form['#instance']['field_name']]->data['state']) ? $fields[$field_mappings[$form['#instance']['field_name']]->data['state']]->systemname . ' - ' . $fields[$field_mappings[$form['#instance']['field_name']]->data['state']]->longname : NULL,
+        );
+        $form['instance']['drealty']['mappings'][$class->systemname]['rets_field']['county'] = array(
+          '#type' => 'textfield',
+          '#title' => t('County'),
+          '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
+          '#default_value' => isset($field_mappings[$form['#instance']['field_name']]->data['county']) ? $fields[$field_mappings[$form['#instance']['field_name']]->data['county']]->systemname . ' - ' . $fields[$field_mappings[$form['#instance']['field_name']]->data['county']]->longname : NULL,
         );
         $form['instance']['drealty']['mappings'][$class->systemname]['rets_field']['zip'] = array(
           '#type' => 'textfield',

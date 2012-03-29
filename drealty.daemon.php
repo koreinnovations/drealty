@@ -517,6 +517,13 @@ class drealtyDaemon {
                   $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
                 }
                 if (
+                  isset($mapping->data['county']) &&
+                  isset($rets_item[$mapping->data['county']]) &&
+                  isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['sub_administrative_area']) &&
+                  $rets_item[$mapping->data['county']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['sub_administrative_area']) {
+                  $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
+                }
+                if (
                   isset($mapping->data['zip']) &&
                   isset($rets_item[$mapping->data['zip']]) &&
                   isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code']) &&
@@ -526,11 +533,16 @@ class drealtyDaemon {
                 if ($is_new) {
                   $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
                 }
-
+                
+                //get the default country code if one exists for the address
+                
+                $field_info = field_info_instance($entity_type, $mapping->field_name, $class->bundle);
+                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['country'] = isset($field_info['default_value'][0]['country']) ? $field_info['default_value'][0]['country'] : 'US';
                 $item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare'] = isset($rets_item[$mapping->data['address_1']]) ? $rets_item[$mapping->data['address_1']] : NULL;
                 $item->{$mapping->field_name}[LANGUAGE_NONE][0]['premise'] = isset($mapping->data['address_2']) ? $rets_item[$mapping->data['address_2']] : NULL;
                 $item->{$mapping->field_name}[LANGUAGE_NONE][0]['locality'] = isset($mapping->data['city']) ? $rets_item[$mapping->data['city']] : NULL;
                 $item->{$mapping->field_name}[LANGUAGE_NONE][0]['administrative_area'] = isset($mapping->data['state']) ? $rets_item[$mapping->data['state']] : NULL;
+                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['sub_administrative_area'] = isset($mapping->data['state']) ? $rets_item[$mapping->data['county']] : NULL;
                 $item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code'] = isset($mapping->data['zip']) ? $rets_item[$mapping->data['zip']] : NULL;
 
                 break;
@@ -794,7 +806,7 @@ class drealtyDaemon {
 
             $listing->process_images = 0;
 
-            if(!empty($address_fields)) {
+            if (!empty($address_fields)) {
               // set each address field's changed = FALSE
               foreach ($address_fields as $address_field) {
                 $listing->{$address_field->field_name}[LANGUAGE_NONE][0]['changed'] = FALSE;

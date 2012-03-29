@@ -126,7 +126,7 @@ class drealtyDaemon {
     drush_log(dt("process_results( connection: @connection_name, resource: @resource, class: @class, chunks: @chunks)", array("@connection_name" => $connection->name, "@resource" => $resource->systemname, "@class" => $class->systemname, "@chunks" => $chunks)));
     $this->process_results($connection, $resource, $class, $entity_type, $chunks);
     if ($entity_type == 'drealty_listing' && $class->process_images) {
-      $this->process_images($connection, $resource, $class);
+      $this->process_images($connection->conid, $resource, $class);
     }
 
     unset($mappings, $resources, $fieldmappings, $query);

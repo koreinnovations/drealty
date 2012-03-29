@@ -63,6 +63,8 @@ class DrealtyListing extends Entity {
    * @var string
    */
   public $listing_key;
+  
+  public $rets_photo_modification_timestamp;
 
   public function __construct(array $values = array()) {
     parent::__construct($values, 'drealty_listing');

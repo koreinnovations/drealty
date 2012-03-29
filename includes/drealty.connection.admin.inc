@@ -326,13 +326,12 @@ function drealty_activate_connection_form($form, &$form_state, $connection = NUL
       );
       $dc->disconnect();
     } else {
-      $error= $dc->rets->Error();
+      $error = $dc->rets->Error();
       drupal_set_message(t("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text'])), 'error');
       $form['markup'] = array(
         '#markup' => '<div>There was an error activating the current connection. Please check the settings and attempt to activate the connection again.</div>'
       );
     }
-
   }
   return $form;
 }
@@ -495,7 +494,7 @@ function drealty_resource_overview_form($form, &$form_state, drealtyConnectionEn
       $form['classes'][$key]['enabled'] = array('#type' => 'checkbox', '#default_value' => $class->enabled, '#attributes' => $class->enabled ? array('checked' => 'checked') : NULL, '#disabled' => $class->configured ? FALSE : TRUE,);
       $form['classes'][$key]['lifetime'] = array('#type' => 'select', '#options' => $life_opts, '#default_value' => isset($class->lifetime) ? $class->lifetime : 28000, '#disabled' => $class->configured ? FALSE : TRUE,);
       $configure_fields_link = l("configure", "admin/drealty/connections/manage/{$connection->name}/resource/{$entity_type}/{$class->cid}");
-      
+
       $form['classes'][$key]['actions'] = array('#markup' => "$configure_fields_link");
       $form['classes'][$key]['rid'] = array('#type' => 'value', '#value' => $class->rid);
       $form['classes'][$key]['conid'] = array('#type' => 'value', '#value' => $class->conid);
@@ -833,6 +832,19 @@ function drealty_resource_configure_form($form, &$form_state, drealtyConnectionE
       '#disabled' => (count($img_field_opts) >= 1) ? FALSE : TRUE,
     );
 
+
+    $form['feed']['images']['modification_timestamp_field'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Photo Modification Timestamp Field.'),
+      '#description' => t('This field is used to determine if image data has been changed. Must be a timestamp or datetime field. If you are unsure, visit <a href="http://www.retsmd.com" target="_blank">www.retsmd.com</a> to ensure that the field is numeric.'),
+      '#default_value' => $class->photo_timestamp_field,
+      '#required' => TRUE,
+      '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
+      '#states' => array(
+        'visible' => array(':input[name="process_images"]' => array('checked' => TRUE)),
+      ),
+    );
+
     $form['feed']['images']['object_type'] = array(
       '#type' => 'select',
       '#multiple' => FALSE,
@@ -952,11 +964,18 @@ function drealty_resource_configure_form_submit($form, &$form_state) {
   $class->offset_max = (int) $form_state['values']['offset_max'];
 
 
+
   if ($form_state['has_images'] && $form_state['values']['process_images']) {
     $class->process_images = $form_state['values']['process_images'];
     $class->object_type = $form_state['values']['object_type'];
     $class->image_field_name = $form_state['values']['image_field_name'];
     $class->image_chunk_size = $form_state['values']['image_chunk_size'];
+
+    $tmp_image_timestamp = explode('-', $form_state['values']['modification_timestamp_field']);
+    $image_timestamp_field_systemname = $tmp_image_timestamp[0];
+
+    $class->photo_timestamp_field = $image_timestamp_field_systemname;
+
     $field = field_read_instance($entity_type, $class->image_field_name, $class->bundle);
     $class->image_dir = isset($field['settings']['file_directory']) ? $field['settings']['file_directory'] : "rets_images";
   } else {

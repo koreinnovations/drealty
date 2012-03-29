@@ -57,9 +57,10 @@ class drealtyMetaData {
    * @param int $conid
    * @param drealtyRetsResource $resource
    * @param drealttyRetsClass $class
+   * @param string $type
    * @return drealtyFieldMapping[]
    */
-  function FetchFieldMappings($conid, $resource = NULL, $class = NULL) {
+  function FetchFieldMappings($conid, $resource = NULL, $class = NULL, $type = NULL) {
 
     $query = db_select('drealty_field_mappings', 'm')
       ->fields('m')
@@ -71,6 +72,10 @@ class drealtyMetaData {
     if (isset($class)) {
       $query->condition('cid', $class->cid);
     }
+    
+    if(isset($type)) {
+      $query->condition('field_api_type', $type);
+    }
 
     $mappings = $query->execute()->fetchAllAssoc('field_name');
     if (!empty($mappings)) {
@@ -80,7 +85,7 @@ class drealtyMetaData {
     }
     return empty($mappings) ? FALSE : $mappings;
   }
-
+ 
   function ExportFieldMappings($conid) {
     $mappings = db_select('drealty_field_mappings', 'm')
       ->fields('m')
@@ -410,7 +415,7 @@ class drealtyRetsClass {
   public $offset_field;
   public $offset_amount;
   public $offset_max;
-
+  public $photo_timestamp_field;
 }
 
 class drealtyRetsResource {

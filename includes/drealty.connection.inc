@@ -274,11 +274,12 @@ class drealtyConnectionEntity extends Entity {
    * @param int $conid
    * @param drealtyRetsResource $resource
    * @param drealttyRetsClass $class
+   * @param string $type
    * @return drealtyFieldMapping[]
    */
-  public function FetchFieldMappings($resource = NULL, $class = NULL) {
+  public function FetchFieldMappings($resource = NULL, $class = NULL, $type = NULL) {
     $dm = new drealtyMetaData();
-    return $dm->FetchFieldMappings($this->conid, $resource, $class);
+    return $dm->FetchFieldMappings($this->conid, $resource, $class, $type);
   }
 
   /**

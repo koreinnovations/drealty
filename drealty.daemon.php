@@ -43,9 +43,8 @@ class drealtyDaemon {
     module_invoke_all('drealty_rets_import_complete');
     return TRUE;
   }
-  
-  
-    public function import_images() {
+
+  public function import_images() {
     $connections = $this->dc->FetchConnections();
     foreach ($connections as $connection) {
       $mappings = $connection->ResourceMappings();
@@ -176,6 +175,10 @@ class drealtyDaemon {
 
       $options['Select'] = $this->get_fields($connection->conid, $class->cid);
 
+      if ($class->process_images) {
+        $options['Select'] .= ',' . $class->photo_timestamp_field;
+      }
+
       $options['Limit'] = $limit;
 
 
@@ -261,6 +264,10 @@ class drealtyDaemon {
 
       $options['Select'] = $this->get_fields($connection->conid, $class->cid);
 
+      if ($class->process_images) {
+        $options['Select'] .= ',' . $class->photo_timestamp_field;
+      }
+
       while ($count < $total) {
 
         $search = $rets->SearchQuery($resource->systemname, $class->systemname, $offset_query, $options);
@@ -333,6 +340,9 @@ class drealtyDaemon {
 
         $fields = $this->get_fields($connection->conid, $class->cid);
 
+        if ($class->process_images) {
+          $fields .= ',' . $class->photo_timestamp_field;
+        }
 
         $optional_params = array(
           'Format' => 'COMPACT-DECODED',
@@ -451,7 +461,26 @@ class drealtyDaemon {
           $item->rets_imported = TRUE;
 
           if ($entity_type == 'drealty_listing' && $class->process_images) {
-            $item->process_images = TRUE;
+            if ($is_new) {
+              $item->process_images = TRUE;
+            } else {
+              if(isset($item->rets_photo_modification_timestamp)) {
+                $last_time = strtotime($item->rets_photo_modification_timestamp);
+                $this_time = strtotime($rets_item[$class->photo_timestamp_field]);
+                if($this_time > $last_time){
+                  $item->process_images = TRUE;
+                  drush_log("************ Processing Images ***********");
+                } else {
+                  $item->process_images = FALSE;
+                  drush_log("************ NOT Processing Images ***********");
+                }                
+              } else {
+                // hasn't been set but it's not new
+                $item->rets_photo_modification_timestamp = $rets_item[$class->photo_timestamp_field];
+                $item->process_images = FALSE;
+                drush_log("************ NOT Processing Images ***********");
+              }
+            }
           }
 
           foreach ($field_mappings as $mapping) {
@@ -627,6 +656,17 @@ class drealtyDaemon {
     if (!$class->process_images) {
       return;
     }
+    
+    /* grab any address fields so we can set changed = false
+     * doing this so that geocoder wont re-geocode an address field 
+     * on entity->save().
+     * 
+     * There's got to be a better way to do this, however, this will work for now.
+     */
+    
+    $dm = new drealtyMetaData();
+    
+    $address_fields = $dm->FetchFieldMappings($conid, $resource, $class, 'addressfield');
 
     $img_field = $class->image_field_name;
     $dir = $class->image_dir;
@@ -722,7 +762,7 @@ class drealtyDaemon {
           $counter = 0;
 
           foreach ($photos as $list_id => $set) {
-            
+
             $listing = $listings[$list_id];
 
             // delete out any existing images
@@ -746,8 +786,15 @@ class drealtyDaemon {
               $file->title = '';
               $listing->{$img_field}[LANGUAGE_NONE][] = (array) $file;
             }
-
+            
             $listing->process_images = 0;
+            
+            // set each address field's changed = FALSE
+            
+            foreach($address_fields as $address_field) {
+              $listing->{$address_field->field_name}[LANGUAGE_NONE][0]['changed'] = FALSE;
+            }
+            
             $listing->save();
             drush_log(dt("Saved @count images for @listing", array("@count" => count($set), "@listing" => $list_id)), "success");
             unset($photos[$list_id]);

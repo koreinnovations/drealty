@@ -971,7 +971,7 @@ function drealty_resource_configure_form_submit($form, &$form_state) {
     $class->image_field_name = $form_state['values']['image_field_name'];
     $class->image_chunk_size = $form_state['values']['image_chunk_size'];
 
-    $tmp_image_timestamp = explode('-', $form_state['values']['modification_timestamp_field']);
+    $tmp_image_timestamp = explode(' - ', $form_state['values']['modification_timestamp_field']);
     $image_timestamp_field_systemname = $tmp_image_timestamp[0];
 
     $class->photo_timestamp_field = $image_timestamp_field_systemname;

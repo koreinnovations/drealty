@@ -464,16 +464,16 @@ class drealtyDaemon {
             if ($is_new) {
               $item->process_images = TRUE;
             } else {
-              if(isset($item->rets_photo_modification_timestamp)) {
+              if (isset($item->rets_photo_modification_timestamp)) {
                 $last_time = strtotime($item->rets_photo_modification_timestamp);
                 $this_time = strtotime($rets_item[$class->photo_timestamp_field]);
-                if($this_time > $last_time){
+                if ($this_time > $last_time) {
                   $item->process_images = TRUE;
                   drush_log("************ Processing Images ***********");
                 } else {
                   $item->process_images = FALSE;
                   drush_log("************ NOT Processing Images ***********");
-                }                
+                }
               } else {
                 // hasn't been set but it's not new
                 $item->rets_photo_modification_timestamp = $rets_item[$class->photo_timestamp_field];
@@ -656,16 +656,16 @@ class drealtyDaemon {
     if (!$class->process_images) {
       return;
     }
-    
+
     /* grab any address fields so we can set changed = false
      * doing this so that geocoder wont re-geocode an address field 
      * on entity->save().
      * 
      * There's got to be a better way to do this, however, this will work for now.
      */
-    
+
     $dm = new drealtyMetaData();
-    
+
     $address_fields = $dm->FetchFieldMappings($conid, $resource, $class, 'addressfield');
 
     $img_field = $class->image_field_name;
@@ -780,21 +780,28 @@ class drealtyDaemon {
               $number = $photo['Object-ID'];
               $filename = "{$mlskey}-{$number}.jpg";
               $filepath = "{$img_dir}/{$filename}";
+              //ensure that there is enough data to actually make a file.
+              if (strlen($photo['Data']) > 173) {
+                $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
+                //make sure we actually save the image
+                if ($file) {
+                  $file->alt = '';
+                  $file->title = '';
+                  $listing->{$img_field}[LANGUAGE_NONE][] = (array) $file;
+                }
+              }
+            }
 
-              $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
-              $file->alt = '';
-              $file->title = '';
-              $listing->{$img_field}[LANGUAGE_NONE][] = (array) $file;
-            }
-            
             $listing->process_images = 0;
-            
-            // set each address field's changed = FALSE
-            
-            foreach($address_fields as $address_field) {
-              $listing->{$address_field->field_name}[LANGUAGE_NONE][0]['changed'] = FALSE;
+
+            if(!empty($address_fields)) {
+              // set each address field's changed = FALSE
+              foreach ($address_fields as $address_field) {
+                $listing->{$address_field->field_name}[LANGUAGE_NONE][0]['changed'] = FALSE;
+              }
+              reset($address_fields);
             }
-            
+
             $listing->save();
             drush_log(dt("Saved @count images for @listing", array("@count" => count($set), "@listing" => $list_id)), "success");
             unset($photos[$list_id]);

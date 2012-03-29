@@ -356,8 +356,7 @@ function drealty_connection_delete_form($form, &$form_state, drealtyConnectionEn
 
   $form['#submit'][] = 'drealty_connection_delete_form_submit';
 
-  $form = confirm_form($form, t('Are you sure you want to delete the %name connection?', array('%name' => $connection->name)), 'admin/drealty/connections', '<p>' . t('This action cannot be undone.') . '</p>', t('Delete'), t('Cancel'), 'confirm'
-  );
+  $form = confirm_form($form, t('Are you sure you want to delete the %name connection?', array('%name' => $connection->name)), 'admin/drealty/connections', '<p>' . t('This action cannot be undone.') . '</p>', t('Delete'), t('Cancel'), 'confirm');
 
   return $form;
 }

@@ -157,7 +157,16 @@ function drealty_menu() {
     'access arguments' => array('access drealty admin'),
     'type' => MENU_CALLBACK
   );
+  
+  $items['drealty_listing/%drealty_listing/rets_refresh'] = array(
+    'title' => t('Update RETS Data'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('drealty_update_single_listing', 1),
+    'access arguments' => array('access drealty admin'),
+    'type' => MENU_CALLBACK | MENU_LOCAL_TASK,
+  );
 
+  
   return $items;
 }
 
@@ -175,6 +184,42 @@ function drealty_menu_local_tasks_alter(&$data, $router_item, $root_path) {
       );
     }
   }
+}
+
+/**
+ *
+ * @param type $form
+ * @param array $form_state
+ * @param drealtyListing $listing
+ * @return type 
+ */
+function drealty_update_single_listing($form, &$form_state, $listing = NULL) {
+  
+  $form_state['listing'] = $listing;
+
+  $form['#submit'][] = 'drealty_update_single_listing_submit';
+
+  $question = t('Are you sure you want to update the listing %name?', array('%name' => $listing->rets_id));
+  $description = '<p>' . t('This action will force the refresh of the RETS data for this listing..') . '</p>';
+  
+  $form = confirm_form($form, $question, $listing->path(), $description, t('Update'), t('Cancel'), 'confirm');
+
+  return $form;
+  
+}
+
+
+function drealty_update_single_listing_submit($form, &$form_state) {
+
+  $listing = $form_state['listing'];
+
+  $daemon = new drealtyDaemon();
+  if($daemon->update_single_listing($listing)) {  
+  drupal_set_message(t('Listing id %id was successfully updated from the RETS server.', array('%id' => $listing->rets_id)), 'status');
+  } else {
+    drupal_set_message(t('Listing id %id FAILED to update from the RETS server.', array('%id' => $listing->rets_id)), 'error');
+  }
+  $form_state['redirect'] = $listing->path();
 }
 
 function drealty_admin_paths_alter(&$paths) {

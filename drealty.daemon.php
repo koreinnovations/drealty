@@ -394,6 +394,99 @@ class drealtyDaemon {
     return $chunks;
   }
 
+  public function update_single_listing(DrealtyListing $listing) {
+    $connection = $this->dc->FetchConnection($listing->conid);
+    $class = $this->dr->FetchClass($listing->class);
+    $resource = $this->dr->FetchResource($class->rid);
+
+    $field_mappings = $connection->FetchFieldMappings($resource, $class);
+    $key_field = $field_mappings['rets_key']->systemname;
+
+    $item_context = array('field_mappings' => $field_mappings, 'connection' => $connection, 'resource' => $resource, 'key_field' => $key_field);
+
+    $query = "({$key_field}={$listing->rets_key})";
+
+    $fields = $this->get_fields($connection->conid, $class->cid);
+
+    if ($class->process_images) {
+      $fields .= ',' . $class->photo_timestamp_field;
+    }
+
+    $params = array(
+      'Format' => 'COMPACT-DECODED',
+      'Limit' => "1",
+      'RestrictedIndicator' => 'xxxx',
+      'Count' => '0',
+      'Select' => $fields,
+    );
+
+    if ($this->dc->connect($connection->conid)) {
+      $rets = $this->dc->rets;
+      $search = $rets->SearchQuery($resource->systemname, $class->systemname, $query, $params);
+
+      $item = $rets->FetchRow($search);
+
+      $rets->FreeResult($search);
+
+      $listing->hash = $this->calculate_hash($item, $connection->conid, $class->cid);
+      $listing->changed = time();
+      
+
+      $this->set_field_data($listing, $item, $field_mappings, $listing->entityType(), $class, TRUE);
+      $item_context['rets_item'] = $item;
+
+
+      if ($class->process_images) {
+        //get the images
+        $results = $rets->GetObject($resource->systemname, $class->object_type, $listing->rets_key, '*');
+         $img_dir = file_default_scheme() . "://{$class->image_dir}";
+         $img_field = $class->image_field_name;
+         
+        //sort the images
+        if ($results) {
+          $photos = array();
+          foreach ($results as $item) {
+            $photos[$item['Object-ID']] = $item;
+          }
+          ksort($photos, SORT_NUMERIC);
+
+          unset($listing->{$img_field}[LANGUAGE_NONE]);
+
+          foreach ($photos as $photo) {
+
+            $mlskey = $photo['Content-ID'];
+            $number = $photo['Object-ID'];
+            $filename = "{$mlskey}-{$number}.jpg";
+            $filepath = "{$img_dir}/{$filename}";
+            //ensure that there is enough data to actually make a file.
+            if (strlen($photo['Data']) > 173) {
+              $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
+              //make sure we actually save the image
+              if ($file) {
+                $file->alt = '';
+                $file->title = '';
+                $listing->{$img_field}[LANGUAGE_NONE][] = (array) $file;
+              }
+            }
+          }
+        }
+      }
+
+      try {
+        drupal_alter('drealty_import_presave', $listing, $item_context);
+        $listing->save();
+        module_invoke_all('drealty_entity_save', array(&$listing, $item_context));
+      } catch (Exception $e) {
+        watchdog("drealty", $e->getMessage(), array(), WATCHDOG_ERROR);
+        drupal_set_message($e->getMessage(), 'error');
+        return FALSE;
+      }
+      $this->dc->disconnect();
+      return TRUE;
+    }
+    return FALSE;   
+  }
+
   /**
    *
    * @param drealtyConnectionEntity $connection
@@ -469,109 +562,18 @@ class drealtyDaemon {
                 $this_time = strtotime($rets_item[$class->photo_timestamp_field]);
                 if ($this_time > $last_time) {
                   $item->process_images = TRUE;
-                  drush_log("************ Processing Images ***********");
                 } else {
                   $item->process_images = FALSE;
-                  drush_log("************ NOT Processing Images ***********");
                 }
               } else {
                 // hasn't been set but it's not new
                 $item->rets_photo_modification_timestamp = $rets_item[$class->photo_timestamp_field];
                 $item->process_images = FALSE;
-                drush_log("************ NOT Processing Images ***********");
               }
             }
           }
 
-          foreach ($field_mappings as $mapping) {
-            switch ($mapping->field_api_type) {
-              case 'addressfield':
-                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = FALSE;
-
-                if (
-                  isset($mapping->data['address_1']) &&
-                  isset($rets_item[$mapping->data['address_1']]) &&
-                  isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare']) &&
-                  $rets_item[$mapping->data['address_1']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare']) {
-                  $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
-                }
-                if (
-                  isset($mapping->data['address_2']) &&
-                  isset($rets_item[$mapping->data['address_2']]) &&
-                  isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['premise']) &&
-                  $rets_item[$mapping->data['address_2']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['premise']) {
-                  $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
-                }
-                if (
-                  isset($mapping->data['city']) &&
-                  isset($rets_item[$mapping->data['city']]) &&
-                  isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['locality']) &&
-                  $rets_item[$mapping->data['city']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['locality']) {
-                  $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
-                }
-                if (
-                  isset($mapping->data['state']) &&
-                  isset($rets_item[$mapping->data['state']]) &&
-                  isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['administrative_area']) &&
-                  $rets_item[$mapping->data['state']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['administrative_area']) {
-                  $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
-                }
-                if (
-                  isset($mapping->data['county']) &&
-                  isset($rets_item[$mapping->data['county']]) &&
-                  isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['sub_administrative_area']) &&
-                  $rets_item[$mapping->data['county']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['sub_administrative_area']) {
-                  $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
-                }
-                if (
-                  isset($mapping->data['zip']) &&
-                  isset($rets_item[$mapping->data['zip']]) &&
-                  isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code']) &&
-                  $rets_item[$mapping->data['zip']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code']) {
-                  $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
-                }
-                if ($is_new) {
-                  $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
-                }
-                
-                //get the default country code if one exists for the address
-                
-                $field_info = field_info_instance($entity_type, $mapping->field_name, $class->bundle);
-                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['country'] = isset($field_info['default_value'][0]['country']) ? $field_info['default_value'][0]['country'] : 'US';
-                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare'] = isset($rets_item[$mapping->data['address_1']]) ? $rets_item[$mapping->data['address_1']] : NULL;
-                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['premise'] = isset($mapping->data['address_2']) ? $rets_item[$mapping->data['address_2']] : NULL;
-                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['locality'] = isset($mapping->data['city']) ? $rets_item[$mapping->data['city']] : NULL;
-                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['administrative_area'] = isset($mapping->data['state']) ? $rets_item[$mapping->data['state']] : NULL;
-                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['sub_administrative_area'] = isset($mapping->data['state']) ? $rets_item[$mapping->data['county']] : NULL;
-                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code'] = isset($mapping->data['zip']) ? $rets_item[$mapping->data['zip']] : NULL;
-
-                break;
-              case 'geofield':
-                // check to see if we already have already geocoded this address
-                if (!isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lat']) && !isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lon'])) {
-                  $item->{$mapping->field_name}[LANGUAGE_NONE][0]['wkt'] = GEOCODER_DUMMY_WKT;
-                  $item->{$mapping->field_name}[LANGUAGE_NONE][0]['geocode'] = TRUE;
-                }
-                break;
-              case 'text_long':
-                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
-                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['format'] = 'plain_text';
-                break;
-              case 'number_integer':
-              case 'number_decimal':
-              case 'number_float':
-                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = empty($rets_item[$mapping->systemname]) ? 0 : is_numeric($rets_item[$mapping->systemname]) ? $rets_item[$mapping->systemname] : 0;
-                break;
-              case 'list_boolean':
-                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = in_array($rets_item[$mapping->systemname], array('true', 'True', 'TRUE', 'yes', 'Yes', 'y', 'Y', '1', 'on', 'On', 'ON', true, 1), true) ? 1 : 0;
-                break;
-              case 'drealty':
-                $item->{$mapping->field_name} = $rets_item[$mapping->systemname];
-                break;
-              default:
-                $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
-            }
-          }
+          $this->set_field_data($item, $rets_item, $field_mappings, $entity_type, $class, $is_new);
 
           $item_context['rets_item'] = $rets_item;
 
@@ -850,6 +852,99 @@ class drealtyDaemon {
       }
     }
     return implode(',', $fields);
+  }
+
+  protected function set_field_data(&$item, $rets_item, $field_mappings, $entity_type, $class, $force_geocode = FALSE) {
+
+    foreach ($field_mappings as $mapping) {
+      switch ($mapping->field_api_type) {
+        case 'addressfield':
+          $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = FALSE;
+
+          if (
+            isset($mapping->data['address_1']) &&
+            isset($rets_item[$mapping->data['address_1']]) &&
+            isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare']) &&
+            $rets_item[$mapping->data['address_1']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare']) {
+            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
+          }
+          if (
+            isset($mapping->data['address_2']) &&
+            isset($rets_item[$mapping->data['address_2']]) &&
+            isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['premise']) &&
+            $rets_item[$mapping->data['address_2']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['premise']) {
+            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
+          }
+          if (
+            isset($mapping->data['city']) &&
+            isset($rets_item[$mapping->data['city']]) &&
+            isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['locality']) &&
+            $rets_item[$mapping->data['city']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['locality']) {
+            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
+          }
+          if (
+            isset($mapping->data['state']) &&
+            isset($rets_item[$mapping->data['state']]) &&
+            isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['administrative_area']) &&
+            $rets_item[$mapping->data['state']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['administrative_area']) {
+            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
+          }
+          if (
+            isset($mapping->data['county']) &&
+            isset($rets_item[$mapping->data['county']]) &&
+            isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['sub_administrative_area']) &&
+            $rets_item[$mapping->data['county']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['sub_administrative_area']) {
+            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
+          }
+          if (
+            isset($mapping->data['zip']) &&
+            isset($rets_item[$mapping->data['zip']]) &&
+            isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code']) &&
+            $rets_item[$mapping->data['zip']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code']) {
+            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
+          }
+          if ($force_geocode) {
+            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
+          }
+
+          //get the default country code if one exists for the address
+
+          $field_info = field_info_instance($entity_type, $mapping->field_name, $class->bundle);
+          $item->{$mapping->field_name}[LANGUAGE_NONE][0]['country'] = isset($field_info['default_value'][0]['country']) ? $field_info['default_value'][0]['country'] : 'US';
+          $item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare'] = isset($rets_item[$mapping->data['address_1']]) ? $rets_item[$mapping->data['address_1']] : NULL;
+          $item->{$mapping->field_name}[LANGUAGE_NONE][0]['premise'] = isset($mapping->data['address_2']) ? $rets_item[$mapping->data['address_2']] : NULL;
+          $item->{$mapping->field_name}[LANGUAGE_NONE][0]['locality'] = isset($mapping->data['city']) ? $rets_item[$mapping->data['city']] : NULL;
+          $item->{$mapping->field_name}[LANGUAGE_NONE][0]['administrative_area'] = isset($mapping->data['state']) ? $rets_item[$mapping->data['state']] : NULL;
+          $item->{$mapping->field_name}[LANGUAGE_NONE][0]['sub_administrative_area'] = isset($mapping->data['county']) ? $rets_item[$mapping->data['county']] : NULL;
+          $item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code'] = isset($mapping->data['zip']) ? $rets_item[$mapping->data['zip']] : NULL;
+
+          break;
+        case 'geofield':
+          // check to see if we already have already geocoded this address
+          if (!isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lat']) && !isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lon'])) {
+            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['wkt'] = GEOCODER_DUMMY_WKT;
+            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['geocode'] = TRUE;
+          }
+          break;
+        case 'text_long':
+          $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
+          $item->{$mapping->field_name}[LANGUAGE_NONE][0]['format'] = 'plain_text';
+          break;
+        case 'number_integer':
+        case 'number_decimal':
+        case 'number_float':
+          $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = empty($rets_item[$mapping->systemname]) ? 0 : is_numeric($rets_item[$mapping->systemname]) ? $rets_item[$mapping->systemname] : 0;
+          break;
+        case 'list_boolean':
+          $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = in_array($rets_item[$mapping->systemname], array('true', 'True', 'TRUE', 'yes', 'Yes', 'y', 'Y', '1', 'on', 'On', 'ON', true, 1), true) ? 1 : 0;
+          break;
+        case 'drealty':
+          $item->{$mapping->field_name} = $rets_item[$mapping->systemname];
+          break;
+        default:
+          $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
+      }
+    }
   }
 
 }

@@ -62,8 +62,9 @@ class DrealtyListing extends Entity {
    *
    * @var string
    */
-  public $listing_key;
-  
+  public $rets_key;
+  public $rets_id;
+  public $class;
   public $rets_photo_modification_timestamp;
 
   public function __construct(array $values = array()) {

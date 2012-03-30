@@ -842,10 +842,10 @@ function drealty_resource_configure_form($form, &$form_state, drealtyConnectionE
       '#title' => t('Photo Modification Timestamp Field.'),
       '#description' => t('This field is used to determine if image data has been changed. Must be a timestamp or datetime field. If you are unsure, visit <a href="http://www.retsmd.com" target="_blank">www.retsmd.com</a> to ensure that the field is numeric.'),
       '#default_value' => $class->photo_timestamp_field,
-      '#required' => TRUE,
       '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
       '#states' => array(
         'visible' => array(':input[name="process_images"]' => array('checked' => TRUE)),
+        'required' => array(':input[name="process_images"]' => array('checked' => TRUE)),
       ),
     );
 

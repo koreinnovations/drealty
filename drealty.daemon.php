@@ -506,6 +506,7 @@ class drealtyDaemon {
     $existing_items = db_select($entity_type, "t")
       ->fields("t", array($key_field, "hash", "id"))
       ->condition("conid", $connection->conid)
+      ->condition('class', $class->cid)
       ->execute()
       ->fetchAllAssoc($key_field);
 
@@ -528,7 +529,7 @@ class drealtyDaemon {
 
         drush_log(dt("Item @idx of @total", array("@idx" => $j + 1, "@total" => $rets_results_count)));
         $rets_item = $rets_results->data[$j];
-        $in_rets[] = $rets_item[$id];
+        $in_rets[$rets_item[$id]] = $rets_item[$id];
 
         $force = FALSE;
         if (!isset($existing_items[$rets_item[$id]]) || $existing_items[$rets_item[$id]]->hash != $rets_item['hash'] || $force) {
@@ -556,6 +557,7 @@ class drealtyDaemon {
           if ($entity_type == 'drealty_listing' && $class->process_images) {
             if ($is_new) {
               $item->process_images = TRUE;
+              $item->rets_photo_modification_timestamp = $rets_item[$class->photo_timestamp_field];
             } else {
               if (isset($item->rets_photo_modification_timestamp)) {
                 $last_time = strtotime($item->rets_photo_modification_timestamp);
@@ -607,21 +609,49 @@ class drealtyDaemon {
           // skipping this item
           drush_log(dt("Skipping item @name", array("@name" => $rets_item[$id])));
         }
-
-        /*
-         *  TODO: sold or removed listings. || removed agents || removed offices
-         * 
-         *  deal with items that are no longer returned from the rets feed but are still in the db. we can either
-         *  delete them, archive/unpublish them, or come up with a status field. should be some sort of option
-         *  as each realtor association will have a different rule concerning if a listing can be displayed after it 
-         *  has been sold or removed from the feed.
-         * 
-         *  
-         * 
-         */
       }
       cache_clear_all($chunk_name, 'cache');
     } // endfor $chunk_count
+    
+    //handle expired listings
+    $this->handle_expired($in_rets, $connection->conid, $class);
+  }
+
+  /**
+   * Function to handle the logic of what to do with expired listings
+   * 
+   * @param array $in_rets
+   * @param array $conid
+   * @param drealtyRetsClass $class 
+   */
+  protected function handle_expired($in_rets, $conid, $class) {
+
+    $results = db_select('drealty_listing', 'dl')
+      ->fields('dl', array('id', 'rets_key'))
+      ->condition('conid', $conid)
+      ->condition('class', $class->cid)
+      ->execute()
+      ->fetchAllAssoc('rets_key');
+
+    $diff = array_diff_key($results, $in_rets);
+
+    foreach ($diff as $item) {
+      switch ($class->expired_handler) {
+        case 0:
+          $listing = drealty_listing_load($item->id);
+          $listing->delete();
+          break;
+        case 1:
+          db_update('drealty_listing')
+            ->fields(array('active' => 0))
+            ->condition('id', $item->id)
+            ->execute();
+          break;
+        default:
+          $listing = drealty_listing_load($item->id);
+          $listing->delete();
+      }
+    }
   }
 
   /**

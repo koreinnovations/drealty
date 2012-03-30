@@ -416,6 +416,7 @@ class drealtyRetsClass {
   public $offset_amount;
   public $offset_max;
   public $photo_timestamp_field;
+  public $expired_handler;
 }
 
 class drealtyRetsResource {

@@ -149,6 +149,7 @@ function drealty_schema() {
       'offset_amount' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
       'offset_max' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
       'photo_timestamp_field' => array('type' => 'varchar', 'length' => 50, 'not null' =>FALSE, 'default' => NULL),
+      'expired_handler' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
     ),
     'primary key' => array('cid'),
   );
@@ -217,6 +218,7 @@ function drealty_schema() {
       'rets_id' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => 'The unique MLS # used to look up an individual listing.'),
       'rets_status' => array('type' => 'varchar', 'length' => 64, 'not null' => FALSE, 'default' => NULL, 'description' => 'RETS status field. This status field is used to build the default query.'),
       'rets_photo_modification_timestamp' => array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => 'RETS field that indicates wether image data has been modified.'),
+      'active' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 1, 'description' => 'Wether a listing is active or not. Active listings are listings that appear in the RETS Feed. Inactive Listings have since been removed from the feeed.')
     ),
     'primary key' => array('id'),
   );
@@ -289,9 +291,20 @@ function drealty_schema() {
   return $schema;
 }
 
-
+/**
+ * Add two new fields to keep track of photo modification timestamp
+ */
 function drealty_update_7300(&$sandbox) {
   db_add_field('drealty_listing', 'rets_photo_modification_timestamp', array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => 'RETS field that indicates wether image data has been modified.'));
   db_add_field('drealty_classes', 'photo_timestamp_field', array('type' => 'varchar', 'length' => 50, 'not null' => FALSE, 'default' => NULL));
   return "Added rets_photo_modification_timestamp and photo_timestamp_field fields to the db.";
+}
+
+
+/**
+ * Add fields to handle expired listings 
+ */
+function drealty_update_7301(&$sandbox) {
+  db_add_field('drealty_listing', 'active', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 1));
+  db_add_field('drealty_classes', 'expired_handler', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0));
 }

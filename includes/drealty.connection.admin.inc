@@ -87,19 +87,14 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
       $operation = '';
       if ($active) {
         $operation .= l("Deactivate", "admin/drealty/connections/manage/$name/deactivate");
-        $operation .= ' <br /> ' . "Configure: " . l("Properties", "admin/drealty/connections/manage/$name/resource/drealty_listing");
-        /*
-          $operation .= ' | ' . l("Open Houses", "admin/drealty/connections/manage/$name/resource/drealty_openhouse");
-          $operation .= ' | ' . l("Offices", "admin/drealty/connections/manage/$name/resource/drealty_office");
-          $operation .= ' | ' . l("Agents", "admin/drealty/connections/manage/$name/resource/drealty_agent");
-         *
-         */
+        $operation .= " | " . l("Configure", "admin/drealty/connections/manage/$name/resource/drealty_listing");
       } else {
         $operation .= l("Activate", "admin/drealty/connections/manage/$name/activate");
       }
       $additional = array($operation);
-
-      $rows[] = $this->overviewTableRow($conditions, entity_id($this->entityType, $entity), $entity, $additional);
+      $row = $this->overviewTableRow($conditions, entity_id($this->entityType, $entity), $entity, $additional);
+      unset($row[4]);
+      $rows[] = $row;
     }
     // Assemble the right table header.
     $header = array(t('Label'));
@@ -128,7 +123,7 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
 }
 
 function drealty_resource_configure_title_callback($class) {
-  return "Configure Fields for: {$class->standardname}";
+  return "Configure {$class->standardname}";
 }
 
 function drealty_resource_overview_title_callback($type) {
@@ -614,7 +609,7 @@ function drealty_resource_configure_form($form, &$form_state, drealtyConnectionE
   /*   * ************************************************************** */
 
 
-  $form['feed'] = array('#type' => 'fieldset', '#title' => t('RETS Import Options'), '#collapsible' => TRUE, '#collapsed' => FALSE, '#description' => t('Use the following settings to configure the import options for the RETS feed.'));
+  $form['feed'] = array('#type' => 'fieldset', '#title' => t('RETS Import Options'), '#collapsible' => FALSE, '#description' => t('Use the following settings to configure the import options for the RETS feed.'));
 
 
   switch ($entity_type) {
@@ -672,10 +667,7 @@ function drealty_resource_configure_form($form, &$form_state, drealtyConnectionE
 
   $form_state['has_images'] = $has_images;
 
-  $form['feed']['query_options'] = array('#type' => 'fieldset', '#title' => 'Query Options', '#collapsed' => FALSE);
-
-
-
+  $form['feed']['query_options'] = array('#type' => 'fieldset', '#title' => 'Query Options', '#collapsible' => TRUE, '#collapsed' => FALSE);
 
   $form['feed']['query_options']['query_type'] = array(
     '#type' => 'radios',
@@ -801,8 +793,21 @@ function drealty_resource_configure_form($form, &$form_state, drealtyConnectionE
 
 
 
+  $form['feed']['expired'] = array('#type' => 'fieldset', '#title' => 'Expired Listings', '#collapsible' => TRUE, '#collapsed' => FALSE, '#description' => t('Configure how to handle expired listings.'));
+
+  $form['feed']['expired']['expired_handler'] = array(
+    '#type' => 'radios',
+    '#title' => t('Expired listing handler'),
+    '#default_value' => isset($class->expired_handler) ? $class->expired_handler : 0,
+    '#options' => array(
+      0 => 'Delete any expired listings',
+      1 => 'Mark expired listings as <em>inactive</em>'
+    ),
+    '#description' => t('Please select the how you would like to deal with expired listings. <em>Expired listings are those listings that no longer exists in the RETS feed but are still present in the system.'),
+  );
+
   if ($has_images) {
-    $form['feed']['images'] = array('#type' => 'fieldset', '#title' => 'Images', '#collapsed' => FALSE);
+    $form['feed']['images'] = array('#type' => 'fieldset', '#title' => 'Images', '#collapsible' => TRUE, '#collapsed' => FALSE);
 
     $img_field_opts = array();
     $field_instances = field_read_instances(array('bundle' => $class->bundle));
@@ -961,7 +966,7 @@ function drealty_resource_configure_form_submit($form, &$form_state) {
   $class->offset_field = $systemname;
   $class->offset_amount = (int) $form_state['values']['offset_amount'];
   $class->offset_max = (int) $form_state['values']['offset_max'];
-
+  $class->expired_handler = $form_state['values']['expired_handler'];
 
 
   if ($form_state['has_images'] && $form_state['values']['process_images']) {

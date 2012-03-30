@@ -18,7 +18,7 @@ class drealtyDaemon {
 
   public function __construct() {
     $this->dc = new drealtyConnection();
-    $this->dr = new drealtyMetaData();
+    $this->dm = new drealtyMetaData();
   }
 
   public function run() {
@@ -26,7 +26,7 @@ class drealtyDaemon {
     foreach ($connections as $connection) {
       $mappings = $connection->ResourceMappings();
       foreach ($mappings as $mapping) {
-        $resource = $this->dr->FetchResource($mapping->rid);
+        $resource = $this->dm->FetchResource($mapping->rid);
         $classes = $connection->FetchClasses($resource);
         foreach ($classes as $class) {
           if ($class->enabled && $class->lifetime <= time() - ($class->lastupdate + 60)) {
@@ -49,7 +49,7 @@ class drealtyDaemon {
     foreach ($connections as $connection) {
       $mappings = $connection->ResourceMappings();
       foreach ($mappings as $mapping) {
-        $resource = $this->dr->FetchResource($mapping->rid);
+        $resource = $this->dm->FetchResource($mapping->rid);
         $classes = $connection->FetchClasses($resource);
         foreach ($classes as $class) {
           if ($class->enabled && $class->process_images) {
@@ -396,8 +396,8 @@ class drealtyDaemon {
 
   public function update_single_listing(DrealtyListing $listing) {
     $connection = $this->dc->FetchConnection($listing->conid);
-    $class = $this->dr->FetchClass($listing->class);
-    $resource = $this->dr->FetchResource($class->rid);
+    $class = $this->dm->FetchClass($listing->class);
+    $resource = $this->dm->FetchResource($class->rid);
 
     $field_mappings = $connection->FetchFieldMappings($resource, $class);
     $key_field = $field_mappings['rets_key']->systemname;
@@ -430,7 +430,7 @@ class drealtyDaemon {
 
       $listing->hash = $this->calculate_hash($item, $connection->conid, $class->cid);
       $listing->changed = time();
-      
+
 
       $this->set_field_data($listing, $item, $field_mappings, $listing->entityType(), $class, TRUE);
       $item_context['rets_item'] = $item;
@@ -439,9 +439,9 @@ class drealtyDaemon {
       if ($class->process_images) {
         //get the images
         $results = $rets->GetObject($resource->systemname, $class->object_type, $listing->rets_key, '*');
-         $img_dir = file_default_scheme() . "://{$class->image_dir}";
-         $img_field = $class->image_field_name;
-         
+        $img_dir = file_default_scheme() . "://{$class->image_dir}";
+        $img_field = $class->image_field_name;
+
         //sort the images
         if ($results) {
           $photos = array();
@@ -484,7 +484,7 @@ class drealtyDaemon {
       $this->dc->disconnect();
       return TRUE;
     }
-    return FALSE;   
+    return FALSE;
   }
 
   /**
@@ -573,7 +573,24 @@ class drealtyDaemon {
             }
           }
 
-          $this->set_field_data($item, $rets_item, $field_mappings, $entity_type, $class, $is_new);
+          $force_geocode = FALSE;
+
+          if (!$is_new) {
+            $geofields = $this->dm->FetchFieldMappings($connection->conid, $resource, $class, 'geofield');
+            if (!empty($geofields)) {
+              foreach ($geofields as $geofield) {
+                // check to see if we already have already geocoded this address
+                if (!isset($item->{$geofield->field_name}[LANGUAGE_NONE][0]['lat']) && !isset($item->{$geofield->field_name}[LANGUAGE_NONE][0]['lon'])) {
+                  $force_geocode = TRUE;
+                }
+              }
+            }
+          } else {
+            $force_geocode = TRUE;
+          }
+
+
+          $this->set_field_data($item, $rets_item, $field_mappings, $entity_type, $class, $force_geocode);
 
           $item_context['rets_item'] = $rets_item;
 
@@ -678,9 +695,9 @@ class drealtyDaemon {
      * There's got to be a better way to do this, however, this will work for now.
      */
 
-    $dm = new drealtyMetaData();
 
-    $address_fields = $dm->FetchFieldMappings($conid, $resource, $class, 'addressfield');
+
+    $address_fields = $this->dm->FetchFieldMappings($conid, $resource, $class, 'addressfield');
 
     $img_field = $class->image_field_name;
     $dir = $class->image_dir;
@@ -859,56 +876,12 @@ class drealtyDaemon {
     foreach ($field_mappings as $mapping) {
       switch ($mapping->field_api_type) {
         case 'addressfield':
-          $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = FALSE;
-
-          if (
-            isset($mapping->data['address_1']) &&
-            isset($rets_item[$mapping->data['address_1']]) &&
-            isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare']) &&
-            $rets_item[$mapping->data['address_1']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare']) {
-            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
-          }
-          if (
-            isset($mapping->data['address_2']) &&
-            isset($rets_item[$mapping->data['address_2']]) &&
-            isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['premise']) &&
-            $rets_item[$mapping->data['address_2']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['premise']) {
-            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
-          }
-          if (
-            isset($mapping->data['city']) &&
-            isset($rets_item[$mapping->data['city']]) &&
-            isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['locality']) &&
-            $rets_item[$mapping->data['city']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['locality']) {
-            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
-          }
-          if (
-            isset($mapping->data['state']) &&
-            isset($rets_item[$mapping->data['state']]) &&
-            isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['administrative_area']) &&
-            $rets_item[$mapping->data['state']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['administrative_area']) {
-            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
-          }
-          if (
-            isset($mapping->data['county']) &&
-            isset($rets_item[$mapping->data['county']]) &&
-            isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['sub_administrative_area']) &&
-            $rets_item[$mapping->data['county']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['sub_administrative_area']) {
-            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
-          }
-          if (
-            isset($mapping->data['zip']) &&
-            isset($rets_item[$mapping->data['zip']]) &&
-            isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code']) &&
-            $rets_item[$mapping->data['zip']] != $item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code']) {
-            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
-          }
           if ($force_geocode) {
             $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
+          } else {
+            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = FALSE;
           }
-
           //get the default country code if one exists for the address
-
           $field_info = field_info_instance($entity_type, $mapping->field_name, $class->bundle);
           $item->{$mapping->field_name}[LANGUAGE_NONE][0]['country'] = isset($field_info['default_value'][0]['country']) ? $field_info['default_value'][0]['country'] : 'US';
           $item->{$mapping->field_name}[LANGUAGE_NONE][0]['thoroughfare'] = isset($rets_item[$mapping->data['address_1']]) ? $rets_item[$mapping->data['address_1']] : NULL;
@@ -917,14 +890,9 @@ class drealtyDaemon {
           $item->{$mapping->field_name}[LANGUAGE_NONE][0]['administrative_area'] = isset($mapping->data['state']) ? $rets_item[$mapping->data['state']] : NULL;
           $item->{$mapping->field_name}[LANGUAGE_NONE][0]['sub_administrative_area'] = isset($mapping->data['county']) ? $rets_item[$mapping->data['county']] : NULL;
           $item->{$mapping->field_name}[LANGUAGE_NONE][0]['postal_code'] = isset($mapping->data['zip']) ? $rets_item[$mapping->data['zip']] : NULL;
-
           break;
         case 'geofield':
-          // check to see if we already have already geocoded this address
-          if (!isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lat']) && !isset($item->{$mapping->field_name}[LANGUAGE_NONE][0]['lon'])) {
-            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['wkt'] = GEOCODER_DUMMY_WKT;
-            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['geocode'] = TRUE;
-          }
+          $item->{$mapping->field_name}[LANGUAGE_NONE][0]['wkt'] = GEOCODER_DUMMY_WKT;
           break;
         case 'text_long':
           $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];

@@ -41,7 +41,7 @@ function drealty_entity_info() {
       'menu wildcard' => '%drealty_listing',
     ),
     'module' => 'drealty',
-    'access callback' => 'drealty_connection_entity_access',
+    'access callback' => 'drealty_listing_access',
   );
 
   $entities['drealty_listing_type'] = array(
@@ -80,7 +80,7 @@ function drealty_entity_info() {
       'name' => 'name'
     ),
     'module' => 'drealty',
-    'access callback' => 'drealty_connection_entity_access',
+    'access callback' => 'drealty_connection_access',
     'admin ui' => array(
       'path' => 'admin/drealty/connections',
       'file' => 'includes/drealty.connection.admin.inc',
@@ -137,7 +137,7 @@ function drealty_listings_get_types($type_name = NULL) {
 }
 
 function drealty_connection_entity_access($op, $type = NULL, $account = NULL) {
-  return TRUE;
+  return user_access('administer drealty connections');
 }
 
 function drealty_menu() {
@@ -157,7 +157,7 @@ function drealty_menu() {
     'access arguments' => array('access drealty admin'),
     'type' => MENU_CALLBACK
   );
-  
+
   $items['drealty_listing/%drealty_listing/rets_refresh'] = array(
     'title' => t('Update RETS Data'),
     'page callback' => 'drupal_get_form',
@@ -166,7 +166,7 @@ function drealty_menu() {
     'type' => MENU_CALLBACK | MENU_LOCAL_TASK,
   );
 
-  
+
   return $items;
 }
 
@@ -194,28 +194,26 @@ function drealty_menu_local_tasks_alter(&$data, $router_item, $root_path) {
  * @return type 
  */
 function drealty_update_single_listing($form, &$form_state, $listing = NULL) {
-  
+
   $form_state['listing'] = $listing;
 
   $form['#submit'][] = 'drealty_update_single_listing_submit';
 
   $question = t('Are you sure you want to update the listing %name?', array('%name' => $listing->rets_id));
   $description = '<p>' . t('This action will force the refresh of the RETS data for this listing..') . '</p>';
-  
+
   $form = confirm_form($form, $question, $listing->path(), $description, t('Update'), t('Cancel'), 'confirm');
 
   return $form;
-  
 }
-
 
 function drealty_update_single_listing_submit($form, &$form_state) {
 
   $listing = $form_state['listing'];
 
   $daemon = new drealtyDaemon();
-  if($daemon->update_single_listing($listing)) {  
-  drupal_set_message(t('Listing id %id was successfully updated from the RETS server.', array('%id' => $listing->rets_id)), 'status');
+  if ($daemon->update_single_listing($listing)) {
+    drupal_set_message(t('Listing id %id was successfully updated from the RETS server.', array('%id' => $listing->rets_id)), 'status');
   } else {
     drupal_set_message(t('Listing id %id FAILED to update from the RETS server.', array('%id' => $listing->rets_id)), 'error');
   }
@@ -331,10 +329,21 @@ function drealty_permission() {
       'description' => t('View, edit and delete all content regardless of permission restrictions.'),
       'restrict access' => TRUE,
     ),
+    'administer drealty_listing types' => array(
+      'title' => t('Administer Drealty Listing Types'),
+      'description' => t('View, edit, and delete Drealty Listing Types.')
+    ),
+    'administer drealty connections' => array(
+      'title' => t('Administer Drealty Connections'),
+      'description' => t('View, edit, and delete Drealty Connections.')
+    ),
+        'administer drealty_listings' => array(
+      'title' => t('Administer Drealty Listings'),
+      'description' => t('Administer Drealty Listings Configuraiton Settings.')
+    ),
   );
 
-  $types = array('drealty listing', 'drealty agent',
-    'drealty office', 'drealty openhouse');
+  $types = array('drealty listing');
 
   foreach ($types as $type) {
     $permissions["view $type"] = array('title' => t('%type:View content', array('%type' => $type)));

@@ -126,6 +126,7 @@ class DrealtyListingController extends EntityAPIController {
 
   public function save($entity, DatabaseTransaction $transaction = NULL) {
     parent::save($entity, $transaction);
+    drupal_static_reset('mongodb_field_storage_field_storage_write');
   }
 
 }
@@ -149,7 +150,7 @@ class DrealtyListingType extends Entity {
   public function isLocked() {
     return isset($this->status) && empty($this->is_new) && (($this->status & ENTITY_IN_CODE) || ($this->status & ENTITY_FIXED));
   }
-  
+
   public function delete() {
     parent::delete();
     field_attach_delete_bundle('drealty_listing', $this->type);
@@ -200,7 +201,6 @@ class DrealtyListingTypeController extends EntityAPIControllerExportable {
 
     return entity_var_json_export($vars, $prefix);
   }
-  
 
   public function save($entity, DatabaseTransaction $transaction = NULL) {
     parent::save($entity, $transaction);
@@ -213,15 +213,13 @@ class DrealtyListingTypeController extends EntityAPIControllerExportable {
           drupal_set_message(t('Skipped creating field %field. A field with this name already exists.', array('%field' => $field['field_name'])), 'warning');
         }
       }
-      
-      if(isset($entity->field_instances)) {
-        foreach($entity->field_instances as $instance) {
+
+      if (isset($entity->field_instances)) {
+        foreach ($entity->field_instances as $instance) {
           $instance['bundle'] = $entity->type;
           field_create_instance($instance);
         }
       }
-      
-      
     }
   }
 

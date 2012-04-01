@@ -16,9 +16,17 @@ class drealtyDaemon {
    */
   protected $dm;
 
+  /**
+   *
+   * @var DrupalQueueInterface
+   */
+  protected $queue;
+
   public function __construct() {
     $this->dc = new drealtyConnection();
     $this->dm = new drealtyMetaData();
+    $this->queue = DrupalQueue::get('drealty');
+    $this->queue->deleteQueue();
   }
 
   public function run() {
@@ -86,45 +94,32 @@ class drealtyDaemon {
 
     switch ($class->query_type) {
       case 1:
-        drush_log("Key Field: $key_field");
         $chunks = $this->fetch_listings_offset_not_supported_price($connection, $resource, $class, $key_field);
         break;
       case 2:
         $query = array();
         drush_log(dt("using @var", array("@var" => $class->override_status_query_text)));
         $query[] = $class->override_status_query_text;
-        $chunks = $this->fetch_listings_offset_supported_default($connection, $resource, $class, $query);
+        $this->fetch_listings_offset_supported_default($connection, $resource, $class, $query);
         break;
       case 3:
-        $chunks = $this->fetch_listings_offset_not_supported_key($connection, $resource, $class, $key_field);
+        $this->fetch_listings_offset_not_supported_key($connection, $resource, $class, $key_field);
         break;
       case 0:
       default:
 //build the query
         $statuses = $class->status_values;
         $status_q = "|$statuses";
-
-        switch ($entity_type) {
-          case 'drealty_listing':
-          case 'drealty_openhouse':
-            $query_field = 'rets_status';
-            break;
-          case 'drealty_agent':
-          case 'drealty_office':
-            $query_field = 'type';
-            break;
-          default:
-            $query_field = 'rets_status';
-        }
+        $query_field = 'rets_status';
         $query = array();
         $query[] = "{$fieldmappings[$query_field]->systemname}={$status_q}";
-        $chunks = $this->fetch_listings_offset_supported_default($connection, $resource, $class, $query);
+        $this->fetch_listings_offset_supported_default($connection, $resource, $class, $query);
     }
 
 // at this point we have data waiting to be processed. Need to process the
 // data which will insert/update/delete the listing data as nodes
     drush_log(dt("process_results( connection: @connection_name, resource: @resource, class: @class, chunks: @chunks)", array("@connection_name" => $connection->name, "@resource" => $resource->systemname, "@class" => $class->systemname, "@chunks" => $chunks)));
-    $this->process_results($connection, $resource, $class, $entity_type, $chunks);
+    $this->process_results($connection, $resource, $class, $entity_type);
     if ($entity_type == 'drealty_listing' && $class->process_images) {
       $this->process_images($connection->conid, $resource, $class);
     }
@@ -189,7 +184,9 @@ class drealtyDaemon {
         if ($rets->NumRows($search) > 0) {
           while ($listing = $rets->FetchRow($search)) {
             $listing['hash'] = $this->calculate_hash($listing, $connection->conid, $class->cid);
-            $listings[] = $listing;
+
+            $this->queue->createItem($listing);
+
             $count++;
           }
 
@@ -200,14 +197,13 @@ class drealtyDaemon {
           $id = $last[$key_field];
           $id = (int) $id + 1;
 
-          cache_set("drealty_chunk_{$resource->systemname}_{$class->systemname}_" . $chunks++, $listings);
           unset($listings);
         } else {
           break;
         }
 
         $rets->FreeResult($search);
-        drush_log("[connection: {$connection->name}][resource: {$resource->systemname}][class: {$class->systemname}][downloaded: $count][query: $query][chunks: $chunks]");
+        drush_log("[connection: {$connection->name}][resource: {$resource->systemname}][class: {$class->systemname}][downloaded: $count][query: $query]");
 
         $query = "({$key_field}={$id}+)";
       }
@@ -217,8 +213,6 @@ class drealtyDaemon {
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
       drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
     }
-    unset($listings);
-    return $chunks;
   }
 
   /**
@@ -260,7 +254,6 @@ class drealtyDaemon {
 
       $offset_query = "$query,({$class->offset_field}={$offset_start}-{$offset_end})";
       $count = 0;
-      $listings = array();
 
       $options['Select'] = $this->get_fields($connection->conid, $class->cid);
 
@@ -275,15 +268,15 @@ class drealtyDaemon {
         if ($rets->NumRows($search) > 0) {
           while ($listing = $rets->FetchRow($search)) {
             $listing['hash'] = $this->calculate_hash($listing, $connection->conid, $class->cid);
-            $listings[] = $listing;
+
+            $this->queue->createItem($listing);
+
             $count++;
           }
-          cache_set("drealty_chunk_{$resource->systemname}_{$class->systemname}_" . $chunks++, $listings);
-          unset($listings);
         }
 
         $rets->FreeResult($search);
-        drush_log("Resource: {$resource->systemname} Class: {$class->systemname} Listings Downloaded: $count Query: $offset_query  Chunks: $chunks");
+        drush_log("Resource: {$resource->systemname} Class: {$class->systemname} Listings Downloaded: $count Query: $offset_query");
 
         if ($offset_end < $offset_max) {
           $offset_start = $offset_end + 1;
@@ -300,7 +293,6 @@ class drealtyDaemon {
       drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
     }
     unset($listings);
-    return $chunks;
   }
 
   /**
@@ -356,13 +348,12 @@ class drealtyDaemon {
         // do the actual search
         $search = $rets->SearchQuery($resource->systemname, $class->systemname, "($q)", $optional_params);
 
-        $items = array();
-
         // loop through the search results
         while ($item = $rets->FetchRow($search)) {
           // calculate the hash
           $listing['hash'] = $this->calculate_hash($listing, $connection->conid, $class->cid);
-          $items[] = $item;
+
+          $this->queue->createItem($listing);
         }
 
 
@@ -370,8 +361,8 @@ class drealtyDaemon {
           drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
         }
 
-        drush_log(dt("caching @count items for resource: @resource | class: @class", array("@count" => count($items), "@resource" => $resource->systemname, "@class" => $class->systemname)));
-        cache_set("drealty_chunk_{$resource->systemname}_{$class->systemname}_" . $chunks++, $items);
+        drush_log(dt("Queuing @count items for resource: @resource | class: @class", array("@count" => count($items), "@resource" => $resource->systemname, "@class" => $class->systemname)));
+
 
         $offset += count($items);
 
@@ -391,7 +382,6 @@ class drealtyDaemon {
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
       drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
     }
-    return $chunks;
   }
 
   public function update_single_listing(DrealtyListing $listing) {
@@ -495,10 +485,8 @@ class drealtyDaemon {
    * @param string $entity_type
    * @param int $chunk_count 
    */
-  protected function process_results(drealtyConnectionEntity $connection, $resource, $class, $entity_type, $chunk_count) {
+  protected function process_results(drealtyConnectionEntity $connection, $resource, $class, $entity_type) {
 
-    drush_log('processing results');
-    $chunk_idx = 0;
     $in_rets = array();
 
     $key_field = 'rets_key';
@@ -517,104 +505,99 @@ class drealtyDaemon {
     $id = $field_mappings[$key_field]->systemname;
 
     $item_context = array('field_mappings' => $field_mappings, 'connection' => $connection, 'resource' => $resource, 'key_field' => $key_field);
+    $total = $this->queue->numberOfItems();
+    $count = 1;
+    while ($queue_item = $this->queue->claimItem()) {
 
-    for ($i = 0; $i < $chunk_count; $chunk_idx++, $i++) {
-      $chunk_name = "drealty_chunk_{$resource->systemname}_{$class->systemname}_{$chunk_idx}";
-      $rets_results = cache_get($chunk_name);
-
-      $rets_results_count = count($rets_results->data);
-
-      for ($j = 0; $j < $rets_results_count; $j++) {
+      $rets_item = $queue_item->data;
 
 
-        drush_log(dt("Item @idx of @total", array("@idx" => $j + 1, "@total" => $rets_results_count)));
-        $rets_item = $rets_results->data[$j];
-        $in_rets[$rets_item[$id]] = $rets_item[$id];
+      $in_rets[$rets_item[$id]] = $rets_item[$id];
 
-        $force = FALSE;
-        if (!isset($existing_items[$rets_item[$id]]) || $existing_items[$rets_item[$id]]->hash != $rets_item['hash'] || $force) {
+      $force = FALSE;
+      if (!isset($existing_items[$rets_item[$id]]) || $existing_items[$rets_item[$id]]->hash != $rets_item['hash'] || $force) {
 
-          $is_new = TRUE;
-          $item = new Entity(array('conid' => $connection->conid, 'type' => $class->bundle), $entity_type);
+        $is_new = TRUE;
+        $item = new Entity(array('conid' => $connection->conid, 'type' => $class->bundle), $entity_type);
 
-          // this listing either doesn't exist in the IDX or has changed. 
-          // determine if we need to update or create a new one.
-          if (isset($existing_items[$rets_item[$id]])) {
-            // this listing exists so we'll get a reference to it and set the values to what came to us in the RETS result
-            $item = reset(entity_load($entity_type, array($existing_items[$rets_item[$id]]->id)));
-            $is_new = FALSE;
+        // this listing either doesn't exist in the IDX or has changed. 
+        // determine if we need to update or create a new one.
+        if (isset($existing_items[$rets_item[$id]])) {
+          // this listing exists so we'll get a reference to it and set the values to what came to us in the RETS result
+          $item = reset(entity_load($entity_type, array($existing_items[$rets_item[$id]]->id)));
+          $is_new = FALSE;
+        } else {
+          $item->created = time();
+        }
+
+        $item->conid = $connection->conid;
+
+        $item->hash = $rets_item['hash'];
+        $item->changed = time();
+        $item->class = $class->cid;
+        $item->rets_imported = TRUE;
+
+        if ($entity_type == 'drealty_listing' && $class->process_images) {
+          if ($is_new) {
+            $item->process_images = TRUE;
+            $item->rets_photo_modification_timestamp = $rets_item[$class->photo_timestamp_field];
           } else {
-            $item->created = time();
-          }
-
-          $item->conid = $connection->conid;
-
-          $item->hash = $rets_item['hash'];
-          $item->changed = time();
-          $item->class = $class->cid;
-          $item->rets_imported = TRUE;
-
-          if ($entity_type == 'drealty_listing' && $class->process_images) {
-            if ($is_new) {
-              $item->process_images = TRUE;
-              $item->rets_photo_modification_timestamp = $rets_item[$class->photo_timestamp_field];
-            } else {
-              if (isset($item->rets_photo_modification_timestamp)) {
-                $last_time = strtotime($item->rets_photo_modification_timestamp);
-                $this_time = strtotime($rets_item[$class->photo_timestamp_field]);
-                if ($this_time > $last_time) {
-                  $item->process_images = TRUE;
-                } else {
-                  $item->process_images = FALSE;
-                }
+            if (isset($item->rets_photo_modification_timestamp)) {
+              $last_time = strtotime($item->rets_photo_modification_timestamp);
+              $this_time = strtotime($rets_item[$class->photo_timestamp_field]);
+              if ($this_time > $last_time) {
+                $item->process_images = TRUE;
               } else {
-                // hasn't been set but it's not new
-                $item->rets_photo_modification_timestamp = $rets_item[$class->photo_timestamp_field];
                 $item->process_images = FALSE;
               }
+            } else {
+              // hasn't been set but it's not new
+              $item->rets_photo_modification_timestamp = $rets_item[$class->photo_timestamp_field];
+              $item->process_images = FALSE;
             }
           }
+        }
 
-          $force_geocode = FALSE;
+        $force_geocode = FALSE;
 
-          if (!$is_new) {
-            $geofields = $this->dm->FetchFieldMappings($connection->conid, $resource, $class, 'geofield');
-            if (!empty($geofields)) {
-              foreach ($geofields as $geofield) {
-                // check to see if we already have already geocoded this address
-                if (!isset($item->{$geofield->field_name}[LANGUAGE_NONE][0]['lat']) && !isset($item->{$geofield->field_name}[LANGUAGE_NONE][0]['lon'])) {
-                  $force_geocode = TRUE;
-                }
+        if (!$is_new) {
+          $geofields = $this->dm->FetchFieldMappings($connection->conid, $resource, $class, 'geofield');
+          if (!empty($geofields)) {
+            foreach ($geofields as $geofield) {
+              // check to see if we already have already geocoded this address
+              if (!isset($item->{$geofield->field_name}[LANGUAGE_NONE][0]['lat']) && !isset($item->{$geofield->field_name}[LANGUAGE_NONE][0]['lon'])) {
+                $force_geocode = TRUE;
               }
             }
-          } else {
-            $force_geocode = TRUE;
           }
-
-
-          $this->set_field_data($item, $rets_item, $field_mappings, $entity_type, $class, $force_geocode);
-
-          $item_context['rets_item'] = $rets_item;
-
-          try {
-            drupal_alter('drealty_import_presave', $item, $item_context);
-            $item->save();
-            module_invoke_all('drealty_entity_save', array(&$item, $item_context));
-          } catch (Exception $e) {
-            drush_log($e->getMessage());
-          }
-          drush_log(dt('Saving item @name', array('@name' => $rets_item[$id])));
-          unset($item);
         } else {
-          // skipping this item
-          drush_log(dt("Skipping item @name", array("@name" => $rets_item[$id])));
+          $force_geocode = TRUE;
         }
-        drupal_get_messages();
-        drupal_static_reset();
+        
+        $this->set_field_data($item, $rets_item, $field_mappings, $entity_type, $class, $force_geocode);
+
+        $item_context['rets_item'] = $rets_item;
+
+        try {
+          drupal_alter('drealty_import_presave', $item, $item_context);
+          $item->save();
+          module_invoke_all('drealty_entity_save', array(&$item, $item_context));
+          $this->queue->deleteItem($queue_item);
+        } catch (Exception $e) {
+          drush_log($e->getMessage());
+          $this->queue->releaseItem($queue_item);
+        }
+        drush_log(dt('Saving item @name. [@count of @total]', array("@name" => $rets_item[$id], "@count" => $count, "@total" => $total)));
+        unset($item);
+      } else {
+        // skipping this item
+        drush_log(dt("Skipping item @name. [@count of @total]", array("@name" => $rets_item[$id], "@count" => $count, "@total" => $total)));
+        $this->queue->deleteItem($queue_item);        
       }
-      cache_clear_all($chunk_name, 'cache');
-    } // endfor $chunk_count
-    
+      $count++;
+      drupal_get_messages();
+      drupal_static_reset();
+    }
     //handle expired listings
     $this->handle_expired($in_rets, $connection->conid, $class);
   }

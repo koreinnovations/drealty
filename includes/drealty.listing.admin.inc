@@ -57,7 +57,7 @@ class DrealtyListingUIController extends EntityDefaultUIController {
 
     // Loading and editing model entities
     $items['drealty_listing/' . $wildcard . '/edit'] = array(
-      'title' => t('Edit Listing'),
+      'title' => t('Edit'),
       'page callback' => 'drealty_listing_form_wrapper',
       'page arguments' => array('edit', 1),
       'access callback' => 'drealty_access',
@@ -109,6 +109,15 @@ class DrealtyListingUIController extends EntityDefaultUIController {
       );
     }
 
+    $items['drealty_listing/' . $wildcard . '/rets_refresh'] = array(
+      'title' => t('Update RETS Data'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('drealty_update_single_listing', 1),
+      'access arguments' => array('access drealty admin'),
+      'type' => MENU_LOCAL_TASK,
+      'context' => MENU_CONTEXT_INLINE | MENU_CONTEXT_PAGE,
+      'weight' => 99,
+    );
 
     return $items;
   }
@@ -138,6 +147,8 @@ function drealty_listing_admin_overview($form, &$form_state, $arg) {
   $header = array(
     'id' => array('data' => t('Listing Id'), 'field' => 'id'),
     'mls_id' => array('data' => t('MLS #'), 'field' => 'rets_id'),
+    'type' => array('data' => t('Type'), 'field' => 'type'),
+    'updated' => array('data' => t('Changed'), 'field' => 'created'),
     'operations' => array('data' => t('Operations')),
   );
 
@@ -159,11 +170,13 @@ function drealty_listing_admin_overview($form, &$form_state, $arg) {
 
   foreach ($listings as $listing) {
 
-    $links = menu_contextual_links('drealty', 'admin/content/drealty_listings', array($listing->id));
+    $links = menu_contextual_links('drealty', 'drealty_listing', array($listing->id));
 
     $options[$listing->id] = array(
       'id' => $listing->id,
       'mls_id' => array('data' => array('#type' => 'link', '#title' => $listing->rets_id, '#href' => 'drealty_listing/' . $listing->id)),
+      'type' => $listing->type,
+      'updated' => format_date($listing->changed, 'short'),
       'operations' => theme('links', array('links' => $links, 'attributes' => array('class' => array('links', 'inline', 'operations')))),
     );
   }

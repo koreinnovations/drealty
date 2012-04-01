@@ -158,15 +158,6 @@ function drealty_menu() {
     'type' => MENU_CALLBACK
   );
 
-  $items['drealty_listing/%drealty_listing/rets_refresh'] = array(
-    'title' => t('Update RETS Data'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('drealty_update_single_listing', 1),
-    'access arguments' => array('access drealty admin'),
-    'type' => MENU_CALLBACK | MENU_LOCAL_TASK,
-  );
-
-
   return $items;
 }
 

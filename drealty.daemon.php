@@ -609,6 +609,8 @@ class drealtyDaemon {
           // skipping this item
           drush_log(dt("Skipping item @name", array("@name" => $rets_item[$id])));
         }
+        drupal_get_messages();
+        drupal_static_reset();
       }
       cache_clear_all($chunk_name, 'cache');
     } // endfor $chunk_count

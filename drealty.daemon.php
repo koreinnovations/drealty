@@ -573,7 +573,7 @@ class drealtyDaemon {
         } else {
           $force_geocode = TRUE;
         }
-        
+
         $this->set_field_data($item, $rets_item, $field_mappings, $entity_type, $class, $force_geocode);
 
         $item_context['rets_item'] = $rets_item;
@@ -592,7 +592,7 @@ class drealtyDaemon {
       } else {
         // skipping this item
         drush_log(dt("Skipping item @name. [@count of @total]", array("@name" => $rets_item[$id], "@count" => $count, "@total" => $total)));
-        $this->queue->deleteItem($queue_item);        
+        $this->queue->deleteItem($queue_item);
       }
       $count++;
       drupal_get_messages();
@@ -783,14 +783,15 @@ class drealtyDaemon {
             $photos = array();
 
             foreach ($results as $item) {
+              if ($item['Success'] == TRUE) {
+                $total++;
+                $length += strlen($item['Data']);
 
-              $total++;
-              $length += strlen($item['Data']);
-
-              if (!isset($photos[$item['Content-ID']])) {
-                $photos[$item['Content-ID']] = array();
+                if (!isset($photos[$item['Content-ID']])) {
+                  $photos[$item['Content-ID']] = array();
+                }
+                $photos[$item['Content-ID']][$item['Object-ID']] = $item;
               }
-              $photos[$item['Content-ID']][$item['Object-ID']] = $item;
             }
 
             ksort($photos, SORT_NUMERIC);
@@ -813,11 +814,12 @@ class drealtyDaemon {
 
             // delete out any existing images
             if (isset($listing->{$img_field}[LANGUAGE_NONE])) {
-              foreach ($listing->{$img_field}[LANGUAGE_NONE] as $img) {
-                $file = (object) $img;
-                file_delete($file, TRUE);
+              foreach ( $listing->{$img_field}[LANGUAGE_NONE] as $key => $file ) {              
+                $image = file_load($item['fid']);                
+                unset($listing->{$img_field}[LANGUAGE_NONE][$key]);
+                file_delete($image);              
               }
-              unset($listing->{$img_field}[LANGUAGE_NONE]);
+              
             }
 
             foreach ($set as $key => $photo) {
@@ -828,9 +830,8 @@ class drealtyDaemon {
               $filepath = "{$img_dir}/{$filename}";
               //ensure that there is enough data to actually make a file.
               if (strlen($photo['Data']) > 173) {
-                $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
-                //make sure we actually save the image
-                if ($file) {
+                if ($file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE)) {
+                  //make sure we actually save the image
                   $file->alt = '';
                   $file->title = '';
                   $listing->{$img_field}[LANGUAGE_NONE][] = (array) $file;

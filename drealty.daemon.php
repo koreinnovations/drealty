@@ -305,6 +305,7 @@ class drealtyDaemon {
    */
   function fetch_listings_offset_supported_default(drealtyConnectionEntity $connection, $resource, $class, $query) {
     $offset = 0;
+    $count = 0;
     $rets = $this->dc->rets;
     $limit = $class->chunk_size;
     if ($limit == 0) {
@@ -354,6 +355,7 @@ class drealtyDaemon {
           $listing['hash'] = $this->calculate_hash($listing, $connection->conid, $class->cid);
 
           $this->queue->createItem($listing);
+          $count++;
         }
 
 
@@ -361,10 +363,10 @@ class drealtyDaemon {
           drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
         }
 
-        drush_log(dt("Queuing @count items for resource: @resource | class: @class", array("@count" => count($items), "@resource" => $resource->systemname, "@class" => $class->systemname)));
+        drush_log(dt("Queuing @count items for resource: @resource | class: @class", array("@count" => $count, "@resource" => $resource->systemname, "@class" => $class->systemname)));
 
 
-        $offset += count($items);
+        $offset += $count;
 
         if ($limit == 'NONE') {
           $end = FALSE;

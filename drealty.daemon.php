@@ -852,6 +852,8 @@ class drealtyDaemon {
             $listing->save();
             drush_log(dt("Saved @count images for @listing", array("@count" => count($set), "@listing" => $list_id)), "success");
             unset($photos[$list_id]);
+            drupal_get_messages();
+            drupal_static_reset();
           }
           unset($photos, $listings);
         }

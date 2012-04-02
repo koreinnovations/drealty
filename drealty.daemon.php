@@ -349,7 +349,7 @@ class drealtyDaemon {
         $search = $rets->SearchQuery($resource->systemname, $class->systemname, "($q)", $optional_params);
 
         // loop through the search results
-        while ($item = $rets->FetchRow($search)) {
+        while ($listing = $rets->FetchRow($search)) {
           // calculate the hash
           $listing['hash'] = $this->calculate_hash($listing, $connection->conid, $class->cid);
 
@@ -518,7 +518,7 @@ class drealtyDaemon {
       if (!isset($existing_items[$rets_item[$id]]) || $existing_items[$rets_item[$id]]->hash != $rets_item['hash'] || $force) {
 
         $is_new = TRUE;
-        $item = new Entity(array('conid' => $connection->conid, 'type' => $class->bundle), $entity_type);
+        $item = entity_create($entity_type, array('conid' => $connection->conid, 'type' => $class->bundle));
 
         // this listing either doesn't exist in the IDX or has changed. 
         // determine if we need to update or create a new one.

@@ -868,7 +868,8 @@ class drealtyDaemon {
               }
               reset($address_fields);
             }
-            $listing->save();            
+            $listing->save();
+            drush_log(dt("Listing @id had no images. Marking as processed.", array("@id" => $list_id)), 'warning');
           }
           unset($photos, $listings);
         }

@@ -870,6 +870,8 @@ class drealtyDaemon {
             }
             $listing->save();
             drush_log(dt("Listing @id had no images. Marking as processed.", array("@id" => $listingid)), 'warning');
+            drupal_get_messages();
+            drupal_static_reset();
           }
           unset($photos, $listings);
         }

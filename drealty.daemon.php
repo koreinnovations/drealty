@@ -817,13 +817,11 @@ class drealtyDaemon {
             // delete out any existing images
             if (isset($listing->{$img_field}[LANGUAGE_NONE])) {
               foreach ($listing->{$img_field}[LANGUAGE_NONE] as $key => $file) {
-                
                 $image = file_load($file['fid']);
                 unset($listing->{$img_field}[LANGUAGE_NONE][$key]);
                 if (!empty($image)) {
                   file_delete($image);
                 }
-                
               }
             }
 
@@ -856,9 +854,21 @@ class drealtyDaemon {
 
             $listing->save();
             drush_log(dt("Saved @count images for @listing", array("@count" => count($set), "@listing" => $list_id)), "success");
-            unset($photos[$list_id]);
+            unset($photos[$list_id], $listings[$list_id]);
             drupal_get_messages();
             drupal_static_reset();
+          }
+          // apparently some mls feeds have listings with 0 images, set them as processed
+          foreach ($listings as $listing) {
+            $listing->process_images = 0;
+            if (!empty($address_fields)) {
+              // set each address field's changed = FALSE
+              foreach ($address_fields as $address_field) {
+                $listing->{$address_field->field_name}[LANGUAGE_NONE][0]['changed'] = FALSE;
+              }
+              reset($address_fields);
+            }
+            $listing->save();            
           }
           unset($photos, $listings);
         }

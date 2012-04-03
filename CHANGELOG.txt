@@ -1,10 +1,16 @@
 
-7.x-3.0-alpha2
+7.x-3.0-beta2 - 04-03-2012
 
-Issue #1457300 by stockliasteroid - fixed an issue with the import offset tracking method, was skipping 1 listing every iteration.
-Issue #1461768 by stockliasteroid - Added an exclude this field mapping from the hash calculation so that you can mark various fields as not 'hashable' .
-Changed the import process only to return the fields that have been mapped.
++ Issue [#1512700] by Kevin Quillen. Squash Pathauto Entity / Alias bug for good. Using new Entity() vs. entity_create() was causing Pathauot Entity to create duplicate alias entries.
++ Issue [#1512618] by Kevin Quillen. daemon import errors.  The default query function had a bad variable name, $item vs. $listing, which was not allowing listings to be imported correctly.
++ Added a $count variable to the import offset counter.
++ Improved the process_images() function. Added better error handling, logging, and some performance / memory management enhancements.
++ Issue [#1512576] by mgriebe. Test DMQL query not working. This is now working.
++ Issue [#1512780] by Kevin Quillen. Undefined offset error in drealty.daemon.php. This was caused by a logging function that was calculating a 'pretty' format for the number of bytes that were downloaded for image data. The function was removed.
++ Fixed issue where listings that did not have images in the MLS were not being properly marked as processed by the process_images() function.
++ Added new drush command: "rets-process-images" that will process any listings that are marked to process images, this is a utility function and probably won't be used by many.
 
 
-7.x-3.0-alpha1
-initial 3.x release
+7.x-3.0-beta1
+
++ Initial Beta Release

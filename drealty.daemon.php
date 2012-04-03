@@ -685,12 +685,6 @@ class drealtyDaemon {
     return md5($tmp);
   }
 
-  public function formatBytes($size, $precision = 2) {
-    $base = log($size) / log(1024);
-    $suffixes = array('', 'k', 'M', 'G', 'T');
-    return round(pow(1024, $base - floor($base)), $precision) . $suffixes[floor($base)];
-  }
-
   /**
    *
    * @global type $user
@@ -802,7 +796,7 @@ class drealtyDaemon {
             foreach ($photos as &$set) {
               ksort($set, SORT_NUMERIC);
             }
-            drush_log(dt("Downloaded a total of @total images for @count Listings. [@size of data].", array("@total" => $total, "@count" => count($ids), "@size" => $this->formatBytes($length, 1))));
+            drush_log(dt("Downloaded a total of @total images for @count Listings.", array("@total" => $total, "@count" => count($ids))));
           }
 
           $this->dc->disconnect();

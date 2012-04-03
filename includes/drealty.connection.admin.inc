@@ -566,6 +566,7 @@ function drealty_resource_configure_form($form, &$form_state, drealtyConnectionE
 
   $dm = new drealtyMetaData();
   $resource = $dm->FetchResource($mappings[$entity_type]->rid);
+  $form_state['resource'] = $resource;
 
   $field_mappings = $connection->FetchFieldMappings($resource, $class);
   $fields = $connection->FetchFields($resource, $class);
@@ -1023,18 +1024,18 @@ function drealty_test_manual_query($form, &$form_state) {
       'Format' => 'COMPACT-DECODED',
     );
 
-    $search = $dc->get_phrets()->SearchQuery($resource, $class->systemname, $query);
+    $search = $dc->rets->SearchQuery($resource->systemname, $class->systemname, $query);
 
-    if ($dc->get_phrets()->Error()) {
-      $error = $dc->get_phrets()->Error();
+    if ($dc->rets->Error()) {
+      $error = $dc->rets->Error();
       drupal_set_message(t("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text'])), 'error');
     } else {
-      $num_rows_returned = $dc->get_phrets()->NumRows($search);
-      $total_records = $dc->get_phrets()->TotalRecordsFound($search);
+      $num_rows_returned = $dc->rets->NumRows($search);
+      $total_records = $dc->rets->TotalRecordsFound($search);
       drupal_set_message("Success. RETS server returned $num_rows_returned of $total_records results.");
     }
 
-    $dc->get_phrets()->FreeResult($search);
+    $dc->rets->FreeResult($search);
 
     $dc->disconnect();
   }

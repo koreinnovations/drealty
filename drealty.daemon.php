@@ -786,13 +786,15 @@ class drealtyDaemon {
 
             foreach ($results as $item) {
               if ($item['Success'] == TRUE) {
-                $total++;
-                $length += strlen($item['Data']);
+                if (strlen($item['data']) > 173) {
+                  $total++;
+                  $length += strlen($item['Data']);
 
-                if (!isset($photos[$item['Content-ID']])) {
-                  $photos[$item['Content-ID']] = array();
+                  if (!isset($photos[$item['Content-ID']])) {
+                    $photos[$item['Content-ID']] = array();
+                  }
+                  $photos[$item['Content-ID']][$item['Object-ID']] = $item;
                 }
-                $photos[$item['Content-ID']][$item['Object-ID']] = $item;
               }
             }
 
@@ -816,12 +818,15 @@ class drealtyDaemon {
 
             // delete out any existing images
             if (isset($listing->{$img_field}[LANGUAGE_NONE])) {
-              foreach ( $listing->{$img_field}[LANGUAGE_NONE] as $key => $file ) {              
-                $image = file_load($item['fid']);                
+              foreach ($listing->{$img_field}[LANGUAGE_NONE] as $key => $file) {
+                
+                $image = file_load($item['fid']);
                 unset($listing->{$img_field}[LANGUAGE_NONE][$key]);
-                file_delete($image);              
+                if (!empty($image)) {
+                  file_delete($image);
+                }
+                
               }
-              
             }
 
             foreach ($set as $key => $photo) {

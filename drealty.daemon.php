@@ -780,7 +780,7 @@ class drealtyDaemon {
 
             foreach ($results as $item) {
               if ($item['Success'] == TRUE) {
-                if (strlen($item['data']) > 173) {
+                if (strlen($item['Data']) > 173) {
                   $total++;
                   $length += strlen($item['Data']);
 

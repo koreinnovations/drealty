@@ -769,11 +769,11 @@ class drealtyDaemon {
 
           if ($rets->Error()) {
             $error = $rets->Error();
-            drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
+            drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text'])), 'error');
             return;
           }
 
-          if ($results) {
+          if (!empty($results)) {
             $length = 0;
             $total = 0;
             $photos = array();
@@ -788,6 +788,8 @@ class drealtyDaemon {
                     $photos[$item['Content-ID']] = array();
                   }
                   $photos[$item['Content-ID']][$item['Object-ID']] = $item;
+                } else {
+                  drush_log(dt("Images failed to download: @code - @text", array('@code' => $item['ReplyCode'], '@text' => $item['ReplyText'])), 'warning');
                 }
               }
             }
@@ -797,6 +799,8 @@ class drealtyDaemon {
               ksort($set, SORT_NUMERIC);
             }
             drush_log(dt("Downloaded a total of @total images for @count Listings.", array("@total" => $total, "@count" => count($ids))));
+          } else {
+            drush_log(dt("GetObject for @resource - @class returned an empty result set.", array('@resource' => $resource->systemname, '@class' => $class->systemname)), 'warning');
           }
 
           $this->dc->disconnect();

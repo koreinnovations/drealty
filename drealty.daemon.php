@@ -818,7 +818,7 @@ class drealtyDaemon {
             if (isset($listing->{$img_field}[LANGUAGE_NONE])) {
               foreach ($listing->{$img_field}[LANGUAGE_NONE] as $key => $file) {
                 
-                $image = file_load($item['fid']);
+                $image = file_load($file['fid']);
                 unset($listing->{$img_field}[LANGUAGE_NONE][$key]);
                 if (!empty($image)) {
                   file_delete($image);

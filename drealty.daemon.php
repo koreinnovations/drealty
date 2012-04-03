@@ -859,7 +859,7 @@ class drealtyDaemon {
             drupal_static_reset();
           }
           // apparently some mls feeds have listings with 0 images, set them as processed
-          foreach ($listings as $listing) {
+          foreach ($listings as $listingid => $listing) {
             $listing->process_images = 0;
             if (!empty($address_fields)) {
               // set each address field's changed = FALSE
@@ -869,7 +869,7 @@ class drealtyDaemon {
               reset($address_fields);
             }
             $listing->save();
-            drush_log(dt("Listing @id had no images. Marking as processed.", array("@id" => $list_id)), 'warning');
+            drush_log(dt("Listing @id had no images. Marking as processed.", array("@id" => $listingid)), 'warning');
           }
           unset($photos, $listings);
         }

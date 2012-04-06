@@ -214,8 +214,8 @@ function drealty_schema() {
       'changed' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => 'Last date the listing was changed/updated in the system'),
       'process_images' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'description' => 'Whether the images need to be processed'),
       'rets_imported' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'tiny', 'not null' => FALSE, 'default' => 1, 'description' => 'Is this a user submitted listing or mls imported'),
-      'rets_key' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => 'A unique identifier for this record from the source system. Typically this is the MLS #, however systems like Interealty use a sysid field. Select the apporpriate field.'),
-      'rets_id' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => 'The unique MLS # used to look up an individual listing.'),
+      'rets_key' => array('type' => 'varchar', 'length' => 64, 'not null' => FALSE, 'default' => NULL, 'description' => 'A unique identifier for this record from the source system. Typically this is the MLS #, however systems like Interealty use a sysid field. Select the apporpriate field.'),
+      'rets_id' => array('type' => 'varchar', 'length' => 64, 'not null' => FALSE, 'default' => NULL, 'description' => 'The unique MLS # used to look up an individual listing.'),
       'rets_status' => array('type' => 'varchar', 'length' => 64, 'not null' => FALSE, 'default' => NULL, 'description' => 'RETS status field. This status field is used to build the default query.'),
       'rets_photo_modification_timestamp' => array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => 'RETS field that indicates wether image data has been modified.'),
       'active' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 1, 'description' => 'Wether a listing is active or not. Active listings are listings that appear in the RETS Feed. Inactive Listings have since been removed from the feeed.')
@@ -307,4 +307,25 @@ function drealty_update_7300(&$sandbox) {
 function drealty_update_7301(&$sandbox) {
   db_add_field('drealty_listing', 'active', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 1));
   db_add_field('drealty_classes', 'expired_handler', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0));
+}
+
+/**
+ * Adjust length of 'rets_key' field to hold more data.
+ * 
+ * See: http://drupal.org/node/1514350
+ */
+
+function drealty_update_7302(&$sandbox) {
+  db_change_field('drealty_listing', 'rets_id', 'rets_id', array(
+    'type' => 'varchar',
+    'length' => 64,
+    'not null' => FALSE,
+    'description' => 'The unique MLS # used to look up an individual listing.',
+  ));
+  db_change_field('drealty_listing', 'rets_key', 'rets_key', array(
+    'type' => 'varchar',
+    'length' => 64,
+    'not null' => FALSE,
+    'description' => 'A unique identifier for this record from the source system. Typically this is the MLS #, however systems like Interealty use a sysid field. Select the apporpriate field.',
+  ));
 }

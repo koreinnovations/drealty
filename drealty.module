@@ -602,9 +602,14 @@ function drealty_form_field_ui_field_overview_form_alter(&$form, &$form_state, $
 function drealty_field_delete_instance($field) {
   $entity_types = array('drealty_listing', 'drealty_agent', 'drealty_openhouse', 'drealty_office');
   if (in_array($field['entity_type'], $entity_types)) {
-    db_delete("drealty_field_mappings")
-      ->condition("field_name", $field['field_name'])
-      ->execute();
+    foreach ($field['drealty']['mappings'] as $mapping) {
+      db_delete("drealty_field_mappings")
+        ->condition("field_name", $field['field_name'])
+        ->condition('conid', $mapping['conid'])
+        ->condition('rid', $mapping['rid'])
+        ->condition('cid', $mapping['class_id'])
+        ->execute();
+    }
   }
 }
 

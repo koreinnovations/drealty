@@ -933,7 +933,6 @@ function drealty_resource_configure_form_submit($form, &$form_state) {
   $entity_type = $form_state['entity_type'];
   $class = $form_state['class'];
 
-  $connection = new drealtyConnectionEntity();
   $connection = $form_state['connection'];
 
   $mappings = $connection->resourceMappings();
@@ -1009,7 +1008,6 @@ function drealty_test_manual_query($form, &$form_state) {
 
   drupal_set_message("Testing the DMQL Query.");
 
-  $connection = new drealtyConnectionEntity();
   $connection = $form_state['connection'];
   $resource = $form_state['resource'];
   $query = $form_state['values']['status_override_query'];
@@ -1039,6 +1037,9 @@ function drealty_test_manual_query($form, &$form_state) {
 
     $dc->disconnect();
   }
+
+  // Rebuild the form to preserve any changes to fields.
+  $form_state['rebuild'] = TRUE;
 
 //  $class->override_status_query_text = $query;
 //  drupal_write_record('drealty_classes', $class, 'cid');

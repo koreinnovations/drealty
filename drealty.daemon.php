@@ -98,8 +98,9 @@ class drealtyDaemon {
         break;
       case 2:
         $query = array();
-        drush_log(dt("using @var", array("@var" => $class->override_status_query_text)));
-        $query[] = $class->override_status_query_text;
+        $custom_query = token_replace($class->override_status_query_text, array('drealty-class' => $class));
+        drush_log(dt("Using query: @var", array("@var" => $custom_query)));
+        $query[] = $custom_query;
         $this->fetch_listings_offset_supported_default($connection, $resource, $class, $query);
         break;
       case 3:
@@ -232,7 +233,7 @@ class drealtyDaemon {
     $offset_start = 0;
     $offset_end = $offset_start + $offset_amount;
 
-    $query = $class->override_status_query_text;
+    $query = token_replace($class->override_status_query_text, array('drealty-class' => $class));
     $options = array(
       'count' => 1,
       'Format' => 'COMPACT-DECODED',
@@ -950,5 +951,4 @@ class drealtyDaemon {
       }
     }
   }
-
 }

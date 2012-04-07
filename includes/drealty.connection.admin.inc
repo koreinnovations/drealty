@@ -705,6 +705,7 @@ function drealty_resource_configure_form($form, &$form_state, drealtyConnectionE
     '#type' => 'textfield',
     '#title' => t('Query to use'),
     '#size' => 100,
+    '#maxlength' => 255,
     '#description' => t('Must be a valid DMQL query. (specs found <a href="http://retsdoc.onconfluence.com/display/rets172/7.7+Query+language" target="_blank">here.</a> A good tutorial can be found <a href="http://www.flexmls.com/support/rets/tutorials/dmql/" target="_blank">here.</a> You may also find that <a href="http://www.retsmd.com" target="_blank">www.retsmd.com</a> is a valuable resource in helping write the query.'),
     '#default_value' => $class->override_status_query_text,
     '#states' => array(
@@ -716,6 +717,7 @@ function drealty_resource_configure_form($form, &$form_state, drealtyConnectionE
     '#type' => 'textfield',
     '#title' => t('Query to use'),
     '#size' => 100,
+    '#maxlength' => 255,
     '#description' => t('Must be a valid DMQL query. (specs found <a href="http://retsdoc.onconfluence.com/display/rets172/7.7+Query+language" target="_blank">here.</a> A good tutorial can be found <a href="http://www.flexmls.com/support/rets/tutorials/dmql/" target="_blank">here.</a> You may also find that <a href="http://www.retsmd.com" target="_blank">www.retsmd.com</a> is a valuable resource in helping write the query.'),
     '#default_value' => $class->override_status_query_text,
     '#states' => array(
@@ -723,6 +725,37 @@ function drealty_resource_configure_form($form, &$form_state, drealtyConnectionE
       'required' => array(':input[name="query_type"]' => array('value' => '1')),
     ),
   );
+  if (module_exists('token')) {
+    $form['feed']['query_options']['token_help1'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Replacement patterns'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#description' => t('Available tokens for this class'),
+      '#states' => array(
+        'visible' => array(':input[name="query_type"]' => array('value' => '1')),
+      ),
+    );
+    $form['feed']['query_options']['token_help1']['help'] = array(
+      '#theme' => 'token_tree',
+      '#token_types' => array('drealty-class'),
+    );
+
+    $form['feed']['query_options']['token_help2'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Replacement patterns'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#description' => t('Available tokens for this class'),
+      '#states' => array(
+        'visible' => array(':input[name="query_type"]' => array('value' => '2')),
+      ),
+    );
+    $form['feed']['query_options']['token_help2']['help'] = array(
+      '#theme' => 'token_tree',
+      '#token_types' => array('drealty-class'),
+    );
+  }
   $form['feed']['query_options']['check_query_1'] = array(
     '#type' => 'submit',
     '#value' => t('Test DMQL Query'),
@@ -1022,6 +1055,7 @@ function drealty_test_manual_query($form, &$form_state) {
       'Format' => 'COMPACT-DECODED',
     );
 
+    $query = token_replace($query, array('drealty-class' => $class));
     $search = $dc->rets->SearchQuery($resource->systemname, $class->systemname, $query);
 
     if ($dc->rets->Error()) {

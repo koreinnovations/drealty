@@ -9,7 +9,7 @@ class DrealtyListingUIController extends EntityDefaultUIController {
 
     $items[$this->path] = array(
       'title' => 'Drealty Listings',
-      'description' => t('Manage Drealty Listing Content'),
+      'description' => 'Manage Drealty Listing Content',
       'page callback' => 'drealty_listing_admin',
       'access arguments' => array('access drealty admin'),
       'type' => MENU_LOCAL_TASK | MENU_NORMAL_ITEM,
@@ -57,7 +57,7 @@ class DrealtyListingUIController extends EntityDefaultUIController {
 
     // Loading and editing model entities
     $items['drealty_listing/' . $wildcard . '/edit'] = array(
-      'title' => t('Edit'),
+      'title' => 'Edit',
       'page callback' => 'drealty_listing_form_wrapper',
       'page arguments' => array('edit', 1),
       'access callback' => 'drealty_access',
@@ -110,7 +110,7 @@ class DrealtyListingUIController extends EntityDefaultUIController {
     }
 
     $items['drealty_listing/' . $wildcard . '/rets_refresh'] = array(
-      'title' => t('Update RETS Data'),
+      'title' => 'Update RETS Data',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('drealty_update_single_listing', 1),
       'access arguments' => array('access drealty admin'),

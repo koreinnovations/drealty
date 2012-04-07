@@ -44,12 +44,12 @@ function drealty_settings_form($form, &$form_state) {
         );
       } else {
         $form['general_settings']['connections'][$key]['office_id'] = array(
-            '#markup' => t("This connection does not appear to have any Office Resource Types imported. Please ensure you have it configured correctly !here and run the rets-import command from drush.", array("!here" => l('here', "admin/drealty/connections/manage/{$connection->name}/resource/drealty_office")))
+            '#markup' => t("This connection does not appear to have any Office Resource Types imported. Please ensure you have it configured correctly !here and run the rets-import command from drush.", array('!here' => l(t('here'), "admin/drealty/connections/manage/{$connection->name}/resource/drealty_office")))
         );
       }
     } else {
       $form['general_settings']['connections'][$key]['office_id'] = array(
-          '#markup' => t("This connection does not appear to have the Office Resource Type configured. Configure it !here.", array("!here" => l('here', "admin/drealty/connections/manage/{$connection->name}/resource/drealty_office")))
+          '#markup' => t("This connection does not appear to have the Office Resource Type configured. Configure it !here.", array('!here' => l(t('here'), "admin/drealty/connections/manage/{$connection->name}/resource/drealty_office")))
       );
     }
   }
@@ -111,7 +111,7 @@ function drealty_settings_form_submit($form, &$form_state) {
     variable_set("{$key}_url_pattern", $value['url_alias']);
   }
   cache_clear_all('drealty', 'cache', TRUE);
-  drupal_set_message("The configuration options have been saved.");
+  drupal_set_message(t('The configuration options have been saved.'));
 }
 
 function theme_drealty_general_setting_form(&$variables) {

@@ -35,7 +35,7 @@ function drealty_geocoder_google($address, $options = array()) {
   $result = drupal_http_request($url);
 
   if (isset($result->error)) {
-    drupal_set_message(t('Error geocoding') . ' - ' . $result->code . ' ' . $result->error, 'error');
+    drupal_set_message(t('Error geocoding - @code @error', array('@code' => $result->code, '@error' => $result->error)), 'error');
     return FALSE;
   }
 
@@ -103,7 +103,7 @@ function drealty_geocoder_google($address, $options = array()) {
     return $geometry;
   }
   else {
-    drupal_set_message(t('Error geocoding') . ' - ' . $data->status, 'error');
+    drupal_set_message(t('Error geocoding - @status', array('@status' => $data->status)), 'error');
     return FALSE;
   }
 }

@@ -9,7 +9,7 @@ class DrealtyLeadUIController extends EntityDefaultUIController {
 
     $items['admin/content/drealty_lead'] = array(
       'title' => 'Drealty Leads',
-      'description' => t('Manage Drealty Leads'),
+      'description' => 'Manage Drealty Leads',
       'page callback' => 'drealty_lead_admin',
       'access arguments' => array('access drealty lead admin'),
       'type' => MENU_LOCAL_TASK | MENU_NORMAL_ITEM,
@@ -49,7 +49,7 @@ class DrealtyLeadUIController extends EntityDefaultUIController {
 		
     // Loading and editing model entities
     $items[$this->path . '/' . $wildcard . '/edit'] = array(
-      'title' => t('Edit Lead'),
+      'title' => 'Edit Lead',
       'page callback' => 'drealty_lead_form_wrapper',
       'page arguments' => array('edit', 1),
       'access callback' => 'drealty_lead_access',

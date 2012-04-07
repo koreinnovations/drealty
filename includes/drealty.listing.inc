@@ -126,7 +126,6 @@ class DrealtyListingController extends EntityAPIController {
 
   public function save($entity, DatabaseTransaction $transaction = NULL) {
     parent::save($entity, $transaction);
-    drupal_static_reset('mongodb_field_storage_field_storage_write');
   }
 
 }

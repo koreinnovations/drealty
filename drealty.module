@@ -328,7 +328,7 @@ function drealty_permission() {
       'title' => t('Administer Drealty Connections'),
       'description' => t('View, edit, and delete Drealty Connections.')
     ),
-        'administer drealty_listings' => array(
+    'administer drealty_listings' => array(
       'title' => t('Administer Drealty Listings'),
       'description' => t('Administer Drealty Listings Configuraiton Settings.')
     ),
@@ -533,10 +533,8 @@ function drealty_listing_page_title(DrealtyListing $listing) {
  * @return type
  */
 function drealty_listing_view($listing, $view_mode = 'full', $langcode = NULL, $page = NULL) {
-  $controller = entity_get_controller('drealty_listing');
-  $content = $controller->view(array($listing->id => $listing), $view_mode, $langcode, $page);
 
-  return $content;
+  return entity_get_controller('drealty_listing')->view(array($listing), $view_mode, $langcode, $page);
 }
 
 function drealty_listing_create($values = array()) {

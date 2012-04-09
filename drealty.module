@@ -36,7 +36,7 @@ function drealty_entity_info() {
     'entity keys' => array(
       'id' => 'id',
       'bundle' => 'type',
-      'label' => 'rets_id',
+      'label' => 'label',
     ),
     'admin ui' => array(
       'path' => 'admin/content/drealty_listings',

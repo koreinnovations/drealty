@@ -539,6 +539,8 @@ class drealtyDaemon {
         $item->changed = time();
         $item->class = $class->cid;
         $item->rets_imported = TRUE;
+        // set the title to the rets_id initially, then it can be changed in hook_presave() if needed.
+        $item->label = $rets_item[$field_mappings['rets_id']->systemname];
 
         if ($entity_type == 'drealty_listing' && $class->process_images) {
           if ($is_new) {
@@ -590,11 +592,11 @@ class drealtyDaemon {
           drush_log($e->getMessage());
           $this->queue->releaseItem($queue_item);
         }
-        drush_log(dt('Saving item @name. [@count of @total]', array("@name" => $rets_item[$id], "@count" => $count, "@total" => $total)));
+        drush_log(dt('Saving item @name. [@count of @total]', array("@name" => $item->label, "@count" => $count, "@total" => $total)));
         unset($item);
       } else {
         // skipping this item
-        drush_log(dt("Skipping item @name. [@count of @total]", array("@name" => $rets_item[$id], "@count" => $count, "@total" => $total)));
+        drush_log(dt("Skipping item @name. [@count of @total]", array("@name" => $item->label, "@count" => $count, "@total" => $total)));
         $this->queue->deleteItem($queue_item);
       }
       $count++;

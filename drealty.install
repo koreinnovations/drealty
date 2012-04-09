@@ -206,6 +206,7 @@ function drealty_schema() {
     'description' => 'Table to hold listing data',
     'fields' => array(
       'id' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The internal Id'),
+      'label' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => '', 'description' => 'The title for this listing, defaults to rets id.'),
       'type' => array('type' => 'varchar', 'length' => 50, 'not null' => TRUE, 'default' => '', 'description' => "The {listing_type} of this listing."),
       'conid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The connection Id'),
       'hash' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => '', 'description' => 'MD5 Hash used to determine if a listing has changed.'),
@@ -328,4 +329,13 @@ function drealty_update_7302(&$sandbox) {
     'not null' => FALSE,
     'description' => 'A unique identifier for this record from the source system. Typically this is the MLS #, however systems like Interealty use a sysid field. Select the apporpriate field.',
   ));
+}
+
+
+/**
+ * Add title field to drealty_listings table.
+ * 
+ */
+function drealty_update_7303(&$sandbox) {
+  db_add_field('drealty_listing', 'label', array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => '', 'initial' => 'Title'));
 }

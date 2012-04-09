@@ -147,6 +147,7 @@ function drealty_listing_admin_overview($form, &$form_state, $arg) {
   $header = array(
     'id' => array('data' => t('Listing Id'), 'field' => 'id'),
     'mls_id' => array('data' => t('MLS #'), 'field' => 'rets_id'),
+    'title' => array('data' => t('Title'), 'field' => 'label'),
     'type' => array('data' => t('Type'), 'field' => 'type'),
     'updated' => array('data' => t('Changed'), 'field' => 'created'),
     'operations' => array('data' => t('Operations')),
@@ -154,7 +155,7 @@ function drealty_listing_admin_overview($form, &$form_state, $arg) {
 
   $query = db_select('drealty_listing', 'd')->extend('PagerDefault')->extend('TableSort');
   $result = $query
-    ->fields('d', array('id', 'rets_id'))
+    ->fields('d', array('id', 'rets_id', 'label'))
     ->limit(10)
     ->orderByHeader($header)
     ->execute();
@@ -175,7 +176,8 @@ function drealty_listing_admin_overview($form, &$form_state, $arg) {
     $options[$listing->id] = array(
       'id' => $listing->id,
       'mls_id' => array('data' => array('#type' => 'link', '#title' => $listing->rets_id, '#href' => 'drealty_listing/' . $listing->id)),
-      'type' => $listing->type,
+      'title' => $listing->label,
+      'type' => $listing->type,      
       'updated' => format_date($listing->changed, 'short'),
       'operations' => theme('links', array('links' => $links, 'attributes' => array('class' => array('links', 'inline', 'operations')))),
     );

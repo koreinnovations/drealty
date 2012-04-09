@@ -24,6 +24,10 @@ function drealty_entity_info() {
         'label' => 'List View',
         'custom settings' => TRUE,
       ),
+      'gallery' => array(
+        'label' => 'Gallery View',
+        'custom settings' => TRUE,
+      ),
     ),
     'bundles' => array(),
     'bundle keys' => array(

@@ -403,17 +403,6 @@ function drealty_views_api() {
   );
 }
 
-function drealty_preprocess_entity(&$variables) {
-  if ($variables['entity_type'] == 'drealty_listing') {
-    ctools_add_css('drealty.base', 'drealty');
-    switch ($variables['view_mode']) {
-      case 'search':
-        ctools_add_css('drealty.search', 'drealty');
-        break;
-      default:
-    }
-  }
-}
 
 function drealty_search_api_multitext_getter_callback($item, $options = array(), $name = NULL) {
   $value = explode(",", $item->{$name});

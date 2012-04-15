@@ -312,74 +312,55 @@ class drealtyDaemon {
     if ($limit == 0) {
       $limit = 'NONE';
     }
-    $chunks = 0;
+    $count = 0;
+
+    $this->dc->rets->SetParam("offset_support", TRUE);
 
     if ($this->dc->connect($connection->conid)) {
       // prepare the query
       $q = implode('),(', $query);
+  
+      $result = db_select('drealty_field_mappings', 'dfm')
+        ->fields('dfm')
+        ->condition('conid', $connection->conid)
+        ->condition('cid', $class->cid)
+        ->execute()
+        ->fetchAllAssoc('systemname');
 
-      $end = TRUE;
+      $fields = $this->get_fields($connection->conid, $class->cid);
 
-      // fetch the search results until we've queried for them all
-      while ($end) {
-        $end_p = $end ? "FALSE" : "TRUE";
-        drush_log("Resource: {$resource->systemname} Class: $class->systemname Limit: $limit Offset: $offset MaxRowsReached: $end_p Chunks: $chunks");
-
-        $result = db_select('drealty_field_mappings', 'dfm')
-          ->fields('dfm')
-          ->condition('conid', $connection->conid)
-          ->condition('cid', $class->cid)
-          ->execute()
-          ->fetchAllAssoc('systemname');
-
-        $fields = $this->get_fields($connection->conid, $class->cid);
-
-        if ($class->process_images) {
-          $fields .= ',' . $class->photo_timestamp_field;
-        }
-
-        $optional_params = array(
-          'Format' => 'COMPACT-DECODED',
-          'Limit' => "$limit",
-          'RestrictedIndicator' => 'xxxx',
-          'Count' => '1',
-          'Select' => $fields,
-          'Offset' => $offset,
-        );
-
-        // do the actual search
-        $search = $rets->SearchQuery($resource->systemname, $class->systemname, "($q)", $optional_params);
-
-        // loop through the search results
-        while ($listing = $rets->FetchRow($search)) {
-          // calculate the hash
-          $listing['hash'] = $this->calculate_hash($listing, $connection->conid, $class->cid);
-
-          $this->queue->createItem($listing);
-          $count++;
-        }
-
-
-        if ($error = $rets->Error()) {
-          drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
-        }
-
-        drush_log(dt("Queuing @count items for resource: @resource | class: @class", array("@count" => $count, "@resource" => $resource->systemname, "@class" => $class->systemname)));
-
-
-        $offset += $count;
-
-        if ($limit == 'NONE') {
-          $end = FALSE;
-        } else {
-          $end = $rets->IsMaxrowsReached();
-        }
-        $rets->FreeResult($search);
+      if ($class->process_images) {
+        $fields .= ',' . $class->photo_timestamp_field;
       }
-      $this->dc->disconnect();
+
+      $optional_params = array(
+        'Format' => 'COMPACT-DECODED',
+        'Limit' => "$limit",
+      );
+
+      // do the actual search
+      $search = $rets->SearchQuery($resource->systemname, $class->systemname, "($q)", $optional_params);
+
+      // loop through the search results
+      while ($listing = $rets->FetchRow($search)) {
+        // calculate the hash
+        $listing['hash'] = $this->calculate_hash($listing, $connection->conid, $class->cid);
+        
+        $this->queue->createItem($listing);
+        drush_log("Resource: {$resource->systemname} Class: $class->systemname - Queuing Item $count");
+        $count++;
+      }
+
+      if ($error = $rets->Error()) {
+        drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
+      }
+
+      $rets->FreeResult($search);
+    
+    $this->dc->disconnect();
 
 // do some cleanup
-      unset($items);
+    unset($items);
     } else {
       $error = $rets->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
@@ -596,7 +577,7 @@ class drealtyDaemon {
         unset($item);
       } else {
         // skipping this item
-        drush_log(dt("Skipping item @name. [@count of @total]", array("@name" => $item->label, "@count" => $count, "@total" => $total)));
+        drush_log(dt("Skipping item @name. [@count of @total]", array("@name" => $rets_item[$id], "@count" => $count, "@total" => $total)));
         $this->queue->deleteItem($queue_item);
       }
       $count++;
@@ -953,4 +934,5 @@ class drealtyDaemon {
       }
     }
   }
+
 }

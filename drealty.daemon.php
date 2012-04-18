@@ -544,23 +544,7 @@ class drealtyDaemon {
           }
         }
 
-        $force_geocode = FALSE;
-
-        if (!$is_new) {
-          $geofields = $this->dm->FetchFieldMappings($connection->conid, $resource, $class, 'geofield');
-          if (!empty($geofields)) {
-            foreach ($geofields as $geofield) {
-              // check to see if we already have already geocoded this address
-              if (!isset($item->{$geofield->field_name}[LANGUAGE_NONE][0]['lat']) && !isset($item->{$geofield->field_name}[LANGUAGE_NONE][0]['lon'])) {
-                $force_geocode = TRUE;
-              }
-            }
-          }
-        } else {
-          $force_geocode = TRUE;
-        }
-
-        $this->set_field_data($item, $rets_item, $field_mappings, $entity_type, $class, $force_geocode);
+        $this->set_field_data($item, $rets_item, $field_mappings, $entity_type, $class);
 
         $item_context['rets_item'] = $rets_item;
 
@@ -682,17 +666,6 @@ class drealtyDaemon {
     if (!$class->process_images) {
       return;
     }
-
-    /* grab any address fields so we can set changed = false
-     * doing this so that geocoder wont re-geocode an address field 
-     * on entity->save().
-     * 
-     * There's got to be a better way to do this, however, this will work for now.
-     */
-
-
-
-    $address_fields = $this->dm->FetchFieldMappings($conid, $resource, $class, 'addressfield');
 
     $img_field = $class->image_field_name;
     $dir = $class->image_dir;
@@ -827,16 +800,8 @@ class drealtyDaemon {
             }
 
             $listing->process_images = 0;
-
-            if (!empty($address_fields)) {
-              // set each address field's changed = FALSE
-              foreach ($address_fields as $address_field) {
-                $listing->{$address_field->field_name}[LANGUAGE_NONE][0]['changed'] = FALSE;
-              }
-              reset($address_fields);
-            }
-
             $listing->save();
+            
             drush_log(dt("Saved @count images for @listing", array("@count" => count($set), "@listing" => $list_id)), "success");
             unset($photos[$list_id], $listings[$list_id]);
             drupal_get_messages();
@@ -845,13 +810,6 @@ class drealtyDaemon {
           // apparently some mls feeds have listings with 0 images, set them as processed
           foreach ($listings as $listingid => $listing) {
             $listing->process_images = 0;
-            if (!empty($address_fields)) {
-              // set each address field's changed = FALSE
-              foreach ($address_fields as $address_field) {
-                $listing->{$address_field->field_name}[LANGUAGE_NONE][0]['changed'] = FALSE;
-              }
-              reset($address_fields);
-            }
             $listing->save();
             drush_log(dt("Listing @id had no images. Marking as processed.", array("@id" => $listingid)), 'warning');
             drupal_get_messages();
@@ -891,16 +849,11 @@ class drealtyDaemon {
     return implode(',', $fields);
   }
 
-  protected function set_field_data(&$item, $rets_item, $field_mappings, $entity_type, $class, $force_geocode = FALSE) {
+  protected function set_field_data(&$item, $rets_item, $field_mappings, $entity_type, $class) {
 
     foreach ($field_mappings as $mapping) {
       switch ($mapping->field_api_type) {
         case 'addressfield':
-          if ($force_geocode) {
-            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = TRUE;
-          } else {
-            $item->{$mapping->field_name}[LANGUAGE_NONE][0]['changed'] = FALSE;
-          }
           //get the default country code if one exists for the address
           $field_info = field_info_instance($entity_type, $mapping->field_name, $class->bundle);
           $item->{$mapping->field_name}[LANGUAGE_NONE][0]['country'] = isset($field_info['default_value'][0]['country']) ? $field_info['default_value'][0]['country'] : 'US';

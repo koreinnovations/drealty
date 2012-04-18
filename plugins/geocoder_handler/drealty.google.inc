@@ -109,18 +109,16 @@ function drealty_geocoder_google($address, $options = array()) {
 }
 
 function drealty_geocoder_google_field($field, $field_item, $options = array()) {
-  if (isset($field_item['changed']) && $field_item['changed']) {
-    if ($field['type'] == 'text' || $field['type'] == 'text_long' || $field['type'] == 'text_with_summary' || $field['type'] == 'computed') {
-      return geocoder_google($field_item['value'], $options);
-    }
-    if ($field['type'] == 'addressfield') {
-      $address = geocoder_widget_parse_addressfield($field_item);
-      return geocoder_google($address, $options);
-    }
-    if ($field['type'] == 'taxonomy_term_reference') {
-      $term = taxonomy_term_load($field_item['tid']);
-      return geocoder_google($term->name);
-    }
+  if ($field['type'] == 'text' || $field['type'] == 'text_long' || $field['type'] == 'text_with_summary' || $field['type'] == 'computed') {
+    return geocoder_google($field_item['value'], $options);
+  }
+  if ($field['type'] == 'addressfield') {
+    $address = geocoder_widget_parse_addressfield($field_item);
+    return geocoder_google($address, $options);
+  }
+  if ($field['type'] == 'taxonomy_term_reference') {
+    $term = taxonomy_term_load($field_item['tid']);
+    return geocoder_google($term->name);
   }
 }
 

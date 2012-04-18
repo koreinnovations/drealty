@@ -33,18 +33,16 @@ function drealty_geocoder_yahoo($address, $options = array()) {
 }
 
 function drealty_geocoder_yahoo_field($field, $field_item) {
-  if (isset($field_item['changed']) && $field_item['changed']) {
-    if ($field['type'] == 'text' || $field['type'] == 'text_long' || $field['type'] == 'text_with_summary' || $field['type'] == 'computed') {
-      return drealty_geocoder_yahoo($field_item['value']);
-    }
-    if ($field['type'] == 'addressfield') {
-      $address = geocoder_widget_parse_addressfield($field_item);
-      return drealty_geocoder_yahoo($address);
-    }
-    if ($field['type'] == 'taxonomy_term_reference') {
-      $term = taxonomy_term_load($field_item['tid']);
-      return drealty_geocoder_yahoo($term->name);
-    }
+  if ($field['type'] == 'text' || $field['type'] == 'text_long' || $field['type'] == 'text_with_summary' || $field['type'] == 'computed') {
+    return drealty_geocoder_yahoo($field_item['value']);
+  }
+  if ($field['type'] == 'addressfield') {
+    $address = geocoder_widget_parse_addressfield($field_item);
+    return drealty_geocoder_yahoo($address);
+  }
+  if ($field['type'] == 'taxonomy_term_reference') {
+    $term = taxonomy_term_load($field_item['tid']);
+    return drealty_geocoder_yahoo($term->name);
   }
 }
 

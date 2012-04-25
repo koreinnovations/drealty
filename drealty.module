@@ -1010,7 +1010,7 @@ function drealty_pathauto($op) {
   switch ($op) {
     case 'settings':
       $settings = array();
-      $settings['module'] = 'drealty';
+      $settings['module'] = 'drealty_listing';
       $settings['token_type'] = 'drealty_listing';
       $settings['groupheader'] = t('Drealty paths');
       $settings['patterndescr'] = t('Default path pattern (applies to all Drealty types with blank patterns below)');

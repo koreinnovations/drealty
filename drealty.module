@@ -403,7 +403,6 @@ function drealty_views_api() {
   );
 }
 
-
 function drealty_search_api_multitext_getter_callback($item, $options = array(), $name = NULL) {
   $value = explode(",", $item->{$name});
   return $value;
@@ -1005,4 +1004,69 @@ function drealty_ctools_plugin_type() {
   return array(
     'geocoder_handler' => array(),
   );
+}
+
+function drealty_pathauto($op) {
+  switch ($op) {
+    case 'settings':
+      $settings = array();
+      $settings['module'] = 'drealty';
+      $settings['token_type'] = 'drealty_listing';
+      $settings['groupheader'] = t('Drealty paths');
+      $settings['patterndescr'] = t('Default path pattern (applies to all Drealty types with blank patterns below)');
+      $settings['patterndefault'] = '';
+
+
+      foreach (drealty_listings_get_types() as $type => $name) {
+        $settings['patternitems'][$type] = t('Pattern for all @node_type paths', array('@node_type' => $name->label));
+      }
+      return (object) $settings;
+    default:
+      break;
+  }
+}
+
+/**
+ * Implements hook_entity_insert() 
+ */
+function drealty_entity_insert($entity, $entity_type) {
+  if (module_exists('pathauto') && $entity_type == 'drealty_listing') {
+    drealty_update_alias($entity_type, $entity, 'insert');
+  }
+}
+
+/***
+ *  Implements hook_entity_delete
+ */
+function drealty_entity_delete($entity, $entity_type) {
+  if (module_exists('pathauto') && $entity_type == 'drealty_listing') {
+    pathauto_entity_path_delete_all($entity_type, $entity);
+  }
+}
+
+/*
+ *   Implements hook_entity_update
+ */
+function drealty_entity_update($entity, $entity_type) {
+  if (module_exists('pathauto') && $entity_type == 'drealty_listing') {
+    drealty_update_alias($entity_type, $entity, 'update');
+  }
+}
+
+function drealty_update_alias($entity_type, $entity, $op) {
+
+  if (isset($entity->path['pathauto']) && empty($entity->path['pathauto'])) {
+    return;
+  }
+
+// Skip processing if the entity has no pattern.
+  $entity_info = entity_get_info($entity_type);
+  list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
+  if (!pathauto_pattern_load_by_entity($entity_type, $bundle)) {
+    return;
+  }
+
+  module_load_include('inc', 'pathauto');
+  $uri = entity_uri($entity_type, $entity);
+  pathauto_create_alias($entity_type, $op, $uri['path'], array($entity_info['token type'] => $entity), $bundle);
 }

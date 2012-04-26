@@ -513,7 +513,7 @@ function drealty_listing_load_multiple($ids = array(), $conditions = array(), $r
  * @return type
  */
 function drealty_listing_page_title(DrealtyListing $listing) {
-  return isset($listing->rets_id) ? $listing->rets_id : "Drealty Listing - id: {$listing->id}";
+  return $listing->label();
 }
 
 /**

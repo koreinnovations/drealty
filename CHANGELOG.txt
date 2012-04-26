@@ -1,3 +1,27 @@
+7.x-3.0-beta3 - 04-26-2012
+
++ Fix for issue #1514350 -  Increase the column length for rets_key and rets_id to prevent 'data too long' and 'data truncated' errors for some users.
++ Fixed issue when deleting mapped fields that were shared between multiple property types, it would also remove the RETS mapping from any property type that had previously mapped that field.
++ Issue #1498424 by TwoD. Broken RETS Query tester. Patch supplied by TwoD.
++ Issue #1519706 by TwoD. String cleanups. Coder Review initial pass.
++ Issue #1518174 by TwoD. Add Token support in custom RETS queries.
+    This patch adds support for using tokens in the custom query field(s).
+    It allows you to, for example, create "incremental" queries to only download listings that have been updated since the last time the listings class was successfully updated: (Status=A), (Last_updated_field=[drealty_class:last_updated]+).
+    Note: Incremental queries like in this example are probably incompatible with the new "delete/deactivate expired listings" feature recently committed. Since only recently changed items will be queued for processing and drealty diffs the queued listings to all previously fetched listings to know which ones are no longer available, it'll remove/deactivate every listing not recently changed...
++ Added a new view mode "gallery" to drealty_listing entity type.
++ Issue #1514350 - by jday. Data too long for column 'rets_id'. This was actually a problem in that the entity key 'label' was set to the field rets_id. This has been changed and there is now a label field and it defaults to the listing id value.
++ Added the title column into the overview form.
++ Issue #1526258 by j9 - ctools requirement. Removed a preprocess_entity hook that was loading some css via ctools_add_css, this wasn't needed and forced an undocumented requirement on ctools, so it was removed.
++ Changed the import method for servers that support offset to use phRETS auto offset feature.
++ Removing Geocoding Logic that is broken
++ Implemented Pathauto API for drealty_listing entities. No need to use pathauto_entity as drealty natively supports this now.
++ Issue #1533598 - Reformatting the drealty listing page title by j9, jday and bforchhammer. Changed the the function for the title callback on listings to return the result of ->label() instead of the rets_id.
++ Issue #1542136 Field mappings can't be removed by TwoD
++ Issue #1542140 Field mappings may only work with the latest connection. By TwoD.
++ Issue #1534508 by TwoD: Added Change the default numeric value to NULL.
++ Issue #1534506 by TwoD: Added Allow preprocessing RETS items.
++ Issue #1520156 by TwoD: Comment cleanups.
+
 
 7.x-3.0-beta2 - 04-03-2012
 

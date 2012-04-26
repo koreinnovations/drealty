@@ -1,4 +1,9 @@
 <?php
+/**
+ * @file
+ * dRealty RETS connection UI controller.
+ */
+
 
 class DrealtyConnectionUIController extends EntityDefaultUIController {
 
@@ -122,10 +127,16 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
 
 }
 
+/**
+ * Title callback for listing classes.
+ */
 function drealty_resource_configure_title_callback($class) {
   return "Configure {$class->standardname}";
 }
 
+/**
+ * Title callback for drealty resources.
+ */
 function drealty_resource_overview_title_callback($type) {
   switch ($type) {
     case 'drealty_listing':
@@ -146,6 +157,9 @@ function drealty_resource_overview_title_callback($type) {
   return $title;
 }
 
+/**
+ * Form builder for the connection form.
+ */
 function drealty_connection_entity_edit_form($form, &$form_state, drealtyConnectionEntity $connection) {
   $form['conid'] = array('#type' => 'value', '#value' => $connection->conid);
 
@@ -268,6 +282,8 @@ function drealty_connection_entity_form($form, &$form_state, $connection, $op = 
 
 /**
  * Form API submit callback for the type form.
+ *
+ * @see drealty_concnection_entity_form()
  */
 function drealty_connection_entity_form_submit(&$form, &$form_state) {
   $dmealty_connection = entity_ui_form_submit_build_entity($form, $form_state);
@@ -275,6 +291,9 @@ function drealty_connection_entity_form_submit(&$form, &$form_state) {
   $form_state['redirect'] = 'admin/drealty/connections';
 }
 
+/**
+ * Form builder for the connection activation form.
+ */
 function drealty_activate_connection_form($form, &$form_state, $connection = NULL) {
 
   $form_state['connection'] = $connection;
@@ -331,6 +350,11 @@ function drealty_activate_connection_form($form, &$form_state, $connection = NUL
   return $form;
 }
 
+/**
+ * Submit handler for activating connections.
+ *
+ * @see drealty_activate_connection_form()
+ */
 function drealty_activate_connection_form_submit($form, &$form_state) {
 
   $connection = $form_state['connection'];
@@ -340,12 +364,20 @@ function drealty_activate_connection_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/drealty/connections';
 }
 
+/**
+ * Page callback for deactivating connections.
+ */
 function drealty_deactivate_connection(drealtyConnectionEntity $connection = NULL) {
   $connection->active = FALSE;
   $connection->save();
   drupal_goto('admin/drealty/connections');
 }
 
+/**
+ * Confirmation form for deleting connections.
+ *
+ * @see drealty_connection_delete_form()
+ */
 function drealty_connection_delete_form($form, &$form_state, drealtyConnectionEntity $connection) {
   $form_state['connection'] = $connection;
 
@@ -356,6 +388,11 @@ function drealty_connection_delete_form($form, &$form_state, drealtyConnectionEn
   return $form;
 }
 
+/**
+ * Submit handler for deleting connections.
+ *
+ * @see drealty_connection_delete_form()
+ */
 function drealty_connection_delete_form_submit($form, &$form_state) {
 
   $connection = new drealtyConnectionEntity();
@@ -370,10 +407,19 @@ function drealty_connection_delete_form_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/drealty/connections';
 }
 
+/**
+ * Utility function to get the connection deletion form.
+ *
+ * @param drealtyConnectionEntity $connection
+ *   The connection to generate a form for.
+ */
 function drealty_connection_delete_form_wrapper(drealtyConnectionEntity $connection = NULL) {
   return drupal_get_form('drealty_connection_delete_form', $connection);
 }
 
+/**
+ * Form builder for picking a resource type.
+ */
 function drealty_select_resource_type($form, &$form_state) {
   $connection = $form_state['connection'];
   $entity_type = $form_state['entity_type'];
@@ -401,6 +447,9 @@ function drealty_select_resource_type($form, &$form_state) {
   drupal_set_message(t('The resource type selection has been saved.'));
 }
 
+/**
+ * Form builder for resource overviews.
+ */
 function drealty_resource_overview_form($form, &$form_state, drealtyConnectionEntity $connection = NULL, $entity_type = NULL) {
 
 
@@ -506,6 +555,11 @@ function drealty_resource_overview_form($form, &$form_state, drealtyConnectionEn
   return $form;
 }
 
+/**
+ * Submt handler for the resource overview form.
+ *
+ * @see drealty_resource_overview_form()
+ */
 function drealty_resource_overview_form_submit($form, &$form_state) {
 
   $connection = $form_state['connection'];
@@ -539,6 +593,9 @@ function drealty_resource_overview_form_submit($form, &$form_state) {
   drupal_set_message(t('The Configuration options have been Saved.'));
 }
 
+/**
+ * Form builder for configuring a resource.
+ */
 function drealty_resource_configure_form($form, &$form_state, drealtyConnectionEntity $connection = NULL, $entity_type = NULL, $class = NULL) {
 
 
@@ -937,6 +994,11 @@ function drealty_resource_configure_form($form, &$form_state, drealtyConnectionE
   return $form;
 }
 
+/**
+ * Validation handler for the resource configuration form.
+ *
+ * @see drealty_resource_configure_form()
+ */
 function drealty_resource_configure_form_validate($form, &$form_state) {
   $connection = $form_state['connection'];
   $entity_type = $form_state['entity_type'];
@@ -961,6 +1023,11 @@ function drealty_resource_configure_form_validate($form, &$form_state) {
   }
 }
 
+/**
+ * Submit handler for the resource configuration form.
+ *
+ * @see drealty_resource_configure_form()
+ */
 function drealty_resource_configure_form_submit($form, &$form_state) {
 
   $entity_type = $form_state['entity_type'];
@@ -1037,6 +1104,11 @@ function drealty_resource_configure_form_submit($form, &$form_state) {
   drupal_set_message('Configuration options have been saved.');
 }
 
+/**
+ * Submit handler for testing manual queries.
+ *
+ * @see drealty_resource_configure_form()
+ */
 function drealty_test_manual_query($form, &$form_state) {
 
   drupal_set_message("Testing the DMQL Query.");
@@ -1080,6 +1152,9 @@ function drealty_test_manual_query($form, &$form_state) {
 //  cache_clear_all('drealty_classes_', 'cache', TRUE);
 }
 
+/**
+ * Theme function for the field configuration form.
+ */
 function theme_drealty_field_config_form(&$variables) {
   $header = array('System Name', 'Standard Name', 'Long Name', 'Data Type', 'Interpretation', 'Operation');
   $rows = array();
@@ -1100,6 +1175,9 @@ function theme_drealty_field_config_form(&$variables) {
   return $output;
 }
 
+/**
+ * Theme function for the class form.
+ */
 function theme_drealty_classes_form(&$variables) {
   $header = array('System Name', 'Description', 'Enabled', 'Lifetime', 'Actions');
   $rows = array();
@@ -1118,6 +1196,9 @@ function theme_drealty_classes_form(&$variables) {
   return $output;
 }
 
+/**
+ * Theme function for the fields form.
+ */
 function theme_drealty_fields_form(&$variables) {
   $header = array('System Field', 'MLS Field Mapping');
   $rows = array();

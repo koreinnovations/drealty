@@ -1,9 +1,12 @@
 <?php
 
 /**
- *
- * @file drealty.drush.inc
- *
+ * @file
+ * Drush integration for dRealty.
+ */
+
+/**
+ * Implements hook_drush_command().
  */
 function drealty_drush_command() {
   $items = array();
@@ -31,7 +34,7 @@ function drealty_drush_command() {
 }
 
 /**
- * Implementation of hook_drush_help().
+ * Implements hook_drush_help().
  *
  * This function is called whenever a drush user calls
  * 'drush help <name-of-command>'

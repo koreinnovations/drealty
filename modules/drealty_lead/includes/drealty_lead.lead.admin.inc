@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * dRealty lead UI controller.
+ */
 
 class DrealtyLeadUIController extends EntityDefaultUIController {
 

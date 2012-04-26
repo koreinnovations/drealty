@@ -1,11 +1,9 @@
 <?php
-
-// $Id$
-
 /**
  * @file
  * Plugin to provide a google geocoder.
  */
+
 /**
  * Plugins are described by creating a $plugin array which will be used
  * by the system that includes this file.
@@ -21,7 +19,7 @@ $plugin = array(
 );
 
 /**
- * Process Markup
+ * Process Markup.
  */
 function drealty_geocoder_google($address, $options = array()) {
   geophp_load();

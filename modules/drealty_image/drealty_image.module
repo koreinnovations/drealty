@@ -1,5 +1,12 @@
 <?php
+/**
+ * @file
+ * Provides an image fied for hotlinking images from a RETS feed.
+ */
 
+/**
+ * Implements hook_field_info().
+ */
 function drealty_image_field_info() {
   $fields = array();
 
@@ -26,7 +33,7 @@ function drealty_image_is_empty($item, $field) {
 }
 
 /**
- *
+ * @todo Implement hook_field_instance_settings_form().
  */
 function drealty_image_instance_settings_form($field, $instance) {
   $settings = $instance['settings'];
@@ -57,10 +64,16 @@ function drealty_image_field_formatter_info() {
   );
 }
 
+/**
+ * @todo Implement hook_field_formatter_settings_summary().
+ */
 function drealty_image_formatter_settings_summary($field, $instance, $view_mode) {
   return '';
 }
 
+/**
+ * @todo Implement hook_field_formatter_view().
+ */
 function drealty_image_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
   $element = array();
   $settings = $display['settings'];
@@ -71,6 +84,9 @@ function drealty_image_formatter_view($entity_type, $entity, $field, $instance, 
   return $element;
 }
 
+/**
+ * @todo Implement hook_field_widget_info().
+ */
 function drealty_image_widget_info() {
   return array(
       'drealty_image_standard' => array(
@@ -81,7 +97,7 @@ function drealty_image_widget_info() {
 }
 
 /**
- * Implements hook_field_widget_form().
+ * @todo Implement hook_field_widget_form().
  */
 function drealty_image_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
   return array('value' => $element);

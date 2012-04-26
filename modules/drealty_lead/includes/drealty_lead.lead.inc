@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * dRealty lead entity.
+ */
 
 class DrealtyLead extends Entity {
 	

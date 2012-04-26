@@ -1,5 +1,15 @@
 <?php
+/**
+ * @file
+ * dRealty connection and connection entity classes.
+ */
 
+/**
+ * Save a connection entity.
+ *
+ * @param drealtyConnectionEntity $connection
+ *   The connection entity to save.
+ */
 function drealty_connection_entity_save(drealtyConnectionEntity $connection) {
   return $connection->save();
 }

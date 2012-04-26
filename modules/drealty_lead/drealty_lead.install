@@ -1,9 +1,12 @@
 <?php
-
 /**
- * Implementation of hook_install()
+ * @file
+ * Installation functions for dRealty.
  */
 
+/**
+ * Implements hook_install().
+ */
 function drealty_lead_install() {
 	
 	if (!field_info_field('field_drealty_lead_name')) {
@@ -118,9 +121,8 @@ function drealty_lead_install() {
 }
 
 /**
- * Implementation of hook_uninstall()
+ * Implements hook_uninstall().
  */
-
 function drealty_lead_uninstall() {
 	$leads = db_select('drealty_lead', 'lead')
     ->fields('lead', array('id'))
@@ -137,9 +139,8 @@ function drealty_lead_uninstall() {
 }
 
 /**
- * Implementation of hook_schema()
+ * Implements hook_schema().
  */
-
 function drealty_lead_schema() {
 	$schema['drealty_lead'] = array(
 		'description' => 'Base table to store dRealty Leads.',

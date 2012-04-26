@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * dRealty listing UI controllers.
+ */
 
 class DrealtyListingUIController extends EntityDefaultUIController {
 
@@ -124,6 +128,9 @@ class DrealtyListingUIController extends EntityDefaultUIController {
 
 }
 
+/**
+ * Page callback for adding listings.
+ */
 function drealty_listing_add_page() {
   $item = menu_get_item();
   if ($content = system_admin_menu_block($item)) {
@@ -134,6 +141,9 @@ function drealty_listing_add_page() {
   return $output;
 }
 
+/**
+ * Page callback form managing listings.
+ */
 function drealty_listing_admin($type = 'new') {
   $edit = $_POST;
   if (isset($edit['operation']) && ($edit['operation'] == 'delete') && isset($edit['listings']) && $edit['listings']) {
@@ -143,6 +153,9 @@ function drealty_listing_admin($type = 'new') {
   }
 }
 
+/**
+ * Form builder for the listing admin overview form.
+ */
 function drealty_listing_admin_overview($form, &$form_state, $arg) {
   $header = array(
     'id' => array('data' => t('Listing Id'), 'field' => 'id'),
@@ -193,10 +206,21 @@ function drealty_listing_admin_overview($form, &$form_state, $arg) {
   return $form;
 }
 
+/**
+ * Utility function to get the listing edit form.
+ *
+ * @param $op
+ *   The operation the form should perform.
+ * @param $listing
+ *  The listing to perform the operation on.
+ */
 function drealty_listing_form_wrapper($op, $listing) {
   return drupal_get_form('drealty_listing_edit_form', $op, $listing);
 }
 
+/**
+ * Form builder for the listing form.
+ */
 function drealty_listing_edit_form($form, &$form_state, $op, $listing) {
 
   $form_state['listing'] = $listing;
@@ -241,6 +265,9 @@ function drealty_listing_edit_form($form, &$form_state, $op, $listing) {
   return $form;
 }
 
+/**
+ * Submit handler for the listing form.
+ */
 function drealty_listing_edit_form_submit($form, &$form_state) {
   // grab the listing
   $listing = $form_state['listing'];

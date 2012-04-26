@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * dRealty RETS metadata classes.
+ */
 
 class drealtyMetaData {
 

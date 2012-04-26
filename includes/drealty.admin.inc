@@ -1,5 +1,12 @@
 <?php
+/**
+ * @file
+ * dRealty admin page forms and callbacks.
+ */
 
+/**
+ * Form builder for the settings form.
+ */
 function drealty_settings_form($form, &$form_state) {
 
   $form['general_settings'] = array('#type' => 'fieldset', '#title' => 'General Settings', '#collapsible' => TRUE, '#collapsed' => FALSE);
@@ -94,6 +101,11 @@ function drealty_settings_form($form, &$form_state) {
   return $form;
 }
 
+/**
+ * Submit handler for the settings form
+ *
+ * @see drealty_settings_form()
+ */
 function drealty_settings_form_submit($form, &$form_state) {
 
   $dc = new drealtyConnection();
@@ -129,6 +141,9 @@ function theme_drealty_general_setting_form(&$variables) {
   return $output;
 }
 
+/**
+ * Autocomplete callback for offices.
+ */
 function drealty_office_autocomplete_callback($conid, $string) {
   if ($conid == NULL) {
     exit();

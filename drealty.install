@@ -1,5 +1,12 @@
 <?php
+/**
+ * @file
+ * Installation functions for dRealty.
+ */
 
+/**
+ * Implements hook_install().
+ */
 function drealty_install() {
   if (!drupal_installation_attempted()) {
     $type = entity_create('drealty_listing_type', array(
@@ -13,6 +20,9 @@ function drealty_install() {
   menu_rebuild();
 }
 
+/**
+ * Implements hook_requirements().
+ */
 function drealty_requirements($phase) {
 
   $requirements = array();
@@ -45,6 +55,9 @@ function drealty_requirements($phase) {
   return $requirements;
 }
 
+/**
+ * Implements hook_uninstall().
+ */
 function drealty_uninstall() {
 
   global $conf;
@@ -81,6 +94,9 @@ function drealty_uninstall() {
   menu_rebuild();
 }
 
+/**
+ * Implements hook_schema().
+ */
 function drealty_schema() {
 
   // connections table
@@ -293,7 +309,7 @@ function drealty_schema() {
 }
 
 /**
- * Add two new fields to keep track of photo modification timestamp
+ * Add two new fields to keep track of photo modification timestamp.
  */
 function drealty_update_7300(&$sandbox) {
   db_add_field('drealty_listing', 'rets_photo_modification_timestamp', array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => 'RETS field that indicates wether image data has been modified.'));
@@ -303,7 +319,7 @@ function drealty_update_7300(&$sandbox) {
 
 
 /**
- * Add fields to handle expired listings 
+ * Add fields to handle expired listings.
  */
 function drealty_update_7301(&$sandbox) {
   db_add_field('drealty_listing', 'active', array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 1));
@@ -312,8 +328,8 @@ function drealty_update_7301(&$sandbox) {
 
 /**
  * Adjust length of 'rets_key' field to hold more data.
- * 
- * See: http://drupal.org/node/1514350
+ *
+ * @see http://drupal.org/node/1514350
  */
 
 function drealty_update_7302(&$sandbox) {

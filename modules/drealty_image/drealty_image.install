@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Installation functions for the drealty image field.
+ */
 
 function drealty_image_field_schema($field) {
   $columns = array(

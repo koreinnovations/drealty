@@ -1,7 +1,12 @@
 <?php
 
-/** File
- * 
+/**
+ * @file
+ * A lightweight leads system for drealty.
+ */
+
+/**
+ * Implements hook_entity_info().
  */
 function drealty_lead_entity_info() {
   $entities = array();
@@ -42,6 +47,9 @@ function drealty_lead_entity_info() {
   return $entities;
 }
 
+/**
+ * Implements hook_menu().
+ */
 function drealty_lead_menu() {
   $items = array();
   $items['admin/drealty/drealty_lead'] = array(
@@ -59,6 +67,9 @@ function drealty_lead_menu() {
   return $items;
 }
 
+/**
+ * @todo Do something awesome here!
+ */
 function drealty_lead_some_function() {
   return "something really cool";
 }
@@ -89,6 +100,9 @@ function drealty_lead_permission() {
   return $permissions;
 }
 
+/**
+ * Access callback for drealty lead entities.
+ */
 function drealty_lead_access($op, $listing = NULL, $account = NULL) {
   if (user_access('administer drealty leads', $account)) {
     return TRUE;
@@ -120,6 +134,9 @@ function drealty_lead_uri(DrealtyLead $lead) {
   return array('path' => 'drealty_lead/' . $lead->id);
 }
 
+/**
+ * Implements hook_load().
+ */
 function drealty_lead_load($id, $conditions = array(), $reset = FALSE) {
   $ids = (isset($id) ? array($id) : array());
   $entity = drealty_lead_load_multiple($ids, $conditions, $reset);

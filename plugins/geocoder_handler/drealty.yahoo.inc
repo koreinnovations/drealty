@@ -1,11 +1,9 @@
 <?php
-
-// $Id$
-
 /**
  * @file
  * Plugin to provide a yahoo geocoder.
  */
+
 /**
  * Plugins are described by creating a $plugin array which will be used
  * by the system that includes this file.
@@ -20,7 +18,7 @@ $plugin = array(
 );
 
 /**
- * Process Markup
+ * Process Markup.
  */
 function drealty_geocoder_yahoo($address, $options = array()) {
   $geocoder_settings = variable_get("geocoder_settings", array());

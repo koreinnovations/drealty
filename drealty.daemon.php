@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * dRealty's import functionality.
+ */
 
 define('GEOCODER_DUMMY_WKT', 'POINT(0, 0)');
 

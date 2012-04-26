@@ -652,14 +652,15 @@ function drealty_form_field_ui_field_edit_form_geofield(&$form, &$form_state) {
       if (isset($class->bundle) && $class->bundle == $form['#instance']['bundle']) {
         $resource = $dm->FetchResource($class->rid);
         $fields = $dm->FetchFields($connection->conid, $resource, $class);
-
         $field_mappings = $dm->fetchfieldmappings($connection->conid, $resource, $class);
-        $form['instance']['drealty']['mappings'][$class->systemname]['conid'] = array('#type' => 'value', '#value' => $connection->conid);
-        $form['instance']['drealty']['mappings'][$class->systemname]['rid'] = array('#type' => 'value', '#value' => $class->rid);
-        $form['instance']['drealty']['mappings'][$class->systemname]['class_id'] = array('#type' => 'value', '#value' => $class->cid);
-        $form['instance']['drealty']['mappings'][$class->systemname]['connection_name'] = array('#markup' => $connection->label);
-        $form['instance']['drealty']['mappings'][$class->systemname]['class_name'] = array('#markup' => $class->standardname . ' - ' . $class->systemname);
-        $form['instance']['drealty']['mappings'][$class->systemname]['rets_field'] = array(
+
+        $mform = &$form['instance']['drealty']['mappings'][$connection->conid . '_' . $class->rid . '_' . $class->systemname];
+        $mform['conid'] = array('#type' => 'value', '#value' => $connection->conid);
+        $mform['rid'] = array('#type' => 'value', '#value' => $class->rid);
+        $mform['class_id'] = array('#type' => 'value', '#value' => $class->cid);
+        $mform['connection_name'] = array('#markup' => $connection->label);
+        $mform['class_name'] = array('#markup' => $class->standardname . ' - ' . $class->systemname);
+        $mform['rets_field'] = array(
           '#type' => 'checkbox',
           '#title' => t('enabled'),
           '#default_value' => isset($field_mappings[$form['#instance']['field_name']]->data['enabled']) ? TRUE : FALSE,
@@ -698,45 +699,46 @@ function drealty_form_field_ui_field_edit_form_addressfield(&$form, &$form_state
       if (isset($class->bundle) && $class->bundle == $form['#instance']['bundle']) {
         $resource = $dm->FetchResource($class->rid);
         $fields = $dm->FetchFields($connection->conid, $resource, $class);
-
         $field_mappings = $dm->fetchfieldmappings($connection->conid, $resource, $class);
-        $form['instance']['drealty']['mappings'][$class->systemname]['conid'] = array('#type' => 'value', '#value' => $connection->conid);
-        $form['instance']['drealty']['mappings'][$class->systemname]['rid'] = array('#type' => 'value', '#value' => $class->rid);
-        $form['instance']['drealty']['mappings'][$class->systemname]['class_id'] = array('#type' => 'value', '#value' => $class->cid);
-        $form['instance']['drealty']['mappings'][$class->systemname]['connection_name'] = array('#markup' => $connection->label);
-        $form['instance']['drealty']['mappings'][$class->systemname]['class_name'] = array('#markup' => $class->standardname . ' - ' . $class->systemname);
-        $form['instance']['drealty']['mappings'][$class->systemname]['rets_field'] = array('#type' => 'fieldset', '#title' => t('Address Field Settings'));
-        $form['instance']['drealty']['mappings'][$class->systemname]['rets_field']['address_1'] = array(
+
+        $mform = &$form['instance']['drealty']['mappings'][$connection->conid . '_' . $class->rid . '_' . $class->systemname];
+        $mform['conid'] = array('#type' => 'value', '#value' => $connection->conid);
+        $mform['rid'] = array('#type' => 'value', '#value' => $class->rid);
+        $mform['class_id'] = array('#type' => 'value', '#value' => $class->cid);
+        $mform['connection_name'] = array('#markup' => $connection->label);
+        $mform['class_name'] = array('#markup' => $class->standardname . ' - ' . $class->systemname);
+        $mform['rets_field'] = array('#type' => 'fieldset', '#title' => t('Address Field Settings'));
+        $mform['rets_field']['address_1'] = array(
           '#type' => 'textfield',
           '#title' => t('Address 1'),
           '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
           '#default_value' => isset($field_mappings[$form['#instance']['field_name']]->data['address_1']) ? $fields[$field_mappings[$form['#instance']['field_name']]->data['address_1']]->systemname . ' - ' . $fields[$field_mappings[$form['#instance']['field_name']]->data['address_1']]->longname : NULL,
         );
-        $form['instance']['drealty']['mappings'][$class->systemname]['rets_field']['address_2'] = array(
+        $mform['rets_field']['address_2'] = array(
           '#type' => 'textfield',
           '#title' => t('Address 2'),
           '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
           '#default_value' => isset($field_mappings[$form['#instance']['field_name']]->data['address_2']) ? $fields[$field_mappings[$form['#instance']['field_name']]->data['address_2']]->systemname . ' - ' . $fields[$field_mappings[$form['#instance']['field_name']]->data['address_2']]->longname : NULL,
         );
-        $form['instance']['drealty']['mappings'][$class->systemname]['rets_field']['city'] = array(
+        $mform['rets_field']['city'] = array(
           '#type' => 'textfield',
           '#title' => t('City'),
           '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
           '#default_value' => isset($field_mappings[$form['#instance']['field_name']]->data['city']) ? $fields[$field_mappings[$form['#instance']['field_name']]->data['city']]->systemname . ' - ' . $fields[$field_mappings[$form['#instance']['field_name']]->data['city']]->longname : NULL,
         );
-        $form['instance']['drealty']['mappings'][$class->systemname]['rets_field']['state'] = array(
+        $mform['rets_field']['state'] = array(
           '#type' => 'textfield',
           '#title' => t('State'),
           '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
           '#default_value' => isset($field_mappings[$form['#instance']['field_name']]->data['state']) ? $fields[$field_mappings[$form['#instance']['field_name']]->data['state']]->systemname . ' - ' . $fields[$field_mappings[$form['#instance']['field_name']]->data['state']]->longname : NULL,
         );
-        $form['instance']['drealty']['mappings'][$class->systemname]['rets_field']['county'] = array(
+        $mform['rets_field']['county'] = array(
           '#type' => 'textfield',
           '#title' => t('County'),
           '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
           '#default_value' => isset($field_mappings[$form['#instance']['field_name']]->data['county']) ? $fields[$field_mappings[$form['#instance']['field_name']]->data['county']]->systemname . ' - ' . $fields[$field_mappings[$form['#instance']['field_name']]->data['county']]->longname : NULL,
         );
-        $form['instance']['drealty']['mappings'][$class->systemname]['rets_field']['zip'] = array(
+        $mform['rets_field']['zip'] = array(
           '#type' => 'textfield',
           '#title' => t('Zip'),
           '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",
@@ -768,14 +770,15 @@ function drealty_form_field_ui_field_edit_form_default(&$form, &$form_state) {
       if (isset($class->bundle) && $class->bundle == $form['#instance']['bundle']) {
         $resource = $dm->FetchResource($class->rid);
         $fields = $dm->FetchFields($connection->conid, $resource, $class);
-
         $field_mappings = $dm->fetchfieldmappings($connection->conid, $resource, $class);
-        $form['instance']['drealty']['mappings'][$class->systemname]['conid'] = array('#type' => 'value', '#value' => $connection->conid);
-        $form['instance']['drealty']['mappings'][$class->systemname]['rid'] = array('#type' => 'value', '#value' => $class->rid);
-        $form['instance']['drealty']['mappings'][$class->systemname]['class_id'] = array('#type' => 'value', '#value' => $class->cid);
-        $form['instance']['drealty']['mappings'][$class->systemname]['connection_name'] = array('#markup' => $connection->label);
-        $form['instance']['drealty']['mappings'][$class->systemname]['class_name'] = array('#markup' => $class->standardname . ' - ' . $class->systemname);
-        $form['instance']['drealty']['mappings'][$class->systemname]['rets_field'] = array(
+
+        $mform = &$form['instance']['drealty']['mappings'][$connection->conid . '_' . $class->rid . '_' . $class->systemname];
+        $mform['conid'] = array('#type' => 'value', '#value' => $connection->conid);
+        $mform['rid'] = array('#type' => 'value', '#value' => $class->rid);
+        $mform['class_id'] = array('#type' => 'value', '#value' => $class->cid);
+        $mform['connection_name'] = array('#markup' => $connection->label);
+        $mform['class_name'] = array('#markup' => $class->standardname . ' - ' . $class->systemname);
+        $mform['rets_field'] = array(
           '#type' => 'textfield',
           '#description' => t('Field to map to.'),
           '#autocomplete_path' => "admin/drealty/fields_autocomplete/$connection->conid/$class->systemname",

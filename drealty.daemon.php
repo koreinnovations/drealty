@@ -501,6 +501,9 @@ class drealtyDaemon {
       $force = FALSE;
       if (!isset($existing_items[$rets_item[$id]]) || $existing_items[$rets_item[$id]]->hash != $rets_item['hash'] || $force) {
 
+        // Allow other modules to preprocess RETS fields before mapping them.
+        drupal_alter('drealty_import_rets_item', $rets_item, $item_context);
+
         $is_new = TRUE;
         $item = entity_create($entity_type, array('conid' => $connection->conid, 'type' => $class->bundle));
 

@@ -302,7 +302,7 @@ function drealty_schema() {
   'city' => array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => "The city in listing address.", 'group' => 'Listing:Location:Address'),
   'state_or_province' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => "Text field containing either the accepted postal abbreviation or the full name for one of the 50 U.S. States and possessions or 13 Canadian provinces/territories.", 'group' => 'Listing:Location:Address'),
   'country' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => "The country in a postal address.", 'group' => 'Listing:Location:Address'),
-  'postal_code' => array('type' => 'varchar', 'length' => 12, 'not null' => FALSE, 'default' => NULL, 'description' => "The postal code portion of a street or mailing address.", 'group' => 'Listing:Location:Address'),
+  'postal_code' => array('type' => 'varchar', 'length' => 60, 'not null' => FALSE, 'default' => NULL, 'description' => "The postal code portion of a street or mailing address.", 'group' => 'Listing:Location:Address'),
   'postal_code_plus_4' => array('type' => 'varchar', 'length' => 12, 'not null' => FALSE, 'default' => NULL, 'description' => "A ZIP+4 code uses the basic five-digit code plus four additional digits to identify a geographic segment within the five-digit delivery area, such as a city block, a group of apartments, an individual high-volume receiver of mail or any other unit that could use an extra identifier to aid in efficient mail sorting and delivery.", 'group' => 'Listing:Location:Address'),
   'carrier_route' => array('type' => 'varchar', 'length' => 50, 'not null' => FALSE, 'default' => NULL, 'description' => "The group of addresses to which the USPS assigns the same code to aid in mail delivery. For the USPS, these codes are 9 digits: 5 numbers for the ZIP Code, one letter for the carrier route type, and 3 numbers for the carrier route number.", 'group' => 'Listing:Location:Address'),
   'unparsed_address' => array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => "The UnparsedAddress is a text representation of the address with the full civic location as a single entity. It may optionally include any of City, StateOrProvince, PostalCode and Country.", 'group' => 'Listing:Location:Address'),
@@ -523,6 +523,7 @@ function drealty_schema() {
   //misc
   'idx_include' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "A descriptor indicating if this property is allowed to be displayed in an IDX.", 'group' => 'Listing:Property'),
   'picture_count' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => FALSE, 'default' => 0, 'description' => "The number of photographs / pictures associated with the property.", 'group' => 'Listing:Property'),
+  'import_or_manual' => array('type' => 'varchar', 'length' => 30, 'not null' => TRUE, 'default' => 'import', 'description' => "Indicates whether the property has been imported or added manually.", 'group' => 'Listing:Property'),
       ) + entity_exportable_schema_fields(),
       'primary key' => array('id'),
           //'unique keys' => array('name' => array('name')),
@@ -570,6 +571,28 @@ function drealty_update_7002() {
   $items = array();
 
   $items[] = db_query("ALTER TABLE {drealty_classes} ADD COLUMN format VARCHAR(255) NOT NULL DEFAULT 'COMPACT-DECODED'");
+
+  return $items;
+}
+
+/**
+ * Increase size of listings zip code column so it doesn't get truncated 
+ */
+function drealty_update_7003() {
+  $items = array();
+
+  $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY postal_code VARCHAR(60)");
+
+  return $items;
+}
+
+/**
+ * Add "import or manual" field to track source of listings
+ */
+function drealty_update_7004() {
+  $items = array();
+
+  $items[] = db_query("ALTER TABLE {drealty_listing} ADD COLUMN import_or_manual VARCHAR(30) NOT NULL DEFAULT 'import'");
 
   return $items;
 }

@@ -734,6 +734,16 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
       try decreasing this value. However, decreasing this value increases the amount of time it will take to update listings. The RETS server may override this value (MAXROWS).'),
   );
 
+  $form['format'] = array(
+      '#title' => t('Record Format'),
+      '#type' => 'select',
+      '#options' => array(
+          'COMPACT' => 'COMPACT',
+          'COMPACT-DECODED' => 'COMPACT-DECODED',
+      ),
+      '#default_value' => ($class->format) ? $class->format : 'COMPACT-DECODED',
+  );
+  
   if ($has_images) {
     $form['images'] = array('#type' => 'fieldset', '#title' => 'Images', '#collapsed' => FALSE);
     $form['images']['process_images'] = array(
@@ -783,6 +793,7 @@ function drealty_configure_resource_limits_form_submit($form, &$form_state) {
   $record->configured = TRUE;
   drupal_write_record('drealty_resources', $record, array('rid'));
 
+  $class->format = $form_state['values']['format'];
   $class->status_values = implode(',', $form_state['values']['status']);
   $class->chunk_size = $form_state['values']['chunk'];
   $class->override_status_query = $form_state['values']['status_override'];

@@ -109,6 +109,7 @@ function drealty_schema() {
           'process_images' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE, 'default' => 0),
           'download_images' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE, 'default' => 0),
           'object_type' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
+          'format' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => 'COMPACT-DECODED'),
           'chunk_size' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE, 'default' => 500),
           'override_status_query' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
           'override_status_query_text' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => ''),
@@ -541,7 +542,6 @@ function drealty_update_7000() {
   return $items;
 }
 
-
 /**
  * Create drealty_external_photos table
  */
@@ -553,12 +553,23 @@ function drealty_update_7001() {
     listing_id INT UNSIGNED NOT NULL,
     photo_url  varchar(255) NOT NULL DEFAULT ''
   )");
-  
+
   $items[] = db_query("ALTER TABLE {drealty_classes} ADD COLUMN download_images INT UNSIGNED NOT NULL DEFAULT 0");
   $items[] = db_query("UPDATE {drealty_classes} SET download_images = 1 WHERE process_images = 1");
-  
+
   $items[] = db_query("ALTER TABLE {drealty_listing} ADD COLUMN download_images INT UNSIGNED NOT NULL DEFAULT 0");
   $items[] = db_query("UPDATE {drealty_listing} SET download_images = 1 WHERE process_images = 1");
-  
+
+  return $items;
+}
+
+/**
+ * Add format field to drealty_classes
+ */
+function drealty_update_7002() {
+  $items = array();
+
+  $items[] = db_query("ALTER TABLE {drealty_classes} ADD COLUMN format VARCHAR(255) NOT NULL DEFAULT 'COMPACT-DECODED'");
+
   return $items;
 }

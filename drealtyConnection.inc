@@ -372,6 +372,7 @@ class dRealtyConnectionEntityContoller extends EntityAPIControllerExportable {
         'force_basic_auth' => '0',
         'use_compression' => '0',
         'active' => FALSE,
+        'format' => 'COMPACT-DECODED',
     );
     $dRealtyConnectionEntity = parent::create($values);
     return $dRealtyConnectionEntity;

@@ -14,18 +14,18 @@ class drealtyDaemon {
     $connections = $this->dc->FetchConnections();
     foreach ($connections as $connection) {
 
-      if (empty($connections_filter) || in_array((string)$connection->conid, $connections_filter)) {
+      if (empty($connections_filter) || in_array((string) $connection->conid, $connections_filter)) {
         drush_log(dt("Importing for connection {$connection->name}, ID {$connection->conid}"));
 
         $mappings = $connection->ResourceMappings();
-        
+
         drush_log(dt('Resource mappings !dump', array('!dump' => print_r($mappings, TRUE))));
-        
+
         foreach ($mappings as $mapping) {
           $classes = $connection->FetchClasses($mapping->resource);
-          
+
           drush_log(dt('Classes !dump', array('!dump' => print_r($classes, TRUE))));
-          
+
           foreach ($classes as $class) {
 //          drush_log(print_r($class, TRUE));
             if ($class->enabled && $class->lifetime <= time() - ($class->lastupdate + 60)) {
@@ -39,7 +39,6 @@ class drealtyDaemon {
       else {
         drush_log(dt("Skipping connection {$connection->name}, ID {$connection->conid}"));
       }
-      
     }
     unset($connections, $mappings, $classes);
     cache_clear_all();
@@ -114,7 +113,7 @@ class drealtyDaemon {
         $end_p = $end ? "FALSE" : "TRUE";
         drush_log("Resource: $resource Class: $class->systemname Limit: $limit Offset: $offset MaxRowsReached: $end_p Chunks: $chunks");
         $optional_params = array(
-            'Format' => 'COMPACT-DECODED',
+            'Format' => ($class->format) ? $class->format : 'COMPACT-DECODED',
             'Limit' => "$limit",
             'Offset' => "$offset",
             'RestrictedIndicator' => 'xxxx',
@@ -395,6 +394,7 @@ class drealtyDaemon {
     $result = $query
             ->entityCondition('entity_type', $entity_type)
             ->propertyCondition('process_images', TRUE)
+            ->propertycondition('conid', $conid->conid)
             ->execute();
 
     if (!empty($result[$entity_type])) {
@@ -470,29 +470,40 @@ class drealtyDaemon {
             drush_log(dt("Saving @filename", array("@filename" => $filepath)));
 
             try {
-              $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
-              // load the entity that is associated with the image
-              $query = new EntityFieldQuery();
 
-              $result = $query
-                      ->entityCondition('entity_type', 'drealty_listing')
-                      ->propertyCondition('listing_key', $mlskey)
-                      ->propertyCondition('conid', $conid->conid)
-                      ->execute();
+              $log = print_r(array(
+                  'Content-Type' => $photo['Content-Type'],
+                  'Success' => $photo['Success'],
+                  'Object-ID' => $photo['Object-ID'],
+                  'Content-ID' => $photo['Content-ID'],
+                      ), TRUE);
+
+              drush_log(dt('Photo result: !dump$jhh'), array('!dump' => $log));
+
+              if ($photo['Content-Type'] == 'image/jpg' || $photo['Content-Type'] == 'image/png' || $photo['Content-Type'] == 'image/gif' || $photo['Content-Type'] == 'image/jpeg') {
+                $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
+                // load the entity that is associated with the image
+                $query = new EntityFieldQuery();
+
+                $result = $query
+                        ->entityCondition('entity_type', 'drealty_listing')
+                        ->propertyCondition('listing_key', $mlskey)
+                        ->propertyCondition('conid', $conid->conid)
+                        ->execute();
 
 
+                $listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
 
-              $listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
+                file_usage_add($file, 'drealty', $entity_type, $listing->id);
 
-              file_usage_add($file, 'drealty', $entity_type, $listing->id);
-
-              $listing->process_images = 0;
-              $listing->save();
+                $listing->process_images = 0;
+                $listing->save();
+              }
             } catch (Exception $ex) {
               drush_log(dt('EXCEPTION SAVING FILE: !ex', array('!ex' => $ex->getMessage())));
               drush_log(dt('MLS Key: !m', array('!m' => $mlskey)));
               drush_log(dt('Connection ID: !m', array('!m' => $conid->conid)));
-              drush_log(dt('Photo: !m', array('!m' => print_r($photo, TRUE))));
+              //drush_log(dt('Photo: !m', array('!m' => print_r($photo, TRUE))));
             }
           }
           unset($photos);

@@ -286,6 +286,7 @@ function drealty_schema() {
   'days_on_market' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "Number calculated from the days elapsed when a listing was first put on the market until it was put under contract, or taken off the market.", 'group' => 'general'),
   'listing_status' => array('type' => 'varchar', 'length' => 50, 'not null' => FALSE, 'default' => NULL, 'description' => "Local or regional status that are well known by business users. Each MlsStatus must map to a single RetsStatus. Multiple MlsStatus may map to a single RetsStatus.", 'group' => 'required', 'required' => TRUE),
   'list_price' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => "The current price of the home as determined by the seller and the contract seller's agent member. The list price is often negotiable. It is also known as the Asking Price. Formatting is specified by the currency attribute.", 'group' => 'general'),
+  'rental_price' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => "The rental price of the home as determined by the seller and the contract seller's agent member. The list price is often negotiable. It is also known as the Asking Price. Formatting is specified by the currency attribute.", 'group' => 'general'),
   'view_on_web' => array('type' => 'varchar', 'length' => 10, 'not null' => FALSE, 'default' => NULL, 'description' => "A Y/N field indicating wether this listing can be viewed on the web.", 'group' => 'general'),
   'virtual_tour_url' => array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => "The branded virtual tour URI.", 'group' => 'general'),
   'public_remarks' => array('type' => 'text', 'not null' => FALSE, 'default' => NULL, 'description' => "Text remarks that may be displayed to the public. In an MLS, it is the field where information is entered for the public. This information is intended to be visible on-line. This is typically information that describes the selling points of the building and/or land for sale. Local conditions and rules will determine what such content can contain. Generally, the following information is excluded: any information pertaining to entry to the property, the seller and/or tenant, listing member contact information. In other systems, these remarks will be determined by local business rules.", 'group' => 'general'),
@@ -349,6 +350,7 @@ function drealty_schema() {
   'colist_office_web_address' => array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => "The website URL for the listing office.", 'group' => 'Listing:AgentOffice:CoListOffice'),
   'colist_office_mls_id' => array('type' => 'varchar', 'length' => 12, 'not null' => FALSE, 'default' => NULL, 'description' => "The local, well-known identifier. This value may not be unique, specifically in the case of aggregation systems, this value should be the identifier from the original system.", 'group' => 'Listing:AgentOffice:CoListOffice'),
   //Listing:Property
+  'property_type' => array('type' => 'varchar', 'length' => 60, 'not null' => FALSE, 'default' => NULL, 'description' => "Residential, Rental, etc.", 'group' => 'Listing:Property'),
   'property_sub_type' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => "A list of types of residential properties, i.e. SFR, Condo, etc.", 'group' => 'Listing:Property'),
   'association_fee' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => "A fee paid by the homeowner to the association that governs a condominium complex for their part of the maintenance and management of the project. Formatting is specified by the currency attribute and the period attribute signifies how often the fee is payable (monthly, quarterly, etc.).", 'group' => 'Listing:Property'),
   'association_yn' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => "Is there a Home Owners Association.  A separate Y/N field is needed because not all associations have dues.", 'group' => 'Listing:Property'),
@@ -593,6 +595,29 @@ function drealty_update_7004() {
   $items = array();
 
   $items[] = db_query("ALTER TABLE {drealty_listing} ADD COLUMN import_or_manual VARCHAR(30) NOT NULL DEFAULT 'import'");
+
+  return $items;
+}
+
+/**
+ * Add rental_price to drealty_listing table
+ */
+function drealty_update_7005() {
+  $items = array();
+
+  $items[] = db_query("ALTER TABLE {drealty_listing} ADD COLUMN rental_price INT NOT NULL DEFAULT 0");
+
+  return $items;
+}
+
+
+/**
+ * Add property_type to drealty_listing table
+ */
+function drealty_update_7006() {
+  $items = array();
+
+  $items[] = db_query("ALTER TABLE {drealty_listing} ADD COLUMN property_type VARCHAR(60) NULL");
 
   return $items;
 }

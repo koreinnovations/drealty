@@ -40,7 +40,7 @@ Requirements & Required Modules
 --------------------------------------------------------------------
 
 php requirements:
-* php 5.2.x - http://www.php.net
+* php 5.3.5 or higher - http://www.php.net
 * php cURL support - http://www.php.net/manual/en/curl.setup.php
 
 

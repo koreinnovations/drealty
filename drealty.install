@@ -26,6 +26,7 @@ function drealty_install() {
 function drealty_requirements($phase) {
 
   $requirements = array();
+  $phpversion = implode('', explode('.', phpversion()));
 
   switch ($phase) {
     case 'install':
@@ -36,6 +37,14 @@ function drealty_requirements($phase) {
         $requirements['drealty'] = array(
           'title' => $t('PHP Curl not installed.'),
           'description' => $t('dRealty requiresthat the PHP:cURL extension is installed and enabled. For more information and how to install PHP:cURL refer to the PHP:cURL manual: <a href="http://php.net/manual/en/book.curl.php" >http://php.net/manual/en/book.curl.php</a>'),
+          'severity' => REQUIREMENT_ERROR,
+        );
+      }
+
+      if ($phpversion < 535) {
+        $requirements['drealty_phpversion'] = array(
+          'title' => t('PHP 5.3.5+ not detected.'),
+          'description' => t('dRealty requires PHP 5.3.5 or higher to run. For backstory, please see how PHP 5.2.x handles object destruction: <a href="http://paul-m-jones.com/archives/262" >http://paul-m-jones.com/archives/262</a>'),
           'severity' => REQUIREMENT_ERROR,
         );
       }
@@ -50,6 +59,13 @@ function drealty_requirements($phase) {
         ),
         'severity' => $file_exists ? REQUIREMENT_OK : REQUIREMENT_ERROR,
       );
+      if ($phpversion < 535) {
+        $requirements['drealty_phpversion'] = array(
+          'title' => t('PHP 5.3.5+ not detected.'),
+          'description' => t('dRealty requires PHP 5.3.5 or higher to run. For backstory, please see how PHP 5.2.x handles object destruction: <a href="http://paul-m-jones.com/archives/262" >http://paul-m-jones.com/archives/262</a>'),
+          'severity' => REQUIREMENT_ERROR,
+        );
+      }
   }
 
   return $requirements;

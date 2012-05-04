@@ -40,7 +40,7 @@ function drealty_requirements($phase) {
         );
       }
 
-      if (PHP_VERSION_ID < 50309) {
+      if (PHP_VERSION_ID < 50305) {
         $requirements['drealty_phpversion'] = array(
           'title' => t('PHP 5.3.5+ not detected.'),
           'description' => t('dRealty requires PHP 5.3.5 or higher to run. For backstory, please see how PHP 5.2.x handles object destruction: <a href="http://paul-m-jones.com/archives/262" >http://paul-m-jones.com/archives/262</a>'),
@@ -58,7 +58,7 @@ function drealty_requirements($phase) {
         ),
         'severity' => $file_exists ? REQUIREMENT_OK : REQUIREMENT_ERROR,
       );
-      if (PHP_VERSION_ID < 50309) {
+      if (PHP_VERSION_ID < 50305) {
         $requirements['drealty_phpversion'] = array(
           'title' => t('PHP 5.3.5+ not detected.'),
           'description' => t('dRealty requires PHP 5.3.5 or higher to run. For backstory, please see how PHP 5.2.x handles object destruction: <a href="http://paul-m-jones.com/archives/262" >http://paul-m-jones.com/archives/262</a>'),

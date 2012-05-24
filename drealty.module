@@ -290,8 +290,8 @@ function drealty_load_phrets() {
   $static_cache = &drupal_static(__FUNCTION__);
 
   if (!isset($static_cache)) {
-    $path = libraries_get_path('phRets');
-    $file = $path . '/phRets.php';
+    $path = libraries_get_path('phrets');
+    $file = $path . '/phrets.php';
     if (file_exists($file)) {
       if (include_once($file)) {
         $static_cache = $file;

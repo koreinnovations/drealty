@@ -49,11 +49,11 @@ function drealty_requirements($phase) {
       }
       break;
     case 'runtime':
-      $file_exists = file_exists(libraries_get_path('phRets') . '/phRets.php');
+      $file_exists = file_exists(libraries_get_path('phrets') . '/phrets.php');
       $requirements['drealty'] = array(
         'title' => t('phRets library'),
         'value' => t('!msg', array(
-          '!msg' => $file_exists ? 'Installed' : 'The ' . l('phRets', 'http://troda.com/projects/phrets') . ' was not found. Please ' . l('download', 'http://troda.com/projects/phrets/index.php?title=Download') . ' it into the Libraries folder.',
+          '!msg' => $file_exists ? 'Installed' : 'The ' . l('phRets', 'https://github.com/troydavisson/PHRETS') . ' was not found. Please ' . l('download', 'https://github.com/troydavisson/PHRETS') . ' it into the Libraries folder.',
           )
         ),
         'severity' => $file_exists ? REQUIREMENT_OK : REQUIREMENT_ERROR,

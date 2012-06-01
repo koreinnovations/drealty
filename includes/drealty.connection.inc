@@ -91,9 +91,9 @@ class drealtyConnection {
           $this->rets->SetParam('use_interealty_ua_auth', TRUE);
         }
 
-        // support non-writeable local folders by specifying Drupal temporary stream wrapper
+        // support non-writeable local folders by specifying Drupal file_directory_temp()
         // some servers may not support phRETS default cookie_file, resulting in 'Cookie "" could not be written' error
-        $this->rets->SetParam('cookie_file', 'temporary://');
+        $this->rets->SetParam("cookie_file", file_directory_temp() . "/drealty_rets.txt");
 
         if ($this->current_connection->debug_mode) {
           $this->rets->SetParam('debug_mode', true);

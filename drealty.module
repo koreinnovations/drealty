@@ -218,7 +218,7 @@ function drealty_update_single_listing_submit($form, &$form_state) {
 function drealty_admin_paths_alter(&$paths) {
   $paths['drealty_listing/add'] = TRUE;
   $paths['drealty_listing/add/*'] = TRUE;
-  $paths['dreatly_listing/*/edit'] = TRUE;
+  $paths['drealty_listing/*/edit'] = TRUE;
 }
 
 function drealty_connections_get_all() {

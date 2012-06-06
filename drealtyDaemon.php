@@ -454,6 +454,7 @@ class drealtyDaemon {
           $counter = 0;
 
           foreach ($photos as $photo) {
+            drush_log(print_r($photo, true));
             $mlskey = $photo['Content-ID'];
             $number = $photo['Object-ID'];
             $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', "{$mlskey}-{$number}.jpg");

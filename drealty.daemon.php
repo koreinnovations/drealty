@@ -1,9 +1,9 @@
 <?php
+
 /**
  * @file
  * dRealty's import functionality.
  */
-
 define('GEOCODER_DUMMY_WKT', 'POINT(0, 0)');
 
 class drealtyDaemon {
@@ -150,9 +150,9 @@ class drealtyDaemon {
     $limit = $class->chunk_size;
 
     $options = array(
-      'count' => 1,
-      'Format' => 'COMPACT-DECODED',
-      'Select' => $key_field,
+        'count' => 1,
+        'Format' => 'COMPACT-DECODED',
+        'Select' => $key_field,
     );
 
 
@@ -203,7 +203,8 @@ class drealtyDaemon {
           $id = (int) $id + 1;
 
           unset($listings);
-        } else {
+        }
+        else {
           break;
         }
 
@@ -213,7 +214,8 @@ class drealtyDaemon {
         $query = "({$key_field}={$id}+)";
       }
       $this->dc->disconnect();
-    } else {
+    }
+    else {
       $error = $rets->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
       drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
@@ -239,9 +241,9 @@ class drealtyDaemon {
 
     $query = token_replace($class->override_status_query_text, array('drealty-class' => $class));
     $options = array(
-      'count' => 1,
-      'Format' => 'COMPACT-DECODED',
-      'Select' => $key_field,
+        'count' => 1,
+        'Format' => 'COMPACT-DECODED',
+        'Select' => $key_field,
     );
 
 
@@ -287,12 +289,14 @@ class drealtyDaemon {
           $offset_start = $offset_end + 1;
           $offset_end += $offset_amount;
           $offset_query = "$query,({$class->offset_field}={$offset_start}-{$offset_end})";
-        } else {
+        }
+        else {
           $offset_query = "$query,({$class->offset_field}={$offset_max}+)";
         }
       }
       $this->dc->disconnect();
-    } else {
+    }
+    else {
       $error = $rets->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
       drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
@@ -323,13 +327,13 @@ class drealtyDaemon {
     if ($this->dc->connect($connection->conid)) {
       // prepare the query
       $q = implode('),(', $query);
-  
+
       $result = db_select('drealty_field_mappings', 'dfm')
-        ->fields('dfm')
-        ->condition('conid', $connection->conid)
-        ->condition('cid', $class->cid)
-        ->execute()
-        ->fetchAllAssoc('systemname');
+              ->fields('dfm')
+              ->condition('conid', $connection->conid)
+              ->condition('cid', $class->cid)
+              ->execute()
+              ->fetchAllAssoc('systemname');
 
       $fields = $this->get_fields($connection->conid, $class->cid);
 
@@ -338,8 +342,8 @@ class drealtyDaemon {
       }
 
       $optional_params = array(
-        'Format' => 'COMPACT-DECODED',
-        'Limit' => "$limit",
+          'Format' => 'COMPACT-DECODED',
+          'Limit' => "$limit",
       );
 
       // do the actual search
@@ -349,7 +353,7 @@ class drealtyDaemon {
       while ($listing = $rets->FetchRow($search)) {
         // calculate the hash
         $listing['hash'] = $this->calculate_hash($listing, $connection->conid, $class->cid);
-        
+
         $this->queue->createItem($listing);
         drush_log("Resource: {$resource->systemname} Class: $class->systemname - Queuing Item $count");
         $count++;
@@ -360,12 +364,13 @@ class drealtyDaemon {
       }
 
       $rets->FreeResult($search);
-    
-    $this->dc->disconnect();
+
+      $this->dc->disconnect();
 
 // do some cleanup
-    unset($items);
-    } else {
+      unset($items);
+    }
+    else {
       $error = $rets->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
       drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
@@ -391,11 +396,11 @@ class drealtyDaemon {
     }
 
     $params = array(
-      'Format' => 'COMPACT-DECODED',
-      'Limit' => "1",
-      'RestrictedIndicator' => 'xxxx',
-      'Count' => '0',
-      'Select' => $fields,
+        'Format' => 'COMPACT-DECODED',
+        'Limit' => "1",
+        'RestrictedIndicator' => 'xxxx',
+        'Count' => '0',
+        'Select' => $fields,
     );
 
     if ($this->dc->connect($connection->conid)) {
@@ -480,11 +485,11 @@ class drealtyDaemon {
     $key_field = 'rets_key';
 
     $existing_items = db_select($entity_type, "t")
-      ->fields("t", array($key_field, "hash", "id"))
-      ->condition("conid", $connection->conid)
-      ->condition('class', $class->cid)
-      ->execute()
-      ->fetchAllAssoc($key_field);
+            ->fields("t", array($key_field, "hash", "id"))
+            ->condition("conid", $connection->conid)
+            ->condition('class', $class->cid)
+            ->execute()
+            ->fetchAllAssoc($key_field);
 
 // get the fieldmappings
     $field_mappings = $connection->FetchFieldMappings($resource, $class);
@@ -517,7 +522,8 @@ class drealtyDaemon {
           // this listing exists so we'll get a reference to it and set the values to what came to us in the RETS result
           $item = reset(entity_load($entity_type, array($existing_items[$rets_item[$id]]->id)));
           $is_new = FALSE;
-        } else {
+        }
+        else {
           $item->created = time();
         }
 
@@ -534,16 +540,19 @@ class drealtyDaemon {
           if ($is_new) {
             $item->process_images = TRUE;
             $item->rets_photo_modification_timestamp = $rets_item[$class->photo_timestamp_field];
-          } else {
+          }
+          else {
             if (isset($item->rets_photo_modification_timestamp)) {
               $last_time = strtotime($item->rets_photo_modification_timestamp);
               $this_time = strtotime($rets_item[$class->photo_timestamp_field]);
               if ($this_time > $last_time) {
                 $item->process_images = TRUE;
-              } else {
+              }
+              else {
                 $item->process_images = FALSE;
               }
-            } else {
+            }
+            else {
               // hasn't been set but it's not new
               $item->rets_photo_modification_timestamp = $rets_item[$class->photo_timestamp_field];
               $item->process_images = FALSE;
@@ -566,7 +575,8 @@ class drealtyDaemon {
         }
         drush_log(dt('Saving item @name. [@count of @total]', array("@name" => $item->label, "@count" => $count, "@total" => $total)));
         unset($item);
-      } else {
+      }
+      else {
         // skipping this item
         drush_log(dt("Skipping item @name. [@count of @total]", array("@name" => $rets_item[$id], "@count" => $count, "@total" => $total)));
         $this->queue->deleteItem($queue_item);
@@ -589,11 +599,11 @@ class drealtyDaemon {
   protected function handle_expired($in_rets, $conid, $class) {
 
     $results = db_select('drealty_listing', 'dl')
-      ->fields('dl', array('id', 'rets_key'))
-      ->condition('conid', $conid)
-      ->condition('class', $class->cid)
-      ->execute()
-      ->fetchAllAssoc('rets_key');
+            ->fields('dl', array('id', 'rets_key'))
+            ->condition('conid', $conid)
+            ->condition('class', $class->cid)
+            ->execute()
+            ->fetchAllAssoc('rets_key');
 
     $diff = array_diff_key($results, $in_rets);
 
@@ -605,9 +615,9 @@ class drealtyDaemon {
           break;
         case 1:
           db_update('drealty_listing')
-            ->fields(array('active' => 0))
-            ->condition('id', $item->id)
-            ->execute();
+                  ->fields(array('active' => 0))
+                  ->condition('id', $item->id)
+                  ->execute();
           break;
         default:
           $listing = drealty_listing_load($item->id);
@@ -629,12 +639,12 @@ class drealtyDaemon {
 
     if (empty($cache[$connection_id]) || empty($cache[$connection_id][$class_id])) {
       $field_mappings = db_select('drealty_field_mappings', 'dfm')
-        ->fields('dfm')
-        ->condition('conid', $connection_id)
-        ->condition('cid', $class_id)
-        ->condition('hash_exclude', FALSE)
-        ->execute()
-        ->fetchAll();
+              ->fields('dfm')
+              ->condition('conid', $connection_id)
+              ->condition('cid', $class_id)
+              ->condition('hash_exclude', FALSE)
+              ->execute()
+              ->fetchAll();
 
       $cache[$connection_id][$class_id] = $field_mappings;
     }
@@ -683,13 +693,14 @@ class drealtyDaemon {
 
     $query = new EntityFieldQuery();
     $result = $query
-      ->entityCondition('entity_type', $entity_type)
-      ->propertyCondition('process_images', 1)
-      ->execute();
+            ->entityCondition('entity_type', $entity_type)
+            ->propertyCondition('process_images', 1)
+            ->execute();
 
     if (!empty($result[$entity_type])) {
       $items = array_keys($result[$entity_type]); //entity_load($entity_type, array_keys($result[$entity_type]));
-    } else {
+    }
+    else {
       drush_log("No images to process.");
       return;
     }
@@ -702,7 +713,8 @@ class drealtyDaemon {
       if (!file_prepare_directory($img_dir, FILE_MODIFY_PERMISSIONS | FILE_CREATE_DIRECTORY)) {
         drush_log(dt("Failed to create %directory.", array('%directory' => $img_dir)), "error");
         return;
-      } else {
+      }
+      else {
         if (!is_dir($img_dir)) {
           drush_log(dt("Failed to locate %directory.", array('%directory' => $img_dir)), "error");
           return;
@@ -752,7 +764,8 @@ class drealtyDaemon {
                     $photos[$item['Content-ID']] = array();
                   }
                   $photos[$item['Content-ID']][$item['Object-ID']] = $item;
-                } else {
+                }
+                else {
                   drush_log(dt("Images failed to download: @code - @text", array('@code' => $item['ReplyCode'], '@text' => $item['ReplyText'])), 'warning');
                 }
               }
@@ -763,7 +776,8 @@ class drealtyDaemon {
               ksort($set, SORT_NUMERIC);
             }
             drush_log(dt("Downloaded a total of @total images for @count Listings.", array("@total" => $total, "@count" => count($ids))));
-          } else {
+          }
+          else {
             drush_log(dt("GetObject for @resource - @class returned an empty result set.", array('@resource' => $resource->systemname, '@class' => $class->systemname)), 'warning');
           }
 
@@ -808,7 +822,7 @@ class drealtyDaemon {
 
             $listing->process_images = 0;
             $listing->save();
-            
+
             drush_log(dt("Saved @count images for @listing", array("@count" => count($set), "@listing" => $list_id)), "success");
             unset($photos[$list_id], $listings[$list_id]);
             drupal_get_messages();
@@ -831,10 +845,10 @@ class drealtyDaemon {
 
   protected function get_fields($conid, $class_id) {
     $results = db_select('drealty_field_mappings', 'dfm')
-      ->fields('dfm')
-      ->condition('conid', $conid)
-      ->condition('cid', $class_id)
-      ->execute();
+            ->fields('dfm')
+            ->condition('conid', $conid)
+            ->condition('cid', $class_id)
+            ->execute();
 
 
     $fields = array();
@@ -892,6 +906,67 @@ class drealtyDaemon {
         default:
           $item->{$mapping->field_name}[LANGUAGE_NONE][0]['value'] = $rets_item[$mapping->systemname];
       }
+    }
+  }
+
+  function perform_query(drealtyConnectionEntity $connection, $resource, $class, $query) {
+    $offset = 0;
+    $count = 0;
+    $rets = $this->dc->rets;
+    $limit = $class->chunk_size;
+    if ($limit == 0) {
+      $limit = 'NONE';
+    }
+    $count = 0;
+    
+    $this->dc->rets->SetParam("offset_support", TRUE);
+
+    if ($this->dc->connect($connection->conid)) {
+      // prepare the query
+      $q = implode('),(', $query);
+
+      $result = db_select('drealty_field_mappings', 'dfm')
+              ->fields('dfm')
+              ->condition('conid', $connection->conid)
+              ->condition('cid', $class->cid)
+              ->execute()
+              ->fetchAllAssoc('systemname');
+
+      $fields = $this->get_fields($connection->conid, $class->cid);
+
+      if ($class->process_images) {
+        $fields .= ',' . $class->photo_timestamp_field;
+      }
+
+      $optional_params = array(
+          'Format' => 'COMPACT-DECODED',
+          'Limit' => "$limit",
+      );
+
+      // do the actual search
+      $search = $rets->SearchQuery($resource->systemname, $class->systemname, "($q)", $optional_params);
+
+      // loop through the search results
+      while ($listing = $rets->FetchRow($search)) {
+        // calculate the hash
+        $listing['hash'] = $this->calculate_hash($listing, $connection->conid, $class->cid);
+
+        $this->queue->createItem($listing);
+        $count++;
+      }
+
+      $rets->FreeResult($search);
+
+      $this->dc->disconnect();
+
+// do some cleanup
+      unset($items);
+      
+      return $this->queue;
+    }
+    else {
+      $error = $rets->Error();
+      watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
     }
   }
 

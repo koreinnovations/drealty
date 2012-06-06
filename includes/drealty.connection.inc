@@ -367,6 +367,7 @@ class drealtyConnectionEntityContoller extends EntityAPIControllerExportable {
       'use_compression' => '0',
       'active' => FALSE,
       'debug_mode' => FALSE,
+      'format' => 'COMPACT-DECODED',
     );
     $dmealtyConnectionEntity = parent::create($values);
     return $dmealtyConnectionEntity;

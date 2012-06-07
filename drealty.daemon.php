@@ -910,8 +910,7 @@ class drealtyDaemon {
   }
 
   function perform_query(drealtyConnectionEntity $connection, $resource, $class, $query) {
-    $offset = 0;
-    $count = 0;
+    $items = array();
     $rets = $this->dc->rets;
     $limit = $class->chunk_size;
     if ($limit == 0) {
@@ -922,36 +921,16 @@ class drealtyDaemon {
     $this->dc->rets->SetParam("offset_support", TRUE);
 
     if ($this->dc->connect($connection->conid)) {
-      // prepare the query
-      $q = implode('),(', $query);
-
-      $result = db_select('drealty_field_mappings', 'dfm')
-              ->fields('dfm')
-              ->condition('conid', $connection->conid)
-              ->condition('cid', $class->cid)
-              ->execute()
-              ->fetchAllAssoc('systemname');
-
-      $fields = $this->get_fields($connection->conid, $class->cid);
-
-      if ($class->process_images) {
-        $fields .= ',' . $class->photo_timestamp_field;
-      }
-
       $optional_params = array(
           'Format' => 'COMPACT-DECODED',
           'Limit' => "$limit",
       );
 
       // do the actual search
-      $search = $rets->SearchQuery($resource->systemname, $class->systemname, "($q)", $optional_params);
+      $search = $rets->SearchQuery($resource->systemname, $class->systemname, $query, $optional_params);
 
       // loop through the search results
       while ($listing = $rets->FetchRow($search)) {
-        // calculate the hash
-        $listing['hash'] = $this->calculate_hash($listing, $connection->conid, $class->cid);
-
-        $this->queue->createItem($listing);
         $count++;
       }
 
@@ -959,10 +938,7 @@ class drealtyDaemon {
 
       $this->dc->disconnect();
 
-// do some cleanup
-      unset($items);
-      
-      return $this->queue;
+      return $items;
     }
     else {
       $error = $rets->Error();

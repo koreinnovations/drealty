@@ -387,7 +387,7 @@ function drealty_deactivate_connection(drealtyConnectionEntity $connection = NUL
 }
 
 function drealty_developer_tools_form_ajax_resource($form, $form_state) {
-  return $form['class'];
+  return $form['cid'];
 }
 
 function drealty_developer_tools_form_ajax_class($form, $form_state) {
@@ -426,8 +426,8 @@ function drealty_developer_tools_form($form, &$form_state, drealtyConnectionEnti
     $classes = $connection->FetchClasses($resource);
     $class_options[''] = t('Select a class');
 
-    if ($form_state['values']['class']) {
-      $class = $dm->FetchClass($form_state['values']['class']);
+    if ($form_state['values']['cid']) {
+      $class = $dm->FetchClass($form_state['values']['cid']);
       $fields = $dm->FetchFields($connection->conid, $resource, $class);
       $form_ready = TRUE;
     }
@@ -452,7 +452,7 @@ function drealty_developer_tools_form($form, &$form_state, drealtyConnectionEnti
       ),
   );
 
-  $form['class'] = array(
+  $form['cid'] = array(
       '#type' => 'select',
       '#title' => t('Class'),
       '#required' => TRUE,
@@ -500,15 +500,12 @@ function drealty_developer_tools_form_submit($form, &$form_state) {
   $daemon = new drealtyDaemon();
   $dm = new drealtyMetaData();
 
-  dpm($form_state);
-
   $resource = $dm->FetchResource($form_state['values']['resource']);
-  $class = $dm->FetchClass($form_state['values']['class']);
+  $class = $dm->FetchClass($form_state['values']['cid']);
 
-  $results = array("TEST");
-  //$results = $daemon->perform_query($form_state['connection'], $resource, $class, $form_state['values']['query']);
+  $results = $daemon->perform_query($form_state['connection'], $resource, $class, $form_state['values']['query']);
 
-  $form['rebuild'] = TRUE;
+  $form_state['rebuild'] = TRUE;
   $form_state['storage']['results'] = $results;
 }
 

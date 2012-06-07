@@ -931,6 +931,9 @@ class drealtyDaemon {
 
       // loop through the search results
       while ($listing = $rets->FetchRow($search)) {
+        if ($count < 10) {
+          $items[] = $listing;
+        }
         $count++;
       }
 

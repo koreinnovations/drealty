@@ -1,6 +1,7 @@
 <?php
 
 class dRealtyConnection {
+
   public function __construct() {
     drealty_load_phrets();
   }
@@ -23,7 +24,8 @@ class dRealtyConnection {
           watchdog('drealty', $e->getMessage(), NULL, WATCHDOG_ERROR);
           return FALSE;
         }
-      } else {
+      }
+      else {
 
         $connection = entity_load('drealty_connection_entity', array($conid));
 //        // no connection setup need to create it.
@@ -100,11 +102,13 @@ class dRealtyConnection {
         $error_info = self::get_phrets()->Error();
         $this->error_string = $error_info['text'];
         throw new drealty_rets_connection_exception($error_info['text'], $error_info['code']);
-      } else {
+      }
+      else {
         // no error result present so we'll throw a generic exception
         throw new drealty_rets_connection_exception('There was an error connecting to the RETS Server.');
       }
-    } else {
+    }
+    else {
       // connection was successful!
       return TRUE;
     }
@@ -122,7 +126,8 @@ class dRealtyConnection {
         self::$_is_connected = FALSE;
         drush_log("Disconnected from RETS server.");
         return TRUE;
-      } else {
+      }
+      else {
         throw new drealty_rets_disconnect_exception('Error Disconnecting from the RETS Server.');
       }
     }
@@ -306,23 +311,23 @@ class dRealtyConnectionEntity extends Entity {
     $this->RemoveFieldMapping($resource, $field_name, $class);
 
     db_insert('drealty_field_mappings')
-      ->fields(array(
-          'conid' => $this->conid,
-          'resource' => $resource,
-          'field_name' => $field_name,
-          'systemname' => $systemname,
-          'cid' => $class,
-      ))
-      ->execute();
+            ->fields(array(
+                'conid' => $this->conid,
+                'resource' => $resource,
+                'field_name' => $field_name,
+                'systemname' => $systemname,
+                'cid' => $class,
+            ))
+            ->execute();
   }
 
   public function RemoveFieldMapping($resource, $field_name, $class) {
     db_delete("drealty_field_mappings")
-      ->condition("conid", $this->conid)
-      ->condition("resource", $resource)
-      ->condition("field_name", $field_name)
-      ->condition('cid', $class)
-      ->execute();
+            ->condition("conid", $this->conid)
+            ->condition("resource", $resource)
+            ->condition("field_name", $field_name)
+            ->condition('cid', $class)
+            ->execute();
   }
 
   public function ExportData() {
@@ -344,6 +349,35 @@ class dRealtyConnectionEntity extends Entity {
     $dr->RemoveResourceMappings($this->conid);
     $dr->RemoveResources($this->conid);
     parent::delete();
+  }
+
+  public function ImportListing($listing_id) {
+    $resource = 'Property';
+    $classes = $this->FetchClasses($resource);
+    $mappings = $this->FetchFieldMappings($resource);
+    $daemon = new drealtyDaemon();
+
+
+    if ($mappings['listing_id']) {
+
+      foreach ($classes as $class) {
+        if ($class->enabled) {
+          $query = sprintf("(%s=%s)", $mappings['listing_id']->systemname, $listing_id);
+          $result = $daemon->perform_query($this, $resource, $class, $query);
+          if (sizeof($result) > 0) {
+            $listing = $result[0];
+            $daemon->process_result($this, $resource, $class, $listing);
+            if ($class->process_images) {
+              $daemon->process_images($connection, $resource, $class, FALSE);
+            }
+            break;
+          }
+        }
+      }
+    }
+    else {
+      drupal_set_message(t('Unable to import this listing.  It appears that your MLS connection is not set up fully.'), 'error');
+    }
   }
 
 }

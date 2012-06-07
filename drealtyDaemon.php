@@ -47,14 +47,14 @@ class drealtyDaemon {
 
   function perform_query(drealtyConnectionEntity $connection, $resource, $class, $query) {
     $items = array();
-    $rets = $this->dc->rets;
+    $rets = $this->dc->get_phrets();
     $limit = $class->chunk_size;
     if ($limit == 0) {
       $limit = 'NONE';
     }
     $count = 0;
 
-    $this->dc->rets->SetParam("offset_support", TRUE);
+    $this->dc->get_phrets()->SetParam("offset_support", TRUE);
 
     if ($this->dc->connect($connection->conid)) {
       $optional_params = array(
@@ -62,8 +62,15 @@ class drealtyDaemon {
           'Limit' => "$limit",
       );
 
+      dpm(array(
+          'resource' => $resource,
+          'class' => $class->systemname,
+          'query' => $query,
+          'optional_params' => $optional_params,
+      ));
+
       // do the actual search
-      $search = $rets->SearchQuery($resource->systemname, $class->systemname, $query, $optional_params);
+      $search = $rets->SearchQuery($resource, $class->systemname, $query, $optional_params);
 
       // loop through the search results
       while ($listing = $rets->FetchRow($search)) {
@@ -72,6 +79,8 @@ class drealtyDaemon {
         }
         $count++;
       }
+
+      dpm($count);
 
       $rets->FreeResult($search);
 
@@ -208,6 +217,119 @@ class drealtyDaemon {
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
       drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
     }
+  }
+
+  public function process_result(dRealtyConnectionEntity $connection, $resource, $class, $rets_item) {
+    $schema = drupal_get_schema_unprocessed("drealty", $entity_type);
+    $schema_fields = $schema['fields'];
+    $entity_type = 'drealty_listing';
+    $key_field = 'listing_key';
+
+    $query = new EntityFieldQuery();
+    $result = $query->entityCondition('entity_type', $entity_type, '=')
+            ->propertyCondition('conid', $connection->conid)
+            ->execute();
+
+    $existing_items_tmp = array();
+    if (!empty($result)) {
+      $existing_items_tmp = entity_load($entity_type, array_keys($result[$entity_type]));
+    }
+
+    $existing_items = array();
+    foreach ($existing_items_tmp as $existing_item_tmp) {
+      $existing_items[$existing_item_tmp->{$key_field}] = $existing_item_tmp;
+    }
+
+    // get the fieldmappings
+    $field_mappings = $connection->FetchFieldMappings($resource, $class->cid);
+
+    // set $id to the systemname of the entity's corresponding key from the rets feed to make the code easier to read
+    $id = $field_mappings[$key_field]->systemname;
+
+    $item = new Entity(array('conid' => $connection->conid), $entity_type);
+
+    // this listing either doesn't exist in the IDX or has changed. 
+    // determine if we need to update or create a new one.
+    if (isset($existing_items[$rets_item[$id]])) {
+      // this listing exists so we'll get a reference to it and set the values to what came to us in the RETS result
+      $item = &$existing_items[$rets_item[$id]];
+    }
+    else {
+      $item->created = time();
+    }
+
+    $item->conid = $connection->conid;
+    $item->name = $rets_item[$id];
+    $item->hash = $rets_item['hash'];
+    $item->changed = time();
+    $item->class = $class->cid;
+    $item->rets_imported = TRUE;
+
+    if ($entity_type == 'drealty_listing') {
+      $item->process_images = TRUE;
+      $item->download_images = $class->download_images;
+    }
+
+    //drush_log(dt('Field_mappings: !map', array('!map' => print_r($field_mappings, TRUE))));
+
+    foreach ($field_mappings as $mapping) {
+      if (isset($rets_item[$mapping->systemname])) {
+
+        $value = '';
+
+        switch ($schema_fields[$mapping->field_name]['type']) {
+          case 'varchar':
+          case 'char':
+            $value = substr($rets_item[$mapping->systemname], 0, $schema_fields[$mapping->field_name]['length']);
+            break;
+          case 'integer':
+          case 'float':
+          case 'decimal':
+          case 'numeric':
+          case 'int':
+            $string = $rets_item[$mapping->systemname];
+            if (preg_match('/date/', $mapping->field_name)) {
+              drush_log($string);
+              $value = strtotime($string);
+              break;
+            }
+            else {
+              $val = preg_replace('/[^0-9\.]/Uis', '', $string);
+              $value = is_numeric($val) ? $val : 0;
+            }
+            break;
+          default:
+            $value = $rets_item[$mapping->systemname];
+        }
+        $item->{$mapping->field_name} = $value;
+      }
+    }
+
+    if ($class->do_geocoding) {
+      $street_number = isset($item->street_number) ? $item->street_number : '';
+      $street_name = isset($item->street_name) ? $item->street_name : '';
+      $street_suffix = isset($item->street_suffix) ? $item->street_suffix : '';
+
+      $street = trim("{$street_number} {$street_name} {$street_suffix}");
+
+      $geoaddress = "{$street}, {$item->city}, {$item->state_or_province} {$item->postal_code}";
+      // remove any double spaces
+      $geoaddress = str_replace("  ", "", $geoaddress);
+
+      if ($latlon = drealty_geocode($geoaddress)) {
+        if ($latlon->success) {
+          $item->latitude = $latlon->lat;
+          $item->longitude = $latlon->lon;
+        }
+      }
+    }
+
+    try {
+      $item->save();
+    } catch (Exception $e) {
+      
+    }
+    unset($item);
   }
 
   /**
@@ -421,8 +543,8 @@ class drealtyDaemon {
     }
     return md5($tmp);
   }
-
-  public function process_images($conid, $resource, $class) {
+  
+  public function process_images($conid, $resource, $class, $in_drush = TRUE) {
     $entity_type = 'drealty_listing';
     $chunk_size = 25;
 
@@ -437,25 +559,25 @@ class drealtyDaemon {
       $items = entity_load($entity_type, array_keys($result[$entity_type]));
     }
     else {
-      drush_log("No images to process.");
+      if ($in_drush) drush_log("No images to process.");
       return;
     }
 
     //make sure we have something to process
     if (count($items) >= 1) {
-      drush_log("process_images() - Starting.");
+      if ($in_drush) drush_log("process_images() - Starting.");
       $img_dir_base = file_default_scheme() . '://drealty_image';
       $img_dir = $img_dir_base . '/' . $conid->conid;
 
       file_prepare_directory($img_dir, FILE_MODIFY_PERMISSIONS | FILE_CREATE_DIRECTORY);
 
       if (!file_prepare_directory($img_dir, FILE_MODIFY_PERMISSIONS | FILE_CREATE_DIRECTORY)) {
-        drush_log(dt("Failed to create %directory.", array('%directory' => $img_dir)), "error");
+        if ($in_drush) drush_log(dt("Failed to create %directory.", array('%directory' => $img_dir)), "error");
         return;
       }
       else {
         if (!is_dir($img_dir)) {
-          drush_log(dt("Failed to locate %directory.", array('%directory' => $img_dir)), "error");
+          if ($in_drush) drush_log(dt("Failed to locate %directory.", array('%directory' => $img_dir)), "error");
           return;
         }
       }
@@ -473,13 +595,13 @@ class drealtyDaemon {
 
         if ($this->dc->connect($conid)) {
           $id_string = implode(',', $ids);
-          drush_log("id string: " . $id_string);
+          if ($in_drush) drush_log("id string: " . $id_string);
 
           $photos = $this->dc->get_phrets()->GetObject($resource, $class->object_type, $id_string, '*');
 
           if ($this->dc->get_phrets()->Error()) {
             $error = $this->dc->get_phrets()->Error();
-            drush_log($error['text']);
+            if ($in_drush) drush_log($error['text']);
             return;
           }
 
@@ -490,7 +612,7 @@ class drealtyDaemon {
           $counter = 0;
 
           foreach ($photos as $photo) {
-            drush_log(print_r($photo, true));
+            if ($in_drush) drush_log(print_r($photo, true));
             $mlskey = $photo['Content-ID'];
             $number = $photo['Object-ID'];
             $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', "{$mlskey}-{$number}.jpg");
@@ -504,7 +626,7 @@ class drealtyDaemon {
               file_delete($file_object, TRUE);
             }
 
-            drush_log(dt("Saving @filename", array("@filename" => $filepath)));
+            if ($in_drush) drush_log(dt("Saving @filename", array("@filename" => $filepath)));
 
             try {
 
@@ -515,7 +637,7 @@ class drealtyDaemon {
                   'Content-ID' => $photo['Content-ID'],
                       ), TRUE);
 
-              drush_log(dt('Photo result: !dump$jhh'), array('!dump' => $log));
+              if ($in_drush) drush_log(dt('Photo result: !dump$jhh'), array('!dump' => $log));
 
               if ($photo['Content-Type'] == 'image/jpg' || $photo['Content-Type'] == 'image/png' || $photo['Content-Type'] == 'image/gif' || $photo['Content-Type'] == 'image/jpeg') {
                 $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
@@ -537,9 +659,9 @@ class drealtyDaemon {
                 $listing->save();
               }
             } catch (Exception $ex) {
-              drush_log(dt('EXCEPTION SAVING FILE: !ex', array('!ex' => $ex->getMessage())));
-              drush_log(dt('MLS Key: !m', array('!m' => $mlskey)));
-              drush_log(dt('Connection ID: !m', array('!m' => $conid->conid)));
+              if ($in_drush) drush_log(dt('EXCEPTION SAVING FILE: !ex', array('!ex' => $ex->getMessage())));
+              if ($in_drush) drush_log(dt('MLS Key: !m', array('!m' => $mlskey)));
+              if ($in_drush) drush_log(dt('Connection ID: !m', array('!m' => $conid->conid)));
               //drush_log(dt('Photo: !m', array('!m' => print_r($photo, TRUE))));
             }
           }

@@ -39,8 +39,8 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
         'page callback' => 'drupal_get_form',
         'page arguments' => array('drealty_developer_tools_form', $id_count + 1),
         'access arguments' => array('access administration pages'),
-        'file' => 'drealty.connection.admin.inc',
-        'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
+        'file' => 'drealty_connection.admin.inc',
+        'file path' => drupal_get_path('module', $this->entityInfo['module']),
         'type' => MENU_CALLBACK,
     );
 
@@ -867,7 +867,6 @@ function theme_drealty_fields_form(&$variables) {
   return $output;
 }
 
-
 function drealty_developer_tools_form_ajax_resource($form, $form_state) {
   return $form['cid'];
 }
@@ -893,7 +892,7 @@ function drealty_developer_tools_form($form, &$form_state, drealtyConnectionEnti
   }
 
 
-  $dm = new drealtyMetaData();
+  $dr = new drealtyResources();
   //$mappings = $connection->ResourceMappings();
   $resources = $connection->Resources();
 
@@ -904,19 +903,18 @@ function drealty_developer_tools_form($form, &$form_state, drealtyConnectionEnti
   $class_options = array();
 
   if ($form_state['values']['resource']) {
-    $resource = $dm->FetchResource($form_state['values']['resource']);
-    $classes = $connection->FetchClasses($resource);
+    $classes = $connection->FetchClasses($form_state['values']['resource']);
     $class_options[''] = t('Select a class');
 
     if ($form_state['values']['cid']) {
-      $class = $dm->FetchClass($form_state['values']['cid']);
-      $fields = $dm->FetchFields($connection->conid, $resource, $class);
+      $class = $dr->FetchClass($form_state['values']['cid']);
+      $fields = $connection->FetchFields($form_state['values']['resource']);
       $form_ready = TRUE;
     }
   }
 
   foreach ($resources as $r) {
-    $resource_options[$r->rid] = $r->systemname;
+    $resource_options[$r->systemname] = $r->systemname;
   }
 
   foreach ($classes as $c) {
@@ -980,12 +978,11 @@ function drealty_developer_tools_form($form, &$form_state, drealtyConnectionEnti
 
 function drealty_developer_tools_form_submit($form, &$form_state) {
   $daemon = new drealtyDaemon();
-  $dm = new drealtyMetaData();
+  $dr = new drealtyResources();
 
-  $resource = $dm->FetchResource($form_state['values']['resource']);
-  $class = $dm->FetchClass($form_state['values']['cid']);
+  $class = $dr->FetchClass($form_state['values']['cid']);
 
-  $results = $daemon->perform_query($form_state['connection'], $resource, $class, $form_state['values']['query']);
+  $results = $daemon->perform_query($form_state['connection'], $form_state['values']['resource'], $class, $form_state['values']['query']);
 
   $form_state['rebuild'] = TRUE;
   $form_state['storage']['results'] = $results;

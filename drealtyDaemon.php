@@ -45,8 +45,44 @@ class drealtyDaemon {
     return TRUE;
   }
 
-  public function RawQuery(dRealtyConnectionEntity $connection) {
-    
+  function perform_query(drealtyConnectionEntity $connection, $resource, $class, $query) {
+    $items = array();
+    $rets = $this->dc->rets;
+    $limit = $class->chunk_size;
+    if ($limit == 0) {
+      $limit = 'NONE';
+    }
+    $count = 0;
+
+    $this->dc->rets->SetParam("offset_support", TRUE);
+
+    if ($this->dc->connect($connection->conid)) {
+      $optional_params = array(
+          'Format' => 'COMPACT-DECODED',
+          'Limit' => "$limit",
+      );
+
+      // do the actual search
+      $search = $rets->SearchQuery($resource->systemname, $class->systemname, $query, $optional_params);
+
+      // loop through the search results
+      while ($listing = $rets->FetchRow($search)) {
+        if ($count < 10) {
+          $items[] = $listing;
+        }
+        $count++;
+      }
+
+      $rets->FreeResult($search);
+
+      $this->dc->disconnect();
+
+      return $items;
+    }
+    else {
+      $error = $rets->Error();
+      watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
+    }
   }
 
   private function ProcessRetsClass(dRealtyConnectionEntity $connection, $resource, $class, $entity_type) {

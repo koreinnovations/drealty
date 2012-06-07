@@ -34,6 +34,16 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
         'type' => MENU_CALLBACK,
     );
 
+    $items[$this->path . '/manage/' . $wildcard . '/tools'] = array(
+        'title' => 'Developer Tools',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('drealty_developer_tools_form', $id_count + 1),
+        'access arguments' => array('access administration pages'),
+        'file' => 'drealty.connection.admin.inc',
+        'file path' => drupal_get_path('module', $this->entityInfo['module']) . '/includes',
+        'type' => MENU_CALLBACK,
+    );
+
 
     $items[$this->path . '/manage/' . $wildcard . '/delete'] = array(
         'title' => 'Delete',
@@ -197,7 +207,8 @@ function drealty_activate_connection_form($form, &$form_state, $connection = NUL
   $form_state['connection'] = $connection;
   if (!isset($connection->conid)) {
     drupal_set_message(t("Must have a connection selected."), 'error');
-  } else {
+  }
+  else {
 
     $rets = new drealtyConnection();
 
@@ -236,7 +247,8 @@ function drealty_activate_connection_form($form, &$form_state, $connection = NUL
           '#type' => 'submit',
           '#value' => t('Activate'),
       );
-    } else {
+    }
+    else {
       drupal_set_message($rets->error_string, 'error');
       $form['markup'] = array(
           '#markup' => '<div>There was an error activating the current connection. Please check the settings and attempt to activate the connection again.</div>'
@@ -329,22 +341,23 @@ function drealty_configure_resource_form($form, &$form_state, dRealtyConnectionE
   if (isset($form_state['input']['prop_resource']) || isset($mappings[$entity_type])) {
     if (isset($form_state['input']['prop_resource'])) {
       $results = $connection->fetchClasses($form_state['input']['prop_resource']);
-    } else {
+    }
+    else {
       $results = $connection->fetchClasses($mappings[$entity_type]->resource);
     }
 
     $life_opts = array(0 => t('Every time')) + drupal_map_assoc(array(
-          900, // 15 mins
-          1800, // 30 mins
-          3600, // 1 hour
-          7200, // 2 hours
-          10800, // 3 hours
-          21600, // 6 hours
-          28800, // 8 hours
-          43200, // 12 hours
-          86400, // 1 day
-          172800, // 2 days
-        ), 'format_interval');
+                900, // 15 mins
+                1800, // 30 mins
+                3600, // 1 hour
+                7200, // 2 hours
+                10800, // 3 hours
+                21600, // 6 hours
+                28800, // 8 hours
+                43200, // 12 hours
+                86400, // 1 day
+                172800, // 2 days
+                    ), 'format_interval');
 
     $form['help'] = array('#markup' => "
       <h3>Instructions</h3>
@@ -398,7 +411,8 @@ function drealty_configure_resource_form_submit($form, &$form_state) {
 // update or insert
   if (isset($mapping['mid'])) {
     drupal_write_record('drealty_resource_mappings', $mapping, array('mid'));
-  } else {
+  }
+  else {
     unset($mapping['mid']);
     drupal_write_record('drealty_resource_mappings', $mapping, array());
   }
@@ -615,7 +629,8 @@ function drealty_configure_resource_fields_form_submit($form, &$form_state) {
 
     if ($field['display']) {
       $connection->CreateFieldMapMapping($resource, $key, $systemname, $class->cid);
-    } else {
+    }
+    else {
       $connection->RemoveFieldMapping($resource, $key, $class->cid);
     }
   }
@@ -743,7 +758,7 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
       ),
       '#default_value' => ($class->format) ? $class->format : 'COMPACT-DECODED',
   );
-  
+
   if ($has_images) {
     $form['images'] = array('#type' => 'fieldset', '#title' => 'Images', '#collapsed' => FALSE);
     $form['images']['process_images'] = array(
@@ -803,7 +818,8 @@ function drealty_configure_resource_limits_form_submit($form, &$form_state) {
     $class->process_images = $form_state['values']['process_images'];
     $class->download_images = $form_state['values']['download_images'];
     $class->object_type = $form_state['values']['object_type'];
-  } else {
+  }
+  else {
     $class->process_images = FALSE;
     $class->download_images = FALSE;
     $class->object_type = NULL;
@@ -849,4 +865,128 @@ function theme_drealty_fields_form(&$variables) {
   $output = theme('table', array('header' => $header, 'rows' => $rows));
 
   return $output;
+}
+
+
+function drealty_developer_tools_form_ajax_resource($form, $form_state) {
+  return $form['cid'];
+}
+
+function drealty_developer_tools_form_ajax_class($form, $form_state) {
+  return $form['fields_table_container'];
+}
+
+/**
+ * Page callback for deactivating connections.
+ */
+function drealty_developer_tools_form($form, &$form_state, drealtyConnectionEntity $connection = NULL) {
+  $form_state['connection'] = $connection;
+  $form_ready = FALSE;
+
+
+  if ($form_state['storage']['results']) {
+    $form['results'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Query Results'),
+        '#default_value' => print_r($form_state['storage']['results'], TRUE),
+    );
+  }
+
+
+  $dm = new drealtyMetaData();
+  //$mappings = $connection->ResourceMappings();
+  $resources = $connection->Resources();
+
+
+  $resource_options = array(
+      '' => t('Select a resource'),
+  );
+  $class_options = array();
+
+  if ($form_state['values']['resource']) {
+    $resource = $dm->FetchResource($form_state['values']['resource']);
+    $classes = $connection->FetchClasses($resource);
+    $class_options[''] = t('Select a class');
+
+    if ($form_state['values']['cid']) {
+      $class = $dm->FetchClass($form_state['values']['cid']);
+      $fields = $dm->FetchFields($connection->conid, $resource, $class);
+      $form_ready = TRUE;
+    }
+  }
+
+  foreach ($resources as $r) {
+    $resource_options[$r->rid] = $r->systemname;
+  }
+
+  foreach ($classes as $c) {
+    $class_options[$c->cid] = $c->visiblename;
+  }
+
+  $form['resource'] = array(
+      '#type' => 'select',
+      '#title' => t('Resource'),
+      '#required' => TRUE,
+      '#options' => $resource_options,
+      '#ajax' => array(
+          'callback' => 'drealty_developer_tools_form_ajax_resource',
+          'wrapper' => 'edit-class-wrapper',
+      ),
+  );
+
+  $form['cid'] = array(
+      '#type' => 'select',
+      '#title' => t('Class'),
+      '#required' => TRUE,
+      '#options' => $class_options,
+      '#prefix' => '<div id="edit-class-wrapper">',
+      '#suffix' => '</div>',
+      '#ajax' => array(
+          'callback' => 'drealty_developer_tools_form_ajax_class',
+          'wrapper' => 'fields-table-container-wrapper',
+      ),
+      '#disabled' => empty($form_state['values']['resource']),
+  );
+
+  $form['query'] = array(
+      '#type' => 'textarea',
+      '#title' => t('RETS Query'),
+      '#required' => TRUE,
+  );
+
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Run Query'),
+  );
+
+  $form['fields_table_container'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Field Mappings'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#prefix' => '<div id="fields-table-container-wrapper">',
+      '#suffix' => '</div>',
+  );
+
+  if ($fields) {
+    $form['fields_table_container']['fields_table'] = array(
+        '#markup' => theme('drealty_fields_table', array('fields' => $fields)),
+    );
+    $form['fields_table_container']['#collapsed'] = FALSE;
+  }
+
+  return $form;
+}
+
+function drealty_developer_tools_form_submit($form, &$form_state) {
+  $daemon = new drealtyDaemon();
+  $dm = new drealtyMetaData();
+
+  $resource = $dm->FetchResource($form_state['values']['resource']);
+  $class = $dm->FetchClass($form_state['values']['cid']);
+
+  $results = $daemon->perform_query($form_state['connection'], $resource, $class, $form_state['values']['query']);
+
+  $form_state['rebuild'] = TRUE;
+  $form_state['storage']['results'] = $results;
 }

@@ -533,15 +533,16 @@ class drealtyDaemon {
     }
     return md5($tmp);
   }
-  
+
   private function log($message) {
     // drush_log($message);
     dpm($message);
   }
-  
-  public function process_images($conid, $resource, $class, $in_drush = TRUE) {
+
+  public function process_images($conid, $resource, $class, $max = 0) {
     $entity_type = 'drealty_listing';
     $chunk_size = 25;
+    $total = 0;
 
     $query = new EntityFieldQuery();
     $result = $query
@@ -592,7 +593,7 @@ class drealtyDaemon {
           $this->log("id string: " . $id_string);
 
           $photos = $this->dc->get_phrets()->GetObject($resource, $class->object_type, $id_string, '*');
-dpm($photos);
+
           if ($this->dc->get_phrets()->Error()) {
             $error = $this->dc->get_phrets()->Error();
             $this->log($error['text']);
@@ -603,7 +604,6 @@ dpm($photos);
 
           unset($ids);
           $id_string = "";
-          $counter = 0;
 
           foreach ($photos as $photo) {
             $this->log($photo);
@@ -658,9 +658,14 @@ dpm($photos);
               $this->log(t('Connection ID: !m', array('!m' => $conid->conid)));
               //$this->log(t('Photo: !m', array('!m' => print_r($photo, TRUE))));
             }
+
+            $total++;
           }
           unset($photos);
         }
+
+        if ($max > 0 && $total >= $max)
+          break;
       }
     }
     cache_clear_all("prop_images_to_process", "cache");

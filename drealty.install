@@ -279,7 +279,7 @@ function drealty_schema() {
   'process_images' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'description' => 'Whether the images need to be processed', 'group' => 'hidden'),
   'download_images' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0, 'description' => 'Whether the images need to be downloaded locally', 'group' => 'hidden'),
   'rets_imported' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'tiny', 'not null' => FALSE, 'default' => 1, 'description' => 'Is this a user submitted listing or mls imported', 'group' => 'hidden'),
-  'listing_key' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => 'A unique identifier for this record from the source system. Typically this is the MLS #, however systems like Interealty use a sysid field. Select the apporpriate field.', 'group' => 'required', 'required' => TRUE, 'weight' => 0),
+  'listing_key' => array('type' => 'varchar', 'length' => 60, 'not null' => FALSE, 'default' => NULL, 'description' => 'A unique identifier for this record from the source system. Typically this is the MLS #, however systems like Interealty use a sysid field. Select the apporpriate field.', 'group' => 'required', 'required' => TRUE, 'weight' => 0),
   'listing_id' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => 'The unique MLS # used to look up an individual listing.', 'group' => 'required', 'required' => TRUE, 'weight' => 1),
   'listing_date' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => "The datetime of the agreement between the seller and the seller's agent. If no date is stated, it may be the date on which the agreement is actually signed, if this is recorded, or it may be the date established by the award The Contract Date is also known as Date of Agreement.", 'group' => 'general'),
   'status_changed_datetime' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => "The date of the listings contractual status change. This is not necessarily the time the agent made the change in the MLS system, but rather the date of the contractual change.", 'group' => 'general'),
@@ -329,7 +329,7 @@ function drealty_schema() {
   'list_agent_first_name' => array('type' => 'varchar', 'length' => 50, 'not null' => FALSE, 'default' => NULL, 'description' => "A person's name that precedes the surname.", 'group' => 'Listing:AgentOffice:ListAgent'),
   'list_agent_last_name' => array('type' => 'varchar', 'length' => 50, 'not null' => FALSE, 'default' => NULL, 'description' => "A person's surname.", 'group' => 'Listing:AgentOffice:ListAgent'),
   'list_agent_full_name' => array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => "A person's full name. Used if there are not seperate fields for the first and last names..", 'group' => 'Listing:AgentOffice:ListAgent'),
-  'list_agent_mls_id' => array('type' => 'varchar', 'length' => 12, 'not null' => FALSE, 'default' => NULL, 'description' => "The local, well-known identifier for the member. This value may not be unique, specifically in the case of aggregation systems, this value should be the identifier from the original system.", 'group' => 'Listing:AgentOffice:ListAgent'),
+  'list_agent_mls_id' => array('type' => 'varchar', 'length' => 60, 'not null' => FALSE, 'default' => NULL, 'description' => "The local, well-known identifier for the member. This value may not be unique, specifically in the case of aggregation systems, this value should be the identifier from the original system.", 'group' => 'Listing:AgentOffice:ListAgent'),
   //Listing:AgentOffice:ListOffice
   'list_office_name' => array('type' => 'varchar', 'length' => 50, 'not null' => FALSE, 'default' => NULL, 'description' => "The name of the listing office.", 'group' => 'Listing:AgentOffice:ListOffice'),
   'list_office_phone' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => "The phone number of the listing office.", 'group' => 'Listing:AgentOffice:ListOffice'),
@@ -610,7 +610,6 @@ function drealty_update_7005() {
   return $items;
 }
 
-
 /**
  * Add property_type to drealty_listing table
  */
@@ -618,6 +617,29 @@ function drealty_update_7006() {
   $items = array();
 
   $items[] = db_query("ALTER TABLE {drealty_listing} ADD COLUMN property_type VARCHAR(60) NULL");
+
+  return $items;
+}
+
+/**
+ * Increase size of listing_key column.
+ */
+function drealty_update_7007() {
+  $items = array();
+
+  $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY listing_key VARCHAR(60)");
+
+  return $items;
+}
+
+
+/**
+ * Increase size of list_agent_mls_id column.
+ */
+function drealty_update_7008() {
+  $items = array();
+
+  $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY list_agent_mls_id VARCHAR(60)");
 
   return $items;
 }

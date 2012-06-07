@@ -357,7 +357,6 @@ class dRealtyConnectionEntity extends Entity {
     $mappings = $this->FetchFieldMappings($resource);
     $daemon = new drealtyDaemon();
 
-
     if ($mappings['listing_id']) {
 
       foreach ($classes as $class) {
@@ -368,7 +367,7 @@ class dRealtyConnectionEntity extends Entity {
             $listing = $result[0];
             $daemon->process_result($this, $resource, $class, $listing);
             if ($class->process_images) {
-              $daemon->process_images($connection, $resource, $class, FALSE);
+              $daemon->process_images($this, $resource, $class, FALSE);
             }
             break;
           }

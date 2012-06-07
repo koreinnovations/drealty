@@ -15,19 +15,18 @@ class drealtyDaemon {
     foreach ($connections as $connection) {
 
       if (empty($connections_filter) || in_array((string) $connection->conid, $connections_filter)) {
-        drush_log(dt("Importing for connection {$connection->name}, ID {$connection->conid}"));
+        $this->log(t("Importing for connection {$connection->name}, ID {$connection->conid}"));
 
         $mappings = $connection->ResourceMappings();
 
-        drush_log(dt('Resource mappings !dump', array('!dump' => print_r($mappings, TRUE))));
+        $this->log(t('Resource mappings !dump', array('!dump' => print_r($mappings, TRUE))));
 
         foreach ($mappings as $mapping) {
           $classes = $connection->FetchClasses($mapping->resource);
 
-          drush_log(dt('Classes !dump', array('!dump' => print_r($classes, TRUE))));
+          $this->log(t('Classes !dump', array('!dump' => print_r($classes, TRUE))));
 
           foreach ($classes as $class) {
-//          drush_log(print_r($class, TRUE));
             if ($class->enabled && $class->lifetime <= time() - ($class->lastupdate + 60)) {
               $this->ProcessRetsClass($connection, $mapping->resource, $class, $mapping->entity_type);
               $class->lastupdate = time();
@@ -37,7 +36,7 @@ class drealtyDaemon {
         }
       }
       else {
-        drush_log(dt("Skipping connection {$connection->name}, ID {$connection->conid}"));
+        $this->log(t("Skipping connection {$connection->name}, ID {$connection->conid}"));
       }
     }
     unset($connections, $mappings, $classes);
@@ -62,25 +61,17 @@ class drealtyDaemon {
           'Limit' => "$limit",
       );
 
-      dpm(array(
-          'resource' => $resource,
-          'class' => $class->systemname,
-          'query' => $query,
-          'optional_params' => $optional_params,
-      ));
-
       // do the actual search
       $search = $rets->SearchQuery($resource, $class->systemname, $query, $optional_params);
 
       // loop through the search results
       while ($listing = $rets->FetchRow($search)) {
         if ($count < 10) {
+          $listing['hash'] = $this->calculate_hash($listing);
           $items[] = $listing;
         }
         $count++;
       }
-
-      dpm($count);
 
       $rets->FreeResult($search);
 
@@ -108,7 +99,7 @@ class drealtyDaemon {
     $fieldmappings = $connection->FetchFieldMappings($resource, $class->cid);
 
 
-    drush_log(dt("Processing @res", array("@res" => $resource)));
+    $this->log(t("Processing @res", array("@res" => $resource)));
     if (!$class->override_status_query) {
       //build the query
       $statuses = $class->status_values;
@@ -133,7 +124,7 @@ class drealtyDaemon {
     }
     else {
       $query = array();
-      drush_log(dt("using @var", array("@var" => $class->override_status_query_text)));
+      $this->log(t("using @var", array("@var" => $class->override_status_query_text)));
       $query[] = $class->override_status_query_text;
     }
 
@@ -156,7 +147,7 @@ class drealtyDaemon {
       // fetch the search results until we've queried for them all
       while ($end) {
         $end_p = $end ? "FALSE" : "TRUE";
-        drush_log("Resource: $resource Class: $class->systemname Limit: $limit Offset: $offset MaxRowsReached: $end_p Chunks: $chunks");
+        $this->log("Resource: $resource Class: $class->systemname Limit: $limit Offset: $offset MaxRowsReached: $end_p Chunks: $chunks");
         $optional_params = array(
             'Format' => ($class->format) ? $class->format : 'COMPACT-DECODED',
             'Limit' => "$limit",
@@ -166,13 +157,13 @@ class drealtyDaemon {
         );
         // do the actual search
 
-        drush_log(dt('Class dump: !dump', array('!dump' => print_r($class, TRUE))));
-        drush_log(dt('Query dump: !dump', array('!dump' => print_r("($q)", TRUE))));
-        drush_log(dt('Params dump: !dump', array('!dump' => print_r($optional_params, TRUE))));
+        $this->log(t('Class dump: !dump', array('!dump' => print_r($class, TRUE))));
+        $this->log(t('Query dump: !dump', array('!dump' => print_r("($q)", TRUE))));
+        $this->log(t('Params dump: !dump', array('!dump' => print_r($optional_params, TRUE))));
 
         $search = $this->dc->get_phrets()->SearchQuery($resource, $class->systemname, "($q)", $optional_params);
 
-        drush_log(dt("Rows returned: " . $this->dc->get_phrets()->TotalRecordsFound()));
+        $this->log(t("Rows returned: " . $this->dc->get_phrets()->TotalRecordsFound()));
 
         $items = array();
         // loop through the search results
@@ -182,11 +173,11 @@ class drealtyDaemon {
           $items[] = $item;
         }
         if ($error = $this->dc->get_phrets()->Error()) {
-          drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
+          $this->log(t("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
 
-          drush_log(dt('Error dump: !dump', array('!dump' => print_r($error, TRUE))));
+          $this->log(t('Error dump: !dump', array('!dump' => print_r($error, TRUE))));
         }
-        drush_log(dt("caching @count items for resource: @resource | class: @class", array("@count" => count($items), "@resource" => $resource, "@class" => $class->systemname)));
+        $this->log(t("caching @count items for resource: @resource | class: @class", array("@count" => count($items), "@resource" => $resource, "@class" => $class->systemname)));
         cache_set("drealty_chunk_{$resource}_{$class->systemname}_" . $chunks++, $items);
 
         $offset += count($items) + 1;
@@ -205,7 +196,7 @@ class drealtyDaemon {
 
       // at this point we have data waiting to be processed. Need to process the
       // data which will insert/update/delete the listing data as nodes
-      drush_log(dt("process_results( connection: @connection_name, resource: @resource, class: @class, chunks: @chunks)", array("@connection_name" => $connection->name, "@resource" => $resource,
+      $this->log(t("process_results( connection: @connection_name, resource: @resource, class: @class, chunks: @chunks)", array("@connection_name" => $connection->name, "@resource" => $resource,
                   "@class" => $class->systemname, "@chunks" => $chunks)));
       $this->process_results($connection, $resource, $class, $entity_type, $chunks);
       if ($entity_type == 'drealty_listing' && $class->process_images) {
@@ -215,7 +206,7 @@ class drealtyDaemon {
     else {
       $error = $this->dc->get_phrets()->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
-      drush_log(dt("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
+      $this->log(t("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
     }
   }
 
@@ -270,8 +261,6 @@ class drealtyDaemon {
       $item->download_images = $class->download_images;
     }
 
-    //drush_log(dt('Field_mappings: !map', array('!map' => print_r($field_mappings, TRUE))));
-
     foreach ($field_mappings as $mapping) {
       if (isset($rets_item[$mapping->systemname])) {
 
@@ -289,7 +278,7 @@ class drealtyDaemon {
           case 'int':
             $string = $rets_item[$mapping->systemname];
             if (preg_match('/date/', $mapping->field_name)) {
-              drush_log($string);
+              $this->log($string);
               $value = strtotime($string);
               break;
             }
@@ -325,9 +314,10 @@ class drealtyDaemon {
     }
 
     try {
+      dpm($item);
       $item->save();
     } catch (Exception $e) {
-      
+      dpm($e);
     }
     unset($item);
   }
@@ -357,7 +347,7 @@ class drealtyDaemon {
     $schema = drupal_get_schema_unprocessed("drealty", $entity_type);
     $schema_fields = $schema['fields'];
 
-    drush_log('processing results');
+    $this->log('processing results');
     $chunk_idx = 0;
     $in_rets = array();
 
@@ -406,11 +396,11 @@ class drealtyDaemon {
       for ($j = 0; $j < $rets_results_count; $j++) {
 
 
-        drush_log(dt("Item @idx of @total", array("@idx" => $j + 1, "@total" => $rets_results_count)));
+        $this->log(t("Item @idx of @total", array("@idx" => $j + 1, "@total" => $rets_results_count)));
         $rets_item = $rets_results->data[$j];
 
 
-        drush_log(dt('Raw item dump: !dump', array('!dump' => print_r($rets_item, TRUE))));
+        $this->log(t('Raw item dump: !dump', array('!dump' => print_r($rets_item, TRUE))));
 
         $in_rets[] = $rets_item[$id];
 
@@ -441,7 +431,7 @@ class drealtyDaemon {
             $item->download_images = $class->download_images;
           }
 
-          //drush_log(dt('Field_mappings: !map', array('!map' => print_r($field_mappings, TRUE))));
+          //$this->log(t('Field_mappings: !map', array('!map' => print_r($field_mappings, TRUE))));
 
           foreach ($field_mappings as $mapping) {
             if (isset($rets_item[$mapping->systemname])) {
@@ -460,7 +450,7 @@ class drealtyDaemon {
                 case 'int':
                   $string = $rets_item[$mapping->systemname];
                   if (preg_match('/date/', $mapping->field_name)) {
-                    drush_log($string);
+                    $this->log($string);
                     $value = strtotime($string);
                     break;
                   }
@@ -471,7 +461,7 @@ class drealtyDaemon {
 //                  switch ($mapping->field_name) {
 //                    case 'end_datetime':
 //                    case 'start_datetime':
-//                      drush_log($string);
+//                      $this->log($string);
 //                      $value = strtotime($string);
 //                      break;
 //                    default:
@@ -501,28 +491,28 @@ class drealtyDaemon {
               if ($latlon->success) {
                 $item->latitude = $latlon->lat;
                 $item->longitude = $latlon->lon;
-                drush_log(dt('Geocoded: @address to (@lat, @lon)', array('@address' => $geoaddress, '@lat' => $item->latitude, '@lon' => $item->longitude)));
+                $this->log(t('Geocoded: @address to (@lat, @lon)', array('@address' => $geoaddress, '@lat' => $item->latitude, '@lon' => $item->longitude)));
               }
               else {
-                drush_log(dt('Failed to Geocode: @address', array('@address' => $geoaddress)));
+                $this->log(t('Failed to Geocode: @address', array('@address' => $geoaddress)));
               }
             }
             else {
-              drush_log(dt('Failed to Geocode: @address', array('@address' => $geoaddress)));
+              $this->log(t('Failed to Geocode: @address', array('@address' => $geoaddress)));
             }
           }
 
           try {
             $item->save();
           } catch (Exception $e) {
-            drush_log($e->getMessage());
+            $this->log($e->getMessage());
           }
-          drush_log(dt('Saving item @name', array('@name' => $item->name)));
+          $this->log(t('Saving item @name', array('@name' => $item->name)));
           unset($item);
         }
         else {
           // skipping this item
-          drush_log(dt("Skipping item @name", array("@name" => $rets_item[$id])));
+          $this->log(t("Skipping item @name", array("@name" => $rets_item[$id])));
         }
       }
       cache_clear_all($chunk_name, 'cache');
@@ -544,6 +534,11 @@ class drealtyDaemon {
     return md5($tmp);
   }
   
+  private function log($message) {
+    // drush_log($message);
+    dpm($message);
+  }
+  
   public function process_images($conid, $resource, $class, $in_drush = TRUE) {
     $entity_type = 'drealty_listing';
     $chunk_size = 25;
@@ -559,29 +554,28 @@ class drealtyDaemon {
       $items = entity_load($entity_type, array_keys($result[$entity_type]));
     }
     else {
-      if ($in_drush) drush_log("No images to process.");
+      $this->log("No images to process.");
       return;
     }
 
     //make sure we have something to process
     if (count($items) >= 1) {
-      if ($in_drush) drush_log("process_images() - Starting.");
+      $this->log("process_images() - Starting.");
       $img_dir_base = file_default_scheme() . '://drealty_image';
       $img_dir = $img_dir_base . '/' . $conid->conid;
 
       file_prepare_directory($img_dir, FILE_MODIFY_PERMISSIONS | FILE_CREATE_DIRECTORY);
 
       if (!file_prepare_directory($img_dir, FILE_MODIFY_PERMISSIONS | FILE_CREATE_DIRECTORY)) {
-        if ($in_drush) drush_log(dt("Failed to create %directory.", array('%directory' => $img_dir)), "error");
+        $this->log(t("Failed to create %directory.", array('%directory' => $img_dir)), "error");
         return;
       }
       else {
         if (!is_dir($img_dir)) {
-          if ($in_drush) drush_log(dt("Failed to locate %directory.", array('%directory' => $img_dir)), "error");
+          $this->log(t("Failed to locate %directory.", array('%directory' => $img_dir)), "error");
           return;
         }
       }
-
 
       $process_array = array_chunk($items, $chunk_size, TRUE);
 
@@ -595,13 +589,13 @@ class drealtyDaemon {
 
         if ($this->dc->connect($conid)) {
           $id_string = implode(',', $ids);
-          if ($in_drush) drush_log("id string: " . $id_string);
+          $this->log("id string: " . $id_string);
 
           $photos = $this->dc->get_phrets()->GetObject($resource, $class->object_type, $id_string, '*');
-
+dpm($photos);
           if ($this->dc->get_phrets()->Error()) {
             $error = $this->dc->get_phrets()->Error();
-            if ($in_drush) drush_log($error['text']);
+            $this->log($error['text']);
             return;
           }
 
@@ -612,7 +606,7 @@ class drealtyDaemon {
           $counter = 0;
 
           foreach ($photos as $photo) {
-            if ($in_drush) drush_log(print_r($photo, true));
+            $this->log($photo);
             $mlskey = $photo['Content-ID'];
             $number = $photo['Object-ID'];
             $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', "{$mlskey}-{$number}.jpg");
@@ -626,7 +620,7 @@ class drealtyDaemon {
               file_delete($file_object, TRUE);
             }
 
-            if ($in_drush) drush_log(dt("Saving @filename", array("@filename" => $filepath)));
+            $this->log(t("Saving @filename", array("@filename" => $filepath)));
 
             try {
 
@@ -637,7 +631,7 @@ class drealtyDaemon {
                   'Content-ID' => $photo['Content-ID'],
                       ), TRUE);
 
-              if ($in_drush) drush_log(dt('Photo result: !dump$jhh'), array('!dump' => $log));
+              $this->log(t('Photo result: !dump$jhh'), array('!dump' => $log));
 
               if ($photo['Content-Type'] == 'image/jpg' || $photo['Content-Type'] == 'image/png' || $photo['Content-Type'] == 'image/gif' || $photo['Content-Type'] == 'image/jpeg') {
                 $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
@@ -659,10 +653,10 @@ class drealtyDaemon {
                 $listing->save();
               }
             } catch (Exception $ex) {
-              if ($in_drush) drush_log(dt('EXCEPTION SAVING FILE: !ex', array('!ex' => $ex->getMessage())));
-              if ($in_drush) drush_log(dt('MLS Key: !m', array('!m' => $mlskey)));
-              if ($in_drush) drush_log(dt('Connection ID: !m', array('!m' => $conid->conid)));
-              //drush_log(dt('Photo: !m', array('!m' => print_r($photo, TRUE))));
+              $this->log(t('EXCEPTION SAVING FILE: !ex', array('!ex' => $ex->getMessage())));
+              $this->log(t('MLS Key: !m', array('!m' => $mlskey)));
+              $this->log(t('Connection ID: !m', array('!m' => $conid->conid)));
+              //$this->log(t('Photo: !m', array('!m' => print_r($photo, TRUE))));
             }
           }
           unset($photos);

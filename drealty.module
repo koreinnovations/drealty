@@ -526,7 +526,7 @@ function drealty_sentence_case($string) {
   return trim($new_string);
 }
 
-function drealty_word_limit($text, $limit=40) {
+function drealty_word_limit($text, $limit = 40) {
   $explode = explode(' ', $text);
   $string = '';
 
@@ -751,6 +751,9 @@ function drealty_theme($existing, $type, $theme, $path) {
       'template' => 'templates/drealty-search-map',
   );
 
+  $themes['drealty_fields_table'] = array(
+      'variables' => array('fields' => array()),
+  );
 
   return $themes;
 }
@@ -968,7 +971,7 @@ class DrealtyListingController extends EntityAPIController {
     drupal_add_html_head($og_image, 'og_image');
     return $content;
   }
-  
+
   public function addImage($file) {
     
   }
@@ -1166,4 +1169,29 @@ function drealty_listing_address($listing) {
   $address = implode(', ', $parts);
 
   return $address;
+}
+
+function theme_drealty_fields_table($variables) {
+  $fields = $variables['fields'];
+  $output = '';
+
+  $header = array(
+      t('System Name'),
+      t('Standard Name'),
+      t('Long Name'),
+      t('Data Type'),
+  );
+  $rows = array();
+  foreach ($fields as $f) {
+    $rows[] = array(
+        $f->systemname,
+        $f->standardname,
+        $f->longname,
+        $f->datatype,
+    );
+  }
+
+  $output .= theme('table', array('header' => $header, 'rows' => $rows));
+
+  return $output;
 }

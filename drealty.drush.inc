@@ -75,6 +75,7 @@ function drush_drealty_rets_import($additional_options = array()) {
   watchdog('message', 'RETS Import Starts at !start.', array('!start' => $start_time));
   module_load_include('php', 'drealty', 'drealtyDaemon');
   $daemon = new drealtyDaemon();
+  $daemon->is_drush = TRUE;
   $daemon->run($connections_filter);
   $max_after = db_query("SELECT MAX(created) as max_created, MAX(changed) as max_changed FROM drealty_listing")->fetchObject();
   $end_time = time();

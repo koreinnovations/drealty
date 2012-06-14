@@ -4,6 +4,7 @@ class drealtyDaemon {
 
   protected $dc;
   protected $dr;
+  public $is_drush = FALSE;
 
   public function __construct() {
     $this->dc = new drealtyConnection();
@@ -171,14 +172,19 @@ class drealtyDaemon {
           // calculate the hash
           $item['hash'] = $this->calculate_hash($item);
           $items[] = $item;
+          //$this->log(t('Item dump: !dump', array('!dump' => print_r($item, TRUE))));
         }
         if ($error = $this->dc->get_phrets()->Error()) {
-          $this->log(t("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
+          $this->log(t("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text'])));
 
           $this->log(t('Error dump: !dump', array('!dump' => print_r($error, TRUE))));
         }
         $this->log(t("caching @count items for resource: @resource | class: @class", array("@count" => count($items), "@resource" => $resource, "@class" => $class->systemname)));
-        cache_set("drealty_chunk_{$resource}_{$class->systemname}_" . $chunks++, $items);
+        $cache_key = "drealty_chunk_{$resource}_{$class->systemname}_" . $chunks++;
+        $this->log($cache_key);
+
+        $cache_result = cache_set($cache_key, $items, 'cache');
+        $this->log(t('Cache result: !res', array('!res' => print_r($cache_result, TRUE))));
 
         $offset += count($items) + 1;
         if ($limit == 'NONE') {
@@ -389,6 +395,7 @@ class drealtyDaemon {
 
     for ($i = 0; $i < $chunk_count; $chunk_idx++, $i++) {
       $chunk_name = "drealty_chunk_{$resource}_{$class->systemname}_{$chunk_idx}";
+      $this->log($chunk_name);
       $rets_results = cache_get($chunk_name);
 
       $rets_results_count = count($rets_results->data);
@@ -515,7 +522,7 @@ class drealtyDaemon {
           $this->log(t("Skipping item @name", array("@name" => $rets_item[$id])));
         }
       }
-      cache_clear_all($chunk_name, 'cache');
+      //cache_clear_all($chunk_name, 'cache');
     } // endfor $chunk_count
   }
 
@@ -535,8 +542,14 @@ class drealtyDaemon {
   }
 
   private function log($message) {
-    // drush_log($message);
-    dpm($message);
+    if ($this->is_drush) {
+      drush_log($message);
+    }
+    else {
+      if (module_exists('devel')) {
+        dpm($message);
+      }
+    }
   }
 
   public function process_images($conid, $resource, $class, $max = 0) {
@@ -631,7 +644,7 @@ class drealtyDaemon {
                   'Content-ID' => $photo['Content-ID'],
                       ), TRUE);
 
-              $this->log(t('Photo result: !dump$jhh'), array('!dump' => $log));
+              $this->log(t('Photo result: !dump', array('!dump' => $log)));
 
               if ($photo['Content-Type'] == 'image/jpg' || $photo['Content-Type'] == 'image/png' || $photo['Content-Type'] == 'image/gif' || $photo['Content-Type'] == 'image/jpeg') {
                 $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);

@@ -40,7 +40,7 @@ function drealty_drush_command() {
  * This function is called whenever a drush user calls
  * 'drush help <name-of-command>'
  *
- * @param string $section
+ * @param string $section  
  * @return string
  */
 function drealty_drush_help($section) {

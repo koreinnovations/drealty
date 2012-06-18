@@ -300,6 +300,8 @@ class drealtyDaemon {
       }
     }
 
+    $item->raw_mls_data = json_encode($rets_item);
+
     if ($class->do_geocoding) {
       $street_number = isset($item->street_number) ? $item->street_number : '';
       $street_name = isset($item->street_name) ? $item->street_name : '';
@@ -482,6 +484,8 @@ class drealtyDaemon {
               $item->{$mapping->field_name} = $value;
             }
           }
+
+          $item->raw_mls_data = json_encode($rets_item);
 
           if ($class->do_geocoding && !$force) {
             $street_number = isset($item->street_number) ? $item->street_number : '';

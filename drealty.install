@@ -290,7 +290,7 @@ function drealty_schema() {
   'view_on_web' => array('type' => 'varchar', 'length' => 10, 'not null' => FALSE, 'default' => NULL, 'description' => "A Y/N field indicating wether this listing can be viewed on the web.", 'group' => 'general'),
   'virtual_tour_url' => array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => "The branded virtual tour URI.", 'group' => 'general'),
   'public_remarks' => array('type' => 'text', 'not null' => FALSE, 'default' => NULL, 'description' => "Text remarks that may be displayed to the public. In an MLS, it is the field where information is entered for the public. This information is intended to be visible on-line. This is typically information that describes the selling points of the building and/or land for sale. Local conditions and rules will determine what such content can contain. Generally, the following information is excluded: any information pertaining to entry to the property, the seller and/or tenant, listing member contact information. In other systems, these remarks will be determined by local business rules.", 'group' => 'general'),
-  'bank_owned' => array('type' => 'varchar', 'length' => 12, 'not null' => FALSE, 'default' => NULL, 'description' => "A flag indicating if this property is bank owned or not.", 'group' => 'general'),
+  'bank_owned' => array('type' => 'varchar', 'length' => 60, 'not null' => FALSE, 'default' => NULL, 'description' => "A flag indicating if this property is bank owned or not.", 'group' => 'general'),
   //Listing:Location:Address
   'box_number' => array('type' => 'varchar', 'length' => 12, 'not null' => FALSE, 'default' => NULL, 'description' => "A container at a central mailing location, where the incoming mail of a person or legal entity is held until picked up by the person or legal entity. Also known as a post office box. Use the BoxNumber element to contain address location information not covered by the Civic Address.", 'group' => 'Listing:Location:Address'),
   'street_number' => array('type' => 'varchar', 'length' => 12, 'not null' => FALSE, 'default' => NULL, 'description' => "The street number portion of a listed property's street address.", 'group' => 'Listing:Location:Address'),
@@ -526,6 +526,7 @@ function drealty_schema() {
   'idx_include' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "A descriptor indicating if this property is allowed to be displayed in an IDX.", 'group' => 'Listing:Property'),
   'picture_count' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => FALSE, 'default' => 0, 'description' => "The number of photographs / pictures associated with the property.", 'group' => 'Listing:Property'),
   'import_or_manual' => array('type' => 'varchar', 'length' => 30, 'not null' => TRUE, 'default' => 'import', 'description' => "Indicates whether the property has been imported or added manually.", 'group' => 'Listing:Property'),
+  'raw_mls_data' => array('type' => 'text', 'not null' => FALSE, 'description' => "Raw data of property pulled in from MLS"),
       ) + entity_exportable_schema_fields(),
       'primary key' => array('id'),
           //'unique keys' => array('name' => array('name')),
@@ -632,7 +633,6 @@ function drealty_update_7007() {
   return $items;
 }
 
-
 /**
  * Increase size of list_agent_mls_id column.
  */
@@ -640,6 +640,18 @@ function drealty_update_7008() {
   $items = array();
 
   $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY list_agent_mls_id VARCHAR(60)");
+
+  return $items;
+}
+
+/**
+ * Increase size of bank_owned column. Add a raw_mls_data column
+ */
+function drealty_update_7009() {
+  $items = array();
+
+  $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY bank_owned VARCHAR(60)");
+  $items[] = db_query("ALTER TABLE {drealty_listing} ADD raw_mls_data TEXT NULL");
 
   return $items;
 }

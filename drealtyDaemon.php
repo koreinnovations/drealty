@@ -54,12 +54,13 @@ class drealtyDaemon {
     }
     $count = 0;
 
-    $this->dc->get_phrets()->SetParam("offset_support", TRUE);
+    //$this->dc->get_phrets()->SetParam("offset_support", TRUE);
 
     if ($this->dc->connect($connection->conid)) {
       $optional_params = array(
           'Format' => 'COMPACT-DECODED',
           'Limit' => "$limit",
+          'Offset' => "$offset",
       );
 
       // do the actual search
@@ -72,6 +73,11 @@ class drealtyDaemon {
           $items[] = $listing;
         }
         $count++;
+      }
+      if ($error = $this->dc->get_phrets()->Error()) {
+        dpm(t("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text'])));
+
+        dpm(t('Error dump: !dump', array('!dump' => print_r($error, TRUE))));
       }
 
       $rets->FreeResult($search);
@@ -322,10 +328,8 @@ class drealtyDaemon {
     }
 
     try {
-      dpm($item);
       $item->save();
     } catch (Exception $e) {
-      dpm($e);
     }
     unset($item);
   }

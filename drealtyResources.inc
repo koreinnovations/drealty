@@ -67,7 +67,7 @@ class drealtyResources {
   function FetchFieldMappings($conid, $resource = NULL, $class = NULL) {
     $cache_name = "drealty_field_mapping_{$resource}_{$conid}";
     $cached = cache_get($cache_name, $this->defaultCache);
-
+    
     if (!$cached) {
     
       $query = db_select('drealty_field_mappings', 'dfm')

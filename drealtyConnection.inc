@@ -351,7 +351,7 @@ class dRealtyConnectionEntity extends Entity {
     parent::delete();
   }
 
-  public function ImportListing($listing_id) {
+  public function ImportListing($listing_id, $query_template = NULL) {
     $resource = 'Property';
     $classes = $this->FetchClasses($resource);
     $mappings = $this->FetchFieldMappings($resource);
@@ -361,7 +361,12 @@ class dRealtyConnectionEntity extends Entity {
 
       foreach ($classes as $class) {
         if ($class->enabled) {
-          $query = sprintf("(%s=%s)", $mappings['listing_id']->systemname, $listing_id);
+          if ($query_template) {
+            $query = str_replace('[listing-id]', $listing_id, $query_template);
+          }
+          else {
+            $query = sprintf("(%s=%s)", $mappings['listing_id']->systemname, $listing_id);
+          }
           $result = $daemon->perform_query($this, $resource, $class, $query);
           if (sizeof($result) > 0) {
             $listing = $result[0];

@@ -206,12 +206,14 @@ class drealtyDaemon {
       // do some cleanup
       unset($items, $query_fields, $offset, $mls_field, $price_field, $mappings, $resources);
 
+      $skip_images = FALSE;
+      
       // at this point we have data waiting to be processed. Need to process the
       // data which will insert/update/delete the listing data as nodes
       $this->log(t("process_results( connection: @connection_name, resource: @resource, class: @class, chunks: @chunks)", array("@connection_name" => $connection->name, "@resource" => $resource,
                   "@class" => $class->systemname, "@chunks" => $chunks)));
       $this->process_results($connection, $resource, $class, $entity_type, $chunks);
-      if ($entity_type == 'drealty_listing' && $class->process_images) {
+      if ($entity_type == 'drealty_listing' && $class->process_images && !$skip_images) {
         $this->process_images($connection, $resource, $class);
       }
     }
@@ -440,7 +442,7 @@ class drealtyDaemon {
           $item->rets_imported = TRUE;
 
           if ($entity_type == 'drealty_listing') {
-            $item->process_images = TRUE;
+            $item->process_images = ($force) ? FALSE : TRUE;
             $item->download_images = $class->download_images;
           }
 

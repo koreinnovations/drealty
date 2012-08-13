@@ -373,7 +373,7 @@ class dRealtyConnectionEntity extends Entity {
             unset($result);
             $listing_entity = $daemon->process_result($this, $resource, $class, $listing);
             if ($class->process_images) {
-              $daemon->process_images($this, $resource, $class, 40);
+              $daemon->process_images($this, $resource, $class, 0, array($listing_entity->listing_key));
             }
             return $listing_entity;
           }

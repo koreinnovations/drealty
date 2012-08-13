@@ -707,8 +707,10 @@ class drealtyDaemon {
      *    only the group of IDs in the chunk.  This will yield $chunk_size
      *    listing entities, which will consume much less memory than ALL listing
      *    entities at once, assuming that $chunk_size is a reasonable number.
+     *    ~~~ DONE ~~~
      * 
      * 2. Unset $items as soon as it has served its purpose
+     *    ~~~ DONE ~~~
      * 
      * 3. Don't run the second EntityFieldQuery inside the if ($is_really_an_image) 
      *    block.  This data has been loaded once and just needs to be put into
@@ -717,7 +719,7 @@ class drealtyDaemon {
      *    this is extremely sloppy and inefficient because the query is run each
      *    time an individual photo is processed.  So if there are 20 photos for 
      *    a listing, we are pulling the listing from the database 20 times.
-     * 
+     *    ~~~ DONE ~~~
      */
     // We have hard-coded the entity type to "drealty_listing"
     $entity_type = 'drealty_listing';
@@ -725,7 +727,8 @@ class drealtyDaemon {
     // Do 25 photos at a time
     $chunk_size = 25;
 
-    // ?
+    // Total number of listings processed.  This gets incremented in our
+    // loops below
     $total = 0;
 
     // Pull all the listing records from the database whose process_images
@@ -737,11 +740,18 @@ class drealtyDaemon {
             ->propertycondition('conid', $conid->conid)
             ->execute();
 
-    // Load full entity objects based on the IDs returned from the query
     if (!empty($result[$entity_type])) {
 
+      // Put IDs returned from the query into an array
       $result_ids = array_keys($result[$entity_type]);
+      
+      // Split IDs into chunks of $chunk_size
       $process_ids = array_chunk($result_ids, $chunk_size, TRUE);
+      // Boolean to indicate whether there are items to process
+      $items_exist = count($result_ids > 0);
+
+      // Remove this array from memory
+      unset($result_ids);
 
       //$items = entity_load($entity_type, $result_ids);
     } else {
@@ -750,9 +760,10 @@ class drealtyDaemon {
     }
 
     //make sure we have something to process
-    if (count($result_ids) >= 1) {
+    if ($items_exist) {
       $this->log("process_images() - Starting.");
 
+      // We don't need $result_ids
       // Set up a base directory for storing images
       $img_dir_base = file_default_scheme() . '://drealty_image';
       $img_dir = $img_dir_base . '/' . $conid->conid;
@@ -778,10 +789,12 @@ class drealtyDaemon {
       foreach ($process_ids as $ids_chunk) {
         $chunk = entity_load($entity_type, $ids_chunk);
         $ids = array();
+        $lookup_table = array();
 
         // Loop through all items in current chunk and extract the ID
         foreach ($chunk as $item) {
           $ids[] = $item->listing_key;
+          $lookup_table[$item->listing_key] = $item;
         }
 
         // Make sure we have a RETS connection
@@ -790,8 +803,6 @@ class drealtyDaemon {
           // Join the IDs extracted into a comma-separated string to send to the 
           // IDX for querying images
           $id_string = implode(',', $ids);
-
-          $this->log("id string: " . $id_string);
 
           // Query the IDX for images.  Put the results into $photos
           $photos = $this->dc->get_phrets()->GetObject($resource, $class->object_type, $id_string, '*');
@@ -812,7 +823,6 @@ class drealtyDaemon {
 
           // Loop through result set from query
           foreach ($photos as $photo) {
-            $this->log($photo);
 
             // Set up destinatino file name, path, etc.
             $mlskey = $photo['Content-ID'];
@@ -842,17 +852,9 @@ class drealtyDaemon {
                 // Save the photo to the filesystem
                 $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
 
-                // load the entity that is associated with the image
-                $query = new EntityFieldQuery();
-                $result = $query
-                        ->entityCondition('entity_type', 'drealty_listing')
-                        ->propertyCondition('listing_key', $mlskey)
-                        ->propertyCondition('conid', $conid->conid)
-                        ->execute();
-
-                // Extract the single listing we're looking for from the array of returned listings
-                $listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
-
+                // Get the listing entity object that this photo belongs to
+                $listing = $lookup_table[$mlskey];
+                
                 // Map the photo to the listing.
                 file_usage_add($file, 'drealty', $entity_type, $listing->id);
 
@@ -873,6 +875,8 @@ class drealtyDaemon {
           }
           unset($photos);
         }
+        
+        unset($chunk);
 
         /**
          * $max is a built-in cutoff that can force this function to break out of

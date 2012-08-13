@@ -11,8 +11,10 @@ function drealty_drush_command() {
 
   $items['rets-import'] = array(
       'description' => 'Import RETS Listings.',
-      'arguments' => array(
+      'options' => array(
           'connections' => t('Restrict import to specific connections'),
+          'skip-images' => t('If "true", then skip image processing'),
+          'force-import' => t('If "true", then insert/update all listings retrieved, even if they have not changed since last import'),
       ),
   );
 
@@ -30,11 +32,11 @@ function drealty_drush_command() {
 
   $items['rets-process-images'] = array(
       'description' => "Download Property Images",
-      'arguments' => array(
+      'options' => array(
           'connections' => t('Restrict import to specific connections'),
           'max' => t('Limit import batch to a specific number of listings'),
-          'listing_keys' => t('Restrict import to specific listing keys/IDs'),
-          'chunk_size' => t('The size of each RETS query batch'),
+          'listing-keys' => t('Restrict import to specific listing keys/IDs'),
+          'chunk-size' => t('The size of each RETS query batch'),
       ),
   );
 
@@ -74,13 +76,20 @@ function drush_drealty_rets_import($additional_options = array()) {
   // set the time out to infinite
   set_time_limit(0);
 
-  drush_log(dt('Args: !dump', array('!dump' => print_r($additional_options, TRUE))));
+  $connections = drush_get_option('connections', NULL);
+  $skip_images = drush_get_option('skip-images', FALSE);
+  $force = drush_get_option('force-import', FALSE);
+  
+  $skip_images = (strtolower($skip_images) == 'true');
+  $force = (strtolower($force) == 'true');
+  
+  drush_log(dt("Skip images? " . $skip_images));
+  drush_log(dt("Force import? " . $force));
 
   $connections_filter = array();
-  if ($additional_options['connections']) {
-    $connections_filter += explode(',', $additional_options); //['connections']);
+  if ($connections) {
+    $connections_filter += explode(',', $connections); //['connections']);
   }
-
 
   $max_before = db_query("SELECT MAX(created) as max_created, MAX(changed) as max_changed FROM drealty_listing")->fetchObject();
   $start_time = time();
@@ -88,7 +97,7 @@ function drush_drealty_rets_import($additional_options = array()) {
   module_load_include('php', 'drealty', 'drealtyDaemon');
   $daemon = new drealtyDaemon();
   $daemon->is_drush = TRUE;
-  $daemon->run($connections_filter);
+  $daemon->run($connections_filter, $skip_images, $force);
   $max_after = db_query("SELECT MAX(created) as max_created, MAX(changed) as max_changed FROM drealty_listing")->fetchObject();
   $end_time = time();
   watchdog('message', 'RETS Import Ends at !end.', array('!end' => $end_time));
@@ -96,19 +105,22 @@ function drush_drealty_rets_import($additional_options = array()) {
   realtsoft_listing_import_manipulation($start_time, $end_time, $max_before, $max_after);
 }
 
-function drush_drealty_rets_process_images($connections = NULL, $max = 0, $listing_keys = NULL, $chunk_size = 25) {
+function drush_drealty_rets_process_images() {
 
-  $args = func_get_args();
-  
+  $connections = drush_get_option('connections', NULL);
+  $max = drush_get_option('max', 0);
+  $listing_keys = drush_get_option('listing-keys', NULL);
+  $chunk_size = drush_get_option('chunk-size', 25);
+
   drush_log(dt('Args: !dump', array('!dump' => print_r($args, TRUE))));
-  
+
   $connections_filter = array();
   $listing_keys_filter = array();
 
   if ($connections) {
     $connections_filter += explode(',', $connections); //['connections']);
   }
-  
+
   if ($listing_keys) {
     $listing_keys_filter = array_filter(explode(',', $listing_keys));
   }
@@ -116,7 +128,6 @@ function drush_drealty_rets_process_images($connections = NULL, $max = 0, $listi
   $daemon = new drealtyDaemon();
   $daemon->is_drush = TRUE;
   $daemon->runImageProcess($connections_filter, $max, $listing_keys_filter, $chunk_size);
-  
 }
 
 function drush_drealty_rets_reprocess_images($additional_options = array()) {

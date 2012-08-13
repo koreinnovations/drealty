@@ -54,8 +54,7 @@ class drealtyDaemon {
             }
           }
         }
-      }
-      else {
+      } else {
         $this->log(t("Skipping connection {$connection->name}, ID {$connection->conid}"));
       }
     }
@@ -64,54 +63,67 @@ class drealtyDaemon {
     return TRUE;
   }
 
-  public function run($connections_filter = array()) {
+  public function run($connections_filter = array(), $skip_images = FALSE, $force = FALSE) {
+
+    if ($skip_images) {
+      $this->log(t('Skipping images for this import'));
+    }
+    if ($force) {
+      $this->log(t('We will force load results for this import'));
+    }
+
+    $connections_to_run = array();
 
     // Pull all the configured RETS connections from the database and loop through them
     $connections = $this->dc->FetchConnections();
+    
     foreach ($connections as $connection) {
-
       // This if(){} statement allows the loop to be restricted to a single connection when run
       // from drush with the --connections setting
       if (empty($connections_filter) || in_array((string) $connection->conid, $connections_filter)) {
-        $this->log(t("Importing for connection {$connection->name}, ID {$connection->conid}"));
-
-        // Pull resource mappings (Property, Office, etc) for the connection
-        $mappings = $connection->ResourceMappings();
-
-        $this->log(t('Resource mappings !dump', array('!dump' => print_r($mappings, TRUE))));
-
-        // Loop through resource mappings
-        foreach ($mappings as $mapping) {
-
-          // Fetch classes (Rental, Residential, etc) connected to the mapped resource
-          $classes = $connection->FetchClasses($mapping->resource);
-
-          $this->log(t('Classes !dump', array('!dump' => print_r($classes, TRUE))));
-
-          // Loop through classes
-          foreach ($classes as $class) {
-            // Make sure the class is (a) enabled and (b) was imported more than 
-            // X time ago (where X is configured per class in the admin tools)
-            if ($class->enabled && $class->lifetime <= time() - ($class->lastupdate + 60)) {
-
-              // Engage RETS connection to download properties
-              $this->ProcessRetsClass($connection, $mapping->resource, $class, $mapping->entity_type);
-
-              // Update the last updated timestamp to ensure that this class is not
-              // re-imported too soon
-              $class->lastupdate = time();
-
-              // Write timestamp change to the database
-              drupal_write_record('drealty_classes', $class, 'cid');
-            }
-          }
-        }
-      }
-      else {
+        $connections_to_run[] = $connection;
+        $this->log(t("Including connection {$connection->name}, ID {$connection->conid}"));
+      } else {
         $this->log(t("Skipping connection {$connection->name}, ID {$connection->conid}"));
       }
     }
-    unset($connections, $mappings, $classes);
+    
+    $this->log("\n======================================\n");
+
+    foreach ($connections_to_run as $connection) {
+      $this->log(t("Importing for connection {$connection->name}, ID {$connection->conid}"));
+
+      // Pull resource mappings (Property, Office, etc) for the connection
+      $mappings = $connection->ResourceMappings();
+
+      // Loop through resource mappings
+      foreach ($mappings as $mapping) {
+
+        // Fetch classes (Rental, Residential, etc) connected to the mapped resource
+        $classes = $connection->FetchClasses($mapping->resource);
+
+        // Loop through classes
+        foreach ($classes as $class) {
+          // Make sure the class is (a) enabled and (b) was imported more than 
+          // X time ago (where X is configured per class in the admin tools)
+          if ($class->enabled && ($force || $class->lifetime <= time() - ($class->lastupdate + 60))) {
+
+            // Engage RETS connection to download properties
+            $this->ProcessRetsClass($connection, $mapping->resource, $class, $mapping->entity_type, $skip_images, $force);
+
+            // Update the last updated timestamp to ensure that this class is not
+            // re-imported too soon
+            $class->lastupdate = time();
+
+            // Write timestamp change to the database
+            drupal_write_record('drealty_classes', $class, 'cid');
+          }
+        }
+      }
+    }
+
+
+    unset($connections, $mappings, $classes, $connections_to_run);
     cache_clear_all();
     return TRUE;
   }
@@ -156,14 +168,13 @@ class drealtyDaemon {
       $this->dc->disconnect();
 
       return $items;
-    }
-    else {
+    } else {
       $error = $rets->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
     }
   }
 
-  private function ProcessRetsClass(dRealtyConnectionEntity $connection, $resource, $class, $entity_type) {
+  private function ProcessRetsClass(dRealtyConnectionEntity $connection, $resource, $class, $entity_type, $skip_images = FALSE, $force = FALSE) {
     $query_fields = array();
     $offset = 0;
     $props = array();
@@ -321,8 +332,7 @@ class drealtyDaemon {
         // If no limit was set, don't go back into the loop. 
         if ($limit == 'NONE') {
           $keep_going = FALSE;
-        }
-        else {
+        } else {
           // If our RETS query reached the maximum rows allowed, keep going
           // and run another query
           $keep_going = $this->dc->get_phrets()->IsMaxrowsReached();
@@ -338,22 +348,19 @@ class drealtyDaemon {
       // do some cleanup, get the following items out of memory
       unset($items, $query_fields, $offset, $mls_field, $price_field, $mappings, $resources);
 
-      $skip_images = FALSE;
-
       // at this point we have data waiting to be processed. Need to process the
       // data which will insert/update/delete the listing data as nodes
       $this->log(t("process_results( connection: @connection_name, resource: @resource, class: @class, chunks: @chunks)", array("@connection_name" => $connection->name, "@resource" => $resource,
                   "@class" => $class->systemname, "@chunks" => $chunks)));
 
       // Process the results cached from the RETS query/queries
-      $this->process_results($connection, $resource, $class, $entity_type, $chunks);
+      $this->process_results($connection, $resource, $class, $entity_type, $chunks, $force);
 
       // Process any images associated with the items downlaoded
       if ($entity_type == 'drealty_listing' && $class->process_images && !$skip_images) {
         $this->process_images($connection, $resource, $class);
       }
-    }
-    else {
+    } else {
       $error = $this->dc->get_phrets()->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
       $this->log(t("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
@@ -398,8 +405,7 @@ class drealtyDaemon {
     if (isset($existing_items[$rets_item[$id]])) {
       // this listing exists so we'll get a reference to it and set the values to what came to us in the RETS result
       $item = &$existing_items[$rets_item[$id]];
-    }
-    else {
+    } else {
       $item->created = time();
     }
 
@@ -435,8 +441,7 @@ class drealtyDaemon {
               $this->log($string);
               $value = strtotime($string);
               break;
-            }
-            else {
+            } else {
               $val = preg_replace('/[^0-9\.]/Uis', '', $string);
               $value = is_numeric($val) ? $val : 0;
             }
@@ -493,9 +498,11 @@ class drealtyDaemon {
    *  array("id"=>int, "id_field"=>int);
    * @param int $number_of_chunks
    *  The number of chunks that need to be processed
-   *
+   * @param bool $force
+   *  If true, force the loading of all results into the database, regardless
+    of whether the data has changed.  This will slow down performance.
    */
-  protected function process_results(dRealtyConnectionEntity $connection, $resource, $class, $entity_type, $number_of_chunks) {
+  protected function process_results(dRealtyConnectionEntity $connection, $resource, $class, $entity_type, $number_of_chunks, $force = FALSE) {
 
     // $first_run = variable_get("drealty_connection_{$connection->conid}_first_run", TRUE);
     // Pull the schema for the appropriate drealty table
@@ -583,10 +590,6 @@ class drealtyDaemon {
         // Put the current record into a variable called $rets_item
         $rets_item = $rets_results->data[$j];
 
-        // If true, force the loading of all results into the database, regardless
-        // of whether the data has changed.  This will slow down performance.
-        $force = FALSE;
-
         // Only process images from the IDX if we're not in "force" mode.
         $process_images_from_rets = !$force;
         // Only attempt geocoding of properties if this feature is turned on from
@@ -661,8 +664,7 @@ class drealtyDaemon {
                     $this->log($string);
                     $value = strtotime($string);
                     break;
-                  }
-                  else {
+                  } else {
                     $val = preg_replace('/[^0-9\.]/Uis', '', $string);
                     $value = is_numeric($val) ? $val : 0;
                   }
@@ -712,8 +714,7 @@ class drealtyDaemon {
               $item->latitude = $latlon->lat;
               $item->longitude = $latlon->lon;
               $this->log(t('Geocoded: @address to (@lat, @lon)', array('@address' => $geoaddress, '@lat' => $item->latitude, '@lon' => $item->longitude)));
-            }
-            else {
+            } else {
               $this->log(t('Failed to Geocode: @address', array('@address' => $geoaddress)));
             }
           }
@@ -728,8 +729,7 @@ class drealtyDaemon {
           $this->log(t('Saving item @name', array('@name' => $item->name)));
           // Remove the item from memory
           unset($item);
-        }
-        else {
+        } else {
           // skipping this item
           $this->log(t("Skipping item @name", array("@name" => $rets_item[$id])));
         }
@@ -756,8 +756,7 @@ class drealtyDaemon {
   private function log($message) {
     if ($this->is_drush) {
       drush_log($message);
-    }
-    else {
+    } else {
       if (module_exists('devel')) {
         dpm($message);
       }
@@ -842,8 +841,7 @@ class drealtyDaemon {
       unset($result_ids);
 
       //$items = entity_load($entity_type, $result_ids);
-    }
-    else {
+    } else {
       $this->log("No images to process.");
       return;
     }
@@ -864,8 +862,7 @@ class drealtyDaemon {
       if (!file_prepare_directory($img_dir, FILE_MODIFY_PERMISSIONS | FILE_CREATE_DIRECTORY)) {
         $this->log(t("Failed to create %directory.", array('%directory' => $img_dir)), "error");
         return;
-      }
-      else {
+      } else {
         // If for some reason the directory still doesn't exist, quit
         if (!is_dir($img_dir)) {
           $this->log(t("Failed to locate %directory.", array('%directory' => $img_dir)), "error");
@@ -969,8 +966,7 @@ class drealtyDaemon {
 
                 // Map the photo to the listing.
                 file_usage_add($file, 'drealty', $entity_type, $listing->id);
-              }
-              else {
+              } else {
                 $this->log(t('Photo !num is not an image. Content type is !type', array('!num' => $index, '!type' => $photo['Content-Type'])));
                 if ($photo['Content-Type'] == 'text/xml') {
                   $this->log($photo['Data']);

@@ -53,8 +53,7 @@ class drealtyDaemon {
             }
           }
         }
-      }
-      else {
+      } else {
         $this->log(t("Skipping connection {$connection->name}, ID {$connection->conid}"));
       }
     }
@@ -103,8 +102,7 @@ class drealtyDaemon {
       $this->dc->disconnect();
 
       return $items;
-    }
-    else {
+    } else {
       $error = $rets->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
     }
@@ -195,10 +193,6 @@ class drealtyDaemon {
       // fetch the search results until we've queried for them all
       while ($keep_going) {
 
-        $end_p = $keep_going ? "FALSE" : "TRUE";
-
-        $this->log("Resource: $resource Class: $class->systemname Limit: $limit Offset: $offset MaxRowsReached: $end_p Chunks: $chunks");
-
         /*
          * Configure parameters to be sent with the RETS query.
          * 
@@ -228,11 +222,6 @@ class drealtyDaemon {
             'Count' => '1',
         );
 
-
-        $this->log(t('Class dump: !dump', array('!dump' => print_r($class, TRUE))));
-        $this->log(t('Query dump: !dump', array('!dump' => print_r("($q)", TRUE))));
-        $this->log(t('Params dump: !dump', array('!dump' => print_r($optional_params, TRUE))));
-
         // Perform the RETS query against the IDX server
         $search = $this->dc->get_phrets()->SearchQuery($resource, $class->systemname, "($q)", $optional_params);
 
@@ -254,7 +243,8 @@ class drealtyDaemon {
         }
 
         // Catch any errors that occurred
-        if ($error = $this->dc->get_phrets()->Error()) {
+        $error = $this->dc->get_phrets()->Error();
+        if ($error) {
           $this->log(t("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text'])));
           $this->log(t('Error dump: !dump', array('!dump' => print_r($error, TRUE))));
         }
@@ -266,12 +256,8 @@ class drealtyDaemon {
         // in "chunks" based on the chunk size (i.e. record limit)
         $cache_key = "drealty_chunk_{$resource}_{$class->systemname}_" . $chunks++;
 
-        $this->log($cache_key);
-
         // Store the items in the cache
         $cache_result = cache_set($cache_key, $items, 'cache');
-
-        $this->log(t('Cache result: !res', array('!res' => print_r($cache_result, TRUE))));
 
         // Increment offset so that our next RETS query will start where we left
         // off and we won't pull duplicate records.
@@ -280,8 +266,7 @@ class drealtyDaemon {
         // If no limit was set, don't go back into the loop. 
         if ($limit == 'NONE') {
           $keep_going = FALSE;
-        }
-        else {
+        } else {
           // If our RETS query reached the maximum rows allowed, keep going
           // and run another query
           $keep_going = $this->dc->get_phrets()->IsMaxrowsReached();
@@ -311,8 +296,7 @@ class drealtyDaemon {
       if ($entity_type == 'drealty_listing' && $class->process_images && !$skip_images) {
         $this->process_images($connection, $resource, $class);
       }
-    }
-    else {
+    } else {
       $error = $this->dc->get_phrets()->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
       $this->log(t("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
@@ -324,7 +308,7 @@ class drealtyDaemon {
     $schema_fields = $schema['fields'];
     $entity_type = 'drealty_listing';
     $key_field = 'listing_key';
-    
+
     // get the fieldmappings
     $field_mappings = $connection->FetchFieldMappings($resource, $class->cid);
 
@@ -355,8 +339,7 @@ class drealtyDaemon {
     if (isset($existing_items[$rets_item[$id]])) {
       // this listing exists so we'll get a reference to it and set the values to what came to us in the RETS result
       $item = &$existing_items[$rets_item[$id]];
-    }
-    else {
+    } else {
       $item->created = time();
     }
 
@@ -392,8 +375,7 @@ class drealtyDaemon {
               $this->log($string);
               $value = strtotime($string);
               break;
-            }
-            else {
+            } else {
               $val = preg_replace('/[^0-9\.]/Uis', '', $string);
               $value = is_numeric($val) ? $val : 0;
             }
@@ -538,10 +520,6 @@ class drealtyDaemon {
         // Put the current record into a variable called $rets_item
         $rets_item = $rets_results->data[$j];
 
-
-        $this->log(t('Raw item dump: !dump', array('!dump' => print_r($rets_item, TRUE))));
-
-
         // If true, force the loading of all results into the database, regardless
         // of whether the data has changed.  This will slow down performance.
         $force = FALSE;
@@ -620,8 +598,7 @@ class drealtyDaemon {
                     $this->log($string);
                     $value = strtotime($string);
                     break;
-                  }
-                  else {
+                  } else {
                     $val = preg_replace('/[^0-9\.]/Uis', '', $string);
                     $value = is_numeric($val) ? $val : 0;
                   }
@@ -671,8 +648,7 @@ class drealtyDaemon {
               $item->latitude = $latlon->lat;
               $item->longitude = $latlon->lon;
               $this->log(t('Geocoded: @address to (@lat, @lon)', array('@address' => $geoaddress, '@lat' => $item->latitude, '@lon' => $item->longitude)));
-            }
-            else {
+            } else {
               $this->log(t('Failed to Geocode: @address', array('@address' => $geoaddress)));
             }
           }
@@ -687,8 +663,7 @@ class drealtyDaemon {
           $this->log(t('Saving item @name', array('@name' => $item->name)));
           // Remove the item from memory
           unset($item);
-        }
-        else {
+        } else {
           // skipping this item
           $this->log(t("Skipping item @name", array("@name" => $rets_item[$id])));
         }
@@ -715,8 +690,7 @@ class drealtyDaemon {
   private function log($message) {
     if ($this->is_drush) {
       drush_log($message);
-    }
-    else {
+    } else {
       if (module_exists('devel')) {
         dpm($message);
       }
@@ -724,13 +698,33 @@ class drealtyDaemon {
   }
 
   public function process_images($conid, $resource, $class, $max = 0) {
-    
+
+    /**
+     * Ideas for optimization:
+     * 
+     * 1. Don't load all entities at the front.  Load IDs and build chunks
+     *    array based on IDs.  For each chunks array, run entity_load and pass
+     *    only the group of IDs in the chunk.  This will yield $chunk_size
+     *    listing entities, which will consume much less memory than ALL listing
+     *    entities at once, assuming that $chunk_size is a reasonable number.
+     * 
+     * 2. Unset $items as soon as it has served its purpose
+     * 
+     * 3. Don't run the second EntityFieldQuery inside the if ($is_really_an_image) 
+     *    block.  This data has been loaded once and just needs to be put into
+     *    a lookup structure so it can be referenced again.  No need to consume
+     *    those resources when performance is already a big concern.  Right now
+     *    this is extremely sloppy and inefficient because the query is run each
+     *    time an individual photo is processed.  So if there are 20 photos for 
+     *    a listing, we are pulling the listing from the database 20 times.
+     * 
+     */
     // We have hard-coded the entity type to "drealty_listing"
     $entity_type = 'drealty_listing';
-    
+
     // Do 25 photos at a time
     $chunk_size = 25;
-    
+
     // ?
     $total = 0;
 
@@ -745,17 +739,20 @@ class drealtyDaemon {
 
     // Load full entity objects based on the IDs returned from the query
     if (!empty($result[$entity_type])) {
-      $items = entity_load($entity_type, array_keys($result[$entity_type]));
-    }
-    else {
+
+      $result_ids = array_keys($result[$entity_type]);
+      $process_ids = array_chunk($result_ids, $chunk_size, TRUE);
+
+      //$items = entity_load($entity_type, $result_ids);
+    } else {
       $this->log("No images to process.");
       return;
     }
 
     //make sure we have something to process
-    if (count($items) >= 1) {
+    if (count($result_ids) >= 1) {
       $this->log("process_images() - Starting.");
-      
+
       // Set up a base directory for storing images
       $img_dir_base = file_default_scheme() . '://drealty_image';
       $img_dir = $img_dir_base . '/' . $conid->conid;
@@ -767,8 +764,7 @@ class drealtyDaemon {
       if (!file_prepare_directory($img_dir, FILE_MODIFY_PERMISSIONS | FILE_CREATE_DIRECTORY)) {
         $this->log(t("Failed to create %directory.", array('%directory' => $img_dir)), "error");
         return;
-      }
-      else {
+      } else {
         // If for some reason the directory still doesn't exist, quit
         if (!is_dir($img_dir)) {
           $this->log(t("Failed to locate %directory.", array('%directory' => $img_dir)), "error");
@@ -777,11 +773,10 @@ class drealtyDaemon {
       }
 
       // Split results into chunks of $chunk_size listings at a time
-      $process_array = array_chunk($items, $chunk_size, TRUE);
-
+      // $process_array = array_chunk($items, $chunk_size, TRUE);
       // Loop through chunks
-      foreach ($process_array as $chunk) {
-
+      foreach ($process_ids as $ids_chunk) {
+        $chunk = entity_load($entity_type, $ids_chunk);
         $ids = array();
 
         // Loop through all items in current chunk and extract the ID
@@ -791,11 +786,11 @@ class drealtyDaemon {
 
         // Make sure we have a RETS connection
         if ($this->dc->connect($conid)) {
-          
+
           // Join the IDs extracted into a comma-separated string to send to the 
           // IDX for querying images
           $id_string = implode(',', $ids);
-          
+
           $this->log("id string: " . $id_string);
 
           // Query the IDX for images.  Put the results into $photos
@@ -818,46 +813,35 @@ class drealtyDaemon {
           // Loop through result set from query
           foreach ($photos as $photo) {
             $this->log($photo);
-            
+
             // Set up destinatino file name, path, etc.
             $mlskey = $photo['Content-ID'];
             $number = $photo['Object-ID'];
             $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', "{$mlskey}-{$number}.jpg");
             $filepath = "{$img_dir}/{$filename}";
 
-            
             $is_really_an_image = ($photo['Content-Type'] == 'image/jpg' || $photo['Content-Type'] == 'image/png' || $photo['Content-Type'] == 'image/gif' || $photo['Content-Type'] == 'image/jpeg');
-            
-            // See if the file we are trying to save currently exists in the managed
-            // files table
-            $fid = db_query('SELECT fid FROM {file_managed} WHERE filename = :filename', array(':filename' => $filename))->fetchField();
-
-            // If the file does exist, delete it so we can save the file we
-            // just pulled from the IDX
-            if (!empty($fid)) {
-              $file_object = file_load($fid);
-              file_delete($file_object, TRUE);
-            }
-
-            $this->log(t("Saving @filename", array("@filename" => $filepath)));
 
             try {
 
-              $log = print_r(array(
-                  'Content-Type' => $photo['Content-Type'],
-                  'Success' => $photo['Success'],
-                  'Object-ID' => $photo['Object-ID'],
-                  'Content-ID' => $photo['Content-ID'],
-                      ), TRUE);
-
-              $this->log(t('Photo result: !dump', array('!dump' => $log)));
-
               // Make sure the object retrieved from the IDX is indeed an image
               if ($is_really_an_image) {
-                
+                // See if the file we are trying to save currently exists in the managed
+                // files table
+                $fid = db_query('SELECT fid FROM {file_managed} WHERE filename = :filename', array(':filename' => $filename))->fetchField();
+
+                // If the file does exist, delete it so we can save the file we
+                // just pulled from the IDX
+                if (!empty($fid)) {
+                  $file_object = file_load($fid);
+                  file_delete($file_object, TRUE);
+                }
+
+                $this->log(t("Saving @filename", array("@filename" => $filepath)));
+
                 // Save the photo to the filesystem
                 $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
-                
+
                 // load the entity that is associated with the image
                 $query = new EntityFieldQuery();
                 $result = $query
@@ -875,7 +859,7 @@ class drealtyDaemon {
                 // Remove the process_images flag so that the listing doesn't
                 // get included the next time images are downloaded.
                 $listing->process_images = 0;
-                
+
                 // Save the listing to the database.
                 $listing->save();
               }
@@ -890,11 +874,16 @@ class drealtyDaemon {
           unset($photos);
         }
 
+        /**
+         * $max is a built-in cutoff that can force this function to break out of
+         * the loop when a certain threshold is hit.  This check is done outside of 
+         * individual photos in a chunk, so $max will not be respected exactly.
+         * The possible variance will be $max + $chunk_size.
+         */
         if ($max > 0 && $total >= $max)
           break;
       }
     }
-    cache_clear_all("prop_images_to_process", "cache");
   }
 
 }

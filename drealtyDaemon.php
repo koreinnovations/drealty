@@ -11,6 +11,58 @@ class drealtyDaemon {
     $this->dr = new drealtyResources();
   }
 
+  public function runImageProcess($connections_filter = array(), $max = 0, $listing_keys = array()) {
+
+    $this->log('Image process routine...');
+    $this->log('Max: ' . $max);
+    $this->log('Listing keys: ' . implode(", ", $listing_keys));
+
+    // Pull all the configured RETS connections from the database and loop through them
+    $connections = $this->dc->FetchConnections();
+    foreach ($connections as $connection) {
+
+      // This if(){} statement allows the loop to be restricted to a single connection when run
+      // from drush with the --connections setting
+      if (empty($connections_filter) || in_array((string) $connection->conid, $connections_filter)) {
+        $this->log(t("Processing images for connection {$connection->name}, ID {$connection->conid}"));
+
+        // Pull resource mappings (Property, Office, etc) for the connection
+        $mappings = $connection->ResourceMappings();
+
+        // Loop through resource mappings
+        foreach ($mappings as $mapping) {
+
+          // Fetch classes (Rental, Residential, etc) connected to the mapped resource
+          $classes = $connection->FetchClasses($mapping->resource);
+
+          // Loop through classes
+          foreach ($classes as $class) {
+            // Make sure the class is (a) enabled and (b) was imported more than 
+            // X time ago (where X is configured per class in the admin tools)
+            if ($class->enabled) {
+
+              // Engage RETS connection to download property images
+              $this->process_images($connection, $mapping->resource, $class, $max, $listing_keys);
+
+              // Update the last updated timestamp to ensure that this class is not
+              // re-imported too soon
+              $class->lastupdate = time();
+
+              // Write timestamp change to the database
+              drupal_write_record('drealty_classes', $class, 'cid');
+            }
+          }
+        }
+      }
+      else {
+        $this->log(t("Skipping connection {$connection->name}, ID {$connection->conid}"));
+      }
+    }
+    unset($connections, $mappings, $classes);
+    cache_clear_all();
+    return TRUE;
+  }
+
   public function run($connections_filter = array()) {
 
     // Pull all the configured RETS connections from the database and loop through them
@@ -53,7 +105,8 @@ class drealtyDaemon {
             }
           }
         }
-      } else {
+      }
+      else {
         $this->log(t("Skipping connection {$connection->name}, ID {$connection->conid}"));
       }
     }
@@ -102,7 +155,8 @@ class drealtyDaemon {
       $this->dc->disconnect();
 
       return $items;
-    } else {
+    }
+    else {
       $error = $rets->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
     }
@@ -266,7 +320,8 @@ class drealtyDaemon {
         // If no limit was set, don't go back into the loop. 
         if ($limit == 'NONE') {
           $keep_going = FALSE;
-        } else {
+        }
+        else {
           // If our RETS query reached the maximum rows allowed, keep going
           // and run another query
           $keep_going = $this->dc->get_phrets()->IsMaxrowsReached();
@@ -296,7 +351,8 @@ class drealtyDaemon {
       if ($entity_type == 'drealty_listing' && $class->process_images && !$skip_images) {
         $this->process_images($connection, $resource, $class);
       }
-    } else {
+    }
+    else {
       $error = $this->dc->get_phrets()->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
       $this->log(t("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
@@ -339,7 +395,8 @@ class drealtyDaemon {
     if (isset($existing_items[$rets_item[$id]])) {
       // this listing exists so we'll get a reference to it and set the values to what came to us in the RETS result
       $item = &$existing_items[$rets_item[$id]];
-    } else {
+    }
+    else {
       $item->created = time();
     }
 
@@ -375,7 +432,8 @@ class drealtyDaemon {
               $this->log($string);
               $value = strtotime($string);
               break;
-            } else {
+            }
+            else {
               $val = preg_replace('/[^0-9\.]/Uis', '', $string);
               $value = is_numeric($val) ? $val : 0;
             }
@@ -419,7 +477,7 @@ class drealtyDaemon {
   /**
    * Insert / Update the listing data
    *
-   * @param int $conid
+   * @param int $connection
    *  The dRealty connection id to be processed
    * @param string $resource
    *  The RETS resource to be processed
@@ -598,7 +656,8 @@ class drealtyDaemon {
                     $this->log($string);
                     $value = strtotime($string);
                     break;
-                  } else {
+                  }
+                  else {
                     $val = preg_replace('/[^0-9\.]/Uis', '', $string);
                     $value = is_numeric($val) ? $val : 0;
                   }
@@ -648,7 +707,8 @@ class drealtyDaemon {
               $item->latitude = $latlon->lat;
               $item->longitude = $latlon->lon;
               $this->log(t('Geocoded: @address to (@lat, @lon)', array('@address' => $geoaddress, '@lat' => $item->latitude, '@lon' => $item->longitude)));
-            } else {
+            }
+            else {
               $this->log(t('Failed to Geocode: @address', array('@address' => $geoaddress)));
             }
           }
@@ -663,7 +723,8 @@ class drealtyDaemon {
           $this->log(t('Saving item @name', array('@name' => $item->name)));
           // Remove the item from memory
           unset($item);
-        } else {
+        }
+        else {
           // skipping this item
           $this->log(t("Skipping item @name", array("@name" => $rets_item[$id])));
         }
@@ -690,7 +751,8 @@ class drealtyDaemon {
   private function log($message) {
     if ($this->is_drush) {
       drush_log($message);
-    } else {
+    }
+    else {
       if (module_exists('devel')) {
         dpm($message);
       }
@@ -699,7 +761,7 @@ class drealtyDaemon {
 
   /**
    * 
-   * @param type $conid
+   * @param type $connection
    * @param type $resource
    * @param type $class
    * @param int $max Optional cutoff (max listings to process)
@@ -708,7 +770,7 @@ class drealtyDaemon {
    * than all listings needing images
    * @return type
    */
-  public function process_images($conid, $resource, $class, $max = 0, $listing_keys = array()) {
+  public function process_images($connection, $resource, $class, $max = 0, $listing_keys = array()) {
 
     /**
      * Ideas for optimization:
@@ -746,9 +808,9 @@ class drealtyDaemon {
     // flag is set to TRUE.
     $query = new EntityFieldQuery();
     $query->entityCondition('entity_type', $entity_type)
-          ->propertyCondition('process_images', TRUE)
-          ->propertycondition('conid', $conid->conid);
-    
+            ->propertyCondition('process_images', TRUE)
+            ->propertycondition('conid', $connection->conid);
+
     // If the $listing_keys array was populated with one or more items,
     // restrict the result set to just those items.  This allows us to process
     // images for a small subset of properties if needed.
@@ -771,7 +833,8 @@ class drealtyDaemon {
       unset($result_ids);
 
       //$items = entity_load($entity_type, $result_ids);
-    } else {
+    }
+    else {
       $this->log("No images to process.");
       return;
     }
@@ -783,7 +846,7 @@ class drealtyDaemon {
       // We don't need $result_ids
       // Set up a base directory for storing images
       $img_dir_base = file_default_scheme() . '://drealty_image';
-      $img_dir = $img_dir_base . '/' . $conid->conid;
+      $img_dir = $img_dir_base . '/' . $connection->conid;
 
       // Make sure the directory exists
       file_prepare_directory($img_dir, FILE_MODIFY_PERMISSIONS | FILE_CREATE_DIRECTORY);
@@ -792,7 +855,8 @@ class drealtyDaemon {
       if (!file_prepare_directory($img_dir, FILE_MODIFY_PERMISSIONS | FILE_CREATE_DIRECTORY)) {
         $this->log(t("Failed to create %directory.", array('%directory' => $img_dir)), "error");
         return;
-      } else {
+      }
+      else {
         // If for some reason the directory still doesn't exist, quit
         if (!is_dir($img_dir)) {
           $this->log(t("Failed to locate %directory.", array('%directory' => $img_dir)), "error");
@@ -815,7 +879,7 @@ class drealtyDaemon {
         }
 
         // Make sure we have a RETS connection
-        if ($this->dc->connect($conid)) {
+        if ($this->dc->connect($connection)) {
 
           // Join the IDs extracted into a comma-separated string to send to the 
           // IDX for querying images
@@ -872,25 +936,26 @@ class drealtyDaemon {
                 // Get the listing entity object that this photo belongs to
                 $listing = $lookup_table[$mlskey];
 
+                // Remove the process_images flag so that the listing doesn't
+                // get included the next time images are downloaded.
+                $listing->process_images = 0;
+
+                // Save the listing to the database.
+                $listing->save();
+
+
                 // Map the photo to the listing.
                 file_usage_add($file, 'drealty', $entity_type, $listing->id);
               }
             } catch (Exception $ex) {
               $this->log(t('EXCEPTION SAVING FILE: !ex', array('!ex' => $ex->getMessage())));
               $this->log(t('MLS Key: !m', array('!m' => $mlskey)));
-              $this->log(t('Connection ID: !m', array('!m' => $conid->conid)));
+              $this->log(t('Connection ID: !m', array('!m' => $connection->conid)));
             }
 
             $total++;
           }
 
-
-          // Remove the process_images flag so that the listing doesn't
-          // get included the next time images are downloaded.
-          $listing->process_images = 0;
-
-          // Save the listing to the database.
-          $listing->save();
 
           unset($photos);
         }

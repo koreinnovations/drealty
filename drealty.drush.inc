@@ -28,6 +28,13 @@ function drealty_drush_command() {
       'description' => 'Prints status information about dRealty imports.',
   );
 
+  $items['rets-process-images'] = array(
+      'description' => "Download Property Images",
+      'options' => array(
+          'connections' => t('Restrict import to specific connections'),
+      ),
+  );
+
   $items['rets-reprocess-images'] = array(
       'description' => "Redownload Property Images"
   );
@@ -52,6 +59,8 @@ function drealty_drush_help($section) {
     case 'drush:rets-list':
       return dt('');
     case 'drush:rets-status':
+      return dt('');
+    case 'drush:rets-process-images':
       return dt('');
     case 'drush:rets-reprocess-images':
       return dt('');
@@ -84,7 +93,29 @@ function drush_drealty_rets_import($additional_options = array()) {
   realtsoft_listing_import_manipulation($start_time, $end_time, $max_before, $max_after);
 }
 
-function drush_drealty_rets_reprocess_images() {
+function drush_drealty_rets_process_images($additional_options = array()) {
+
+  $connections_filter = array();
+  $max = 0;
+  $listing_keys = array();
+
+  if ($additional_options['connections']) {
+    $connections_filter += explode(',', $additional_options); //['connections']);
+  }
+  if ($additional_options['max']) {
+    $max = $additional_options['max'];
+  }
+  if ($additional_options['listing_keys']) {
+    $listing_keys = explode(',', $additional_options['listing_keys']);
+  }
+
+  $daemon = new drealtyDaemon();
+  $daemon->is_drush = TRUE;
+  $daemon->runImageProcess($connections_filter, $max, $listing_keys);
+  
+}
+
+function drush_drealty_rets_reprocess_images($additional_options = array()) {
   set_time_limit(0);
 
 //  module_load_include('php', 'drealty', 'drealtyDaemon');

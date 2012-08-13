@@ -697,7 +697,18 @@ class drealtyDaemon {
     }
   }
 
-  public function process_images($conid, $resource, $class, $max = 0) {
+  /**
+   * 
+   * @param type $conid
+   * @param type $resource
+   * @param type $class
+   * @param int $max Optional cutoff (max listings to process)
+   * @param array $listing_keys 
+   * Allows the process_images() method to process select listings by key rather
+   * than all listings needing images
+   * @return type
+   */
+  public function process_images($conid, $resource, $class, $max = 0, $listing_keys = array()) {
 
     /**
      * Ideas for optimization:
@@ -734,17 +745,23 @@ class drealtyDaemon {
     // Pull all the listing records from the database whose process_images
     // flag is set to TRUE.
     $query = new EntityFieldQuery();
-    $result = $query
-            ->entityCondition('entity_type', $entity_type)
-            ->propertyCondition('process_images', TRUE)
-            ->propertycondition('conid', $conid->conid)
-            ->execute();
+    $query->entityCondition('entity_type', $entity_type)
+          ->propertyCondition('process_images', TRUE)
+          ->propertycondition('conid', $conid->conid);
+    
+    // If the $listing_keys array was populated with one or more items,
+    // restrict the result set to just those items.  This allows us to process
+    // images for a small subset of properties if needed.
+    if (count($listing_keys) > 0) {
+      $query->propertyCondition('listing_key', $listing_keys);
+    }
+    $result = $query->execute();
 
     if (!empty($result[$entity_type])) {
 
       // Put IDs returned from the query into an array
       $result_ids = array_keys($result[$entity_type]);
-      
+
       // Split IDs into chunks of $chunk_size
       $process_ids = array_chunk($result_ids, $chunk_size, TRUE);
       // Boolean to indicate whether there are items to process
@@ -854,16 +871,9 @@ class drealtyDaemon {
 
                 // Get the listing entity object that this photo belongs to
                 $listing = $lookup_table[$mlskey];
-                
+
                 // Map the photo to the listing.
                 file_usage_add($file, 'drealty', $entity_type, $listing->id);
-
-                // Remove the process_images flag so that the listing doesn't
-                // get included the next time images are downloaded.
-                $listing->process_images = 0;
-
-                // Save the listing to the database.
-                $listing->save();
               }
             } catch (Exception $ex) {
               $this->log(t('EXCEPTION SAVING FILE: !ex', array('!ex' => $ex->getMessage())));
@@ -873,9 +883,18 @@ class drealtyDaemon {
 
             $total++;
           }
+
+
+          // Remove the process_images flag so that the listing doesn't
+          // get included the next time images are downloaded.
+          $listing->process_images = 0;
+
+          // Save the listing to the database.
+          $listing->save();
+
           unset($photos);
         }
-        
+
         unset($chunk);
         unset($lookup_table);
 

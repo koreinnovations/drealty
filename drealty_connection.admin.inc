@@ -34,6 +34,16 @@ class DrealtyConnectionUIController extends EntityDefaultUIController {
         'type' => MENU_CALLBACK,
     );
 
+    $items[$this->path . '/manage/' . $wildcard . '/stats'] = array(
+        'title' => 'Data and Stats',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('drealty_data_stats_form', $id_count + 1),
+        'access arguments' => array('access administration pages'),
+        'file' => 'drealty_connection.admin.inc',
+        'file path' => drupal_get_path('module', $this->entityInfo['module']),
+        'type' => MENU_CALLBACK,
+    );
+
     $items[$this->path . '/manage/' . $wildcard . '/tools'] = array(
         'title' => 'Developer Tools',
         'page callback' => 'drupal_get_form',
@@ -873,6 +883,43 @@ function drealty_developer_tools_form_ajax_resource($form, $form_state) {
 
 function drealty_developer_tools_form_ajax_class($form, $form_state) {
   return $form['fields_table_container'];
+}
+
+function drealty_data_stats_form($form, &$form_state, drealtyConnectionEntity $connection = NULL) {
+  $form_state['connection'] = $connection;
+  
+  $listings_needing_image_processing = db_query("SELECT COUNT(*) FROM {drealty_listing} WHERE conid = :conid AND process_images = 1", array(':conid' => $connection->conid))->fetchField();
+  $total_listings = db_query("SELECT COUNT(*) FROM {drealty_listing} WHERE conid = :conid", array(':conid' => $connection->conid))->fetchField();
+  $most_recent = db_query("SELECT MAX(created) FROM {drealty_listing} WHERE conid = :conid", array(':conid' => $connection->conid))->fetchField();
+  $last_updated = db_query("SELECT MAX(changed) FROM {drealty_listing} WHERE conid = :conid", array(':conid' => $connection->conid))->fetchField();
+  
+  $date_format = 'l, F j Y, g:i a';
+  
+  $form['total_listings'] = array(
+      '#type' => 'item',
+      '#title' => t('Total # of listings'),
+      '#markup' => $total_listings,
+  );
+  
+  $form['listings_needing_image_processing'] = array(
+      '#type' => 'item',
+      '#title' => t('Listings needing image processing'),
+      '#markup' => $listings_needing_image_processing,
+  );
+  
+  $form['most_recent'] = array(
+      '#type' => 'item',
+      '#title' => t('Most recently-added'),
+      '#markup' => date($date_format, $most_recent),
+  );
+  
+  $form['last_updated'] = array(
+      '#type' => 'item',
+      '#title' => t('Most recently updated'),
+      '#markup' => date($date_format, $last_updated),
+  );
+  
+  return $form;
 }
 
 /**

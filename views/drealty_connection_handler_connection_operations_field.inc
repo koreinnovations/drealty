@@ -34,6 +34,7 @@ class drealty_connection_handler_connection_operations_field extends views_handl
       $operation .= ' | ' . l("Deactivate", "admin/drealty/connections/manage/$name/deactivate");
       $operation .= ' | ' . l("Export", "admin/drealty/connections/manage/$name/export");
       $operation .= " | " . l("Developer Tools", "admin/drealty/connections/manage/$name/tools");
+      $operation .= " | " . l("Data and Stats", "admin/drealty/connections/manage/$name/stats");
 
       // $operation .= ' | ' . l("Data Management", "admin/config/drealty/connection/manual_update/{$connection->conid}");
       $operation .= ' <br /> ' . "Configure: " . l("Properties", "admin/drealty/connections/manage/$name/resource/drealty_listing");

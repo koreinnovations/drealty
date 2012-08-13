@@ -381,12 +381,12 @@ function drealty_schema() {
   'baths_three_quarters' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => "The number of three quarter bathrooms in the dwelling.", 'group' => 'Listing:Property:Structure'),
   'living_area' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => "The total measurable finished space for all buildings.", 'group' => 'Listing:Property:Structure'),
   'building_area_total' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'description' => "Total area of the structure. Includes both finished and unfinished areas.", 'group' => 'Listing:Property:Structure'),
-  'detached_yn' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "A flag indicating that the primary structure is attached to another structure that is not included in the sale.  i.e. one unit of a duplex. This flag may be T/F, Y/N or a list of attached or detached. As with all flags, the field may be null.", 'group' => 'Listing:Property:Structure'),
-  'garage_yn' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "A flag indicating that the listing has a garage. This flag may be T/F, Y/N or other true, false or unknown indicator. As with all flags, the field may be null.", 'group' => 'Listing:Property:Structure'),
-  'garage_spaces' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "The number of spaces in the garage(s).", 'group' => 'Listing:Property:Structure'),
+  'detached_yn' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => NULL, 'description' => "A flag indicating that the primary structure is attached to another structure that is not included in the sale.  i.e. one unit of a duplex. This flag may be T/F, Y/N or a list of attached or detached. As with all flags, the field may be null.", 'group' => 'Listing:Property:Structure'),
+  'garage_yn' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => NULL, 'description' => "A flag indicating that the listing has a garage. This flag may be T/F, Y/N or other true, false or unknown indicator. As with all flags, the field may be null.", 'group' => 'Listing:Property:Structure'),
+  'garage_spaces' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => NULL, 'description' => "The number of spaces in the garage(s).", 'group' => 'Listing:Property:Structure'),
   'garage_dimensions' => array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => "The dimensions of the garage.", 'group' => 'Listing:Property:Structure'),
   'garage_features' => array('type' => 'text', 'not null' => FALSE, 'default' => NULL, 'description' => "A pick list of features for the garage.", 'group' => 'Listing:Property:Structure'),
-  'attached_garage_yn' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "A flag indicating that the garage attached to the dwelling.", 'group' => 'Listing:Property:Structure'),
+  'attached_garage_yn' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => NULL, 'description' => "A flag indicating that the garage attached to the dwelling.", 'group' => 'Listing:Property:Structure'),
   'carport_spaces' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => "The number of covered parking spaces not including garage spaces.", 'group' => 'Listing:Property:Structure'),
   'open_parking_yn' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => "A flag indicating that any parking spaces associated with the property are not covered by a roof.", 'group' => 'Listing:Property:Structure'),
   'covered_spaces' => array('type' => 'varchar', 'length' => 25, 'not null' => FALSE, 'default' => NULL, 'description' => "The total number of garage and carport spaces.", 'group' => 'Listing:Property:Structure'),
@@ -405,15 +405,15 @@ function drealty_schema() {
   'roof' => array('type' => 'text', 'not null' => FALSE, 'default' => NULL, 'description' => "A pick list of roof features and/or construction type/materials.", 'group' => 'Listing:Property:Structure', 'multi' => TRUE),
   'construction_materials' => array('type' => 'text', 'not null' => FALSE, 'default' => NULL, 'description' => "A pick list of construction materials for the dwelling or structure.", 'group' => 'Listing:Property:Structure', 'multi' => TRUE),
   //bedrooms
-  'bedrooms_upper' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "Number of bedrooms on the upper floor.", 'group' => 'Listing:Property:Structure'),
-  'bedrooms_main' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "Number of bedrooms on the main floor.", 'group' => 'Listing:Property:Structure'),
-  'bedrooms_lower' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "Number of bedrooms on the lower floor.", 'group' => 'Listing:Property:Structure'),
-  'bedrooms_basement' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "Number of bedrooms in the basement.", 'group' => 'Listing:Property:Structure'),
+  'bedrooms_upper' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => NULL, 'description' => "Number of bedrooms on the upper floor.", 'group' => 'Listing:Property:Structure'),
+  'bedrooms_main' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => NULL, 'description' => "Number of bedrooms on the main floor.", 'group' => 'Listing:Property:Structure'),
+  'bedrooms_lower' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => NULL, 'description' => "Number of bedrooms on the lower floor.", 'group' => 'Listing:Property:Structure'),
+  'bedrooms_basement' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => NULL, 'description' => "Number of bedrooms in the basement.", 'group' => 'Listing:Property:Structure'),
   //bathrooms
-  'bathrooms_upper' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "Number of bathrooms on the upper floor.", 'group' => 'Listing:Property:Structure'),
-  'bathrooms_main' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "Number of bathrooms on the main floor.", 'group' => 'Listing:Property:Structure'),
-  'bathrooms_lower' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "Number of bathrooms on the lower floor.", 'group' => 'Listing:Property:Structure'),
-  'bathrooms_basement' => array('type' => 'varchar', 'length' => 8, 'not null' => FALSE, 'default' => NULL, 'description' => "Number of bathrooms in the basement", 'group' => 'Listing:Property:Structure'),
+  'bathrooms_upper' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => NULL, 'description' => "Number of bathrooms on the upper floor.", 'group' => 'Listing:Property:Structure'),
+  'bathrooms_main' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => NULL, 'description' => "Number of bathrooms on the main floor.", 'group' => 'Listing:Property:Structure'),
+  'bathrooms_lower' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => NULL, 'description' => "Number of bathrooms on the lower floor.", 'group' => 'Listing:Property:Structure'),
+  'bathrooms_basement' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE, 'default' => NULL, 'description' => "Number of bathrooms in the basement", 'group' => 'Listing:Property:Structure'),
   //dining room
   'dining_room_area' => array('type' => 'int', 'not null' => FALSE, 'default' => NULL, 'description' => "The square footage of the room.", 'group' => 'Listing:Property:Rooms'),
   'dining_room_dimensions' => array('type' => 'varchar', 'length' => 128, 'not null' => FALSE, 'default' => NULL, 'description' => "Measurement specifying a list of dimensions for an irregular space.", 'group' => 'Listing:Property:Rooms'),
@@ -652,6 +652,30 @@ function drealty_update_7009() {
 
   $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY bank_owned VARCHAR(60)");
   $items[] = db_query("ALTER TABLE {drealty_listing} ADD raw_mls_data TEXT NULL");
+
+  return $items;
+}
+
+/**
+ * Increase size of several drealty_listing columns
+ */
+function drealty_update_7010() {
+  $items = array();
+
+  $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY detached_yn VARCHAR(255)");
+  $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY garage_yn VARCHAR(255)");
+  $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY garage_spaces VARCHAR(255)");
+  $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY attached_garage_yn VARCHAR(255)");
+
+  $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY bedrooms_upper VARCHAR(255)");
+  $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY bedrooms_main VARCHAR(255)");
+  $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY bedrooms_lower VARCHAR(255)");
+  $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY bedrooms_basement VARCHAR(255)");
+
+  $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY bathrooms_upper VARCHAR(255)");
+  $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY bathrooms_main VARCHAR(255)");
+  $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY bathrooms_lower VARCHAR(255)");
+  $items[] = db_query("ALTER TABLE {drealty_listing} MODIFY bathrooms_basement VARCHAR(255)");
 
   return $items;
 }

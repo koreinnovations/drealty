@@ -367,14 +367,21 @@ class dRealtyConnectionEntity extends Entity {
           else {
             $query = sprintf("(%s=%s)", $mappings['listing_id']->systemname, $listing_id);
           }
+
           $result = $daemon->perform_query($this, $resource, $class, $query);
+
+          watchdog('drealty', 'Searching the IDX for !class listing !id with query "!query".  !count results returned.', array('!id' => $listing_id, '!class' => $class->visiblename, '!query' => $query, '!count' => sizeof($result)));
+
           if (sizeof($result) > 0) {
             $listing = $result[0];
-            unset($result);
             $listing_entity = $daemon->process_result($this, $resource, $class, $listing);
             if ($class->process_images) {
+              watchdog('drealty', 'Loaded the listing entity.  Now processing images.  Filtered on listing key !key', array('!key' => $listing_entity->listing_key));
               $daemon->process_images($this, $resource, $class, 0, array($listing_entity->listing_key));
             }
+
+            unset($result);
+
             return $listing_entity;
           }
         }

@@ -479,7 +479,8 @@ class drealtyDaemon {
     } catch (Exception $e) {
       
     }
-    unset($item);
+    
+    return $item;
   }
 
   /**
@@ -759,6 +760,9 @@ class drealtyDaemon {
     } else {
       if (module_exists('devel')) {
         dpm($message);
+      }
+      else {
+        watchdog('drealty_daemon', $message);
       }
     }
   }

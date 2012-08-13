@@ -730,8 +730,12 @@ class drealtyDaemon {
     
     // Do 25 photos at a time
     $chunk_size = 25;
+    
+    // ?
     $total = 0;
 
+    // Pull all the listing records from the database whose process_images
+    // flag is set to TRUE.
     $query = new EntityFieldQuery();
     $result = $query
             ->entityCondition('entity_type', $entity_type)
@@ -739,6 +743,7 @@ class drealtyDaemon {
             ->propertycondition('conid', $conid->conid)
             ->execute();
 
+    // Load full entity objects based on the IDs returned from the query
     if (!empty($result[$entity_type])) {
       $items = entity_load($entity_type, array_keys($result[$entity_type]));
     }
@@ -750,59 +755,85 @@ class drealtyDaemon {
     //make sure we have something to process
     if (count($items) >= 1) {
       $this->log("process_images() - Starting.");
+      
+      // Set up a base directory for storing images
       $img_dir_base = file_default_scheme() . '://drealty_image';
       $img_dir = $img_dir_base . '/' . $conid->conid;
 
+      // Make sure the directory exists
       file_prepare_directory($img_dir, FILE_MODIFY_PERMISSIONS | FILE_CREATE_DIRECTORY);
 
+      // If we failed to create the directory, quit
       if (!file_prepare_directory($img_dir, FILE_MODIFY_PERMISSIONS | FILE_CREATE_DIRECTORY)) {
         $this->log(t("Failed to create %directory.", array('%directory' => $img_dir)), "error");
         return;
       }
       else {
+        // If for some reason the directory still doesn't exist, quit
         if (!is_dir($img_dir)) {
           $this->log(t("Failed to locate %directory.", array('%directory' => $img_dir)), "error");
           return;
         }
       }
 
+      // Split results into chunks of $chunk_size listings at a time
       $process_array = array_chunk($items, $chunk_size, TRUE);
 
+      // Loop through chunks
       foreach ($process_array as $chunk) {
 
         $ids = array();
 
+        // Loop through all items in current chunk and extract the ID
         foreach ($chunk as $item) {
           $ids[] = $item->listing_key;
         }
 
+        // Make sure we have a RETS connection
         if ($this->dc->connect($conid)) {
+          
+          // Join the IDs extracted into a comma-separated string to send to the 
+          // IDX for querying images
           $id_string = implode(',', $ids);
+          
           $this->log("id string: " . $id_string);
 
+          // Query the IDX for images.  Put the results into $photos
           $photos = $this->dc->get_phrets()->GetObject($resource, $class->object_type, $id_string, '*');
 
+          // If there was an error, log it and quit.
           if ($this->dc->get_phrets()->Error()) {
             $error = $this->dc->get_phrets()->Error();
             $this->log($error['text']);
             return;
           }
 
+          // Close the RETS connection
           $this->dc->disconnect();
 
+          // Eliminate the IDs from memory
           unset($ids);
-          $id_string = "";
+          unset($id_string);
 
+          // Loop through result set from query
           foreach ($photos as $photo) {
             $this->log($photo);
+            
+            // Set up destinatino file name, path, etc.
             $mlskey = $photo['Content-ID'];
             $number = $photo['Object-ID'];
             $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', "{$mlskey}-{$number}.jpg");
             $filepath = "{$img_dir}/{$filename}";
 
-
+            
+            $is_really_an_image = ($photo['Content-Type'] == 'image/jpg' || $photo['Content-Type'] == 'image/png' || $photo['Content-Type'] == 'image/gif' || $photo['Content-Type'] == 'image/jpeg');
+            
+            // See if the file we are trying to save currently exists in the managed
+            // files table
             $fid = db_query('SELECT fid FROM {file_managed} WHERE filename = :filename', array(':filename' => $filename))->fetchField();
 
+            // If the file does exist, delete it so we can save the file we
+            // just pulled from the IDX
             if (!empty($fid)) {
               $file_object = file_load($fid);
               file_delete($file_object, TRUE);
@@ -821,30 +852,37 @@ class drealtyDaemon {
 
               $this->log(t('Photo result: !dump', array('!dump' => $log)));
 
-              if ($photo['Content-Type'] == 'image/jpg' || $photo['Content-Type'] == 'image/png' || $photo['Content-Type'] == 'image/gif' || $photo['Content-Type'] == 'image/jpeg') {
+              // Make sure the object retrieved from the IDX is indeed an image
+              if ($is_really_an_image) {
+                
+                // Save the photo to the filesystem
                 $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
+                
                 // load the entity that is associated with the image
                 $query = new EntityFieldQuery();
-
                 $result = $query
                         ->entityCondition('entity_type', 'drealty_listing')
                         ->propertyCondition('listing_key', $mlskey)
                         ->propertyCondition('conid', $conid->conid)
                         ->execute();
 
-
+                // Extract the single listing we're looking for from the array of returned listings
                 $listing = reset(entity_load('drealty_listing', array_keys($result['drealty_listing']), array(), FALSE));
 
+                // Map the photo to the listing.
                 file_usage_add($file, 'drealty', $entity_type, $listing->id);
 
+                // Remove the process_images flag so that the listing doesn't
+                // get included the next time images are downloaded.
                 $listing->process_images = 0;
+                
+                // Save the listing to the database.
                 $listing->save();
               }
             } catch (Exception $ex) {
               $this->log(t('EXCEPTION SAVING FILE: !ex', array('!ex' => $ex->getMessage())));
               $this->log(t('MLS Key: !m', array('!m' => $mlskey)));
               $this->log(t('Connection ID: !m', array('!m' => $conid->conid)));
-              //$this->log(t('Photo: !m', array('!m' => print_r($photo, TRUE))));
             }
 
             $total++;

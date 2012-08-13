@@ -324,10 +324,18 @@ class drealtyDaemon {
     $schema_fields = $schema['fields'];
     $entity_type = 'drealty_listing';
     $key_field = 'listing_key';
+    
+    // get the fieldmappings
+    $field_mappings = $connection->FetchFieldMappings($resource, $class->cid);
+
+    // set $id to the systemname of the entity's corresponding key from the rets feed to make the code easier to read
+    $id = $field_mappings[$key_field]->systemname;
+
 
     $query = new EntityFieldQuery();
     $result = $query->entityCondition('entity_type', $entity_type, '=')
             ->propertyCondition('conid', $connection->conid)
+            ->propertyCondition($key_field, $rets_item[$id])
             ->execute();
 
     $existing_items_tmp = array();
@@ -339,12 +347,6 @@ class drealtyDaemon {
     foreach ($existing_items_tmp as $existing_item_tmp) {
       $existing_items[$existing_item_tmp->{$key_field}] = $existing_item_tmp;
     }
-
-    // get the fieldmappings
-    $field_mappings = $connection->FetchFieldMappings($resource, $class->cid);
-
-    // set $id to the systemname of the entity's corresponding key from the rets feed to make the code easier to read
-    $id = $field_mappings[$key_field]->systemname;
 
     $item = new Entity(array('conid' => $connection->conid), $entity_type);
 
@@ -477,28 +479,6 @@ class drealtyDaemon {
 
     $chunk_idx = 0;
 
-    // Pull the listing IDs for this RETS connection from the table and put them
-    // into $result
-    $query = new EntityFieldQuery();
-    $result = $query->entityCondition('entity_type', $entity_type, '=')
-            ->propertyCondition('conid', $connection->conid)
-            ->execute();
-
-    // Load the full entity object for each item in the result set.
-    // 
-    // TODO: why are we doing this?????
-    // IDEA: Load in results per chunk using entity_load() and pass IDs of all entities in active chunk
-    $existing_items_tmp = array();
-    if (!empty($result)) {
-      $existing_items_tmp = entity_load($entity_type, array_keys($result[$entity_type]));
-    }
-
-    // Put the items into a new associative array based on the appropriate key field.
-    $existing_items = array();
-    foreach ($existing_items_tmp as $existing_item_tmp) {
-      $existing_items[$existing_item_tmp->{$key_field}] = $existing_item_tmp;
-    }
-
     // get the fieldmappings
     $field_mappings = $connection->FetchFieldMappings($resource, $class->cid);
 
@@ -507,6 +487,12 @@ class drealtyDaemon {
 
     // Loop through each "chunk" of records stored from the cache
     for ($i = 0; $i < $number_of_chunks; $chunk_idx++, $i++) {
+
+      // Initialize an empty array of listing ids that will be used
+      // to look up existing listings in our database
+      $ids = array();
+      $existing_items_tmp = array();
+      $existing_items = array();
 
       // Identify the name of the "cache key", which is a composite of the 
       // following variables:
@@ -518,13 +504,31 @@ class drealtyDaemon {
       $rets_results = cache_get($chunk_name);
       // Pull in the number of records in the cached cunk
       $rets_results_count = count($rets_results->data);
-      
+
       // Initially loop through all records from the cache and pull the record 
       // IDs so we can query our database to find listings
-//      for ($j = 0; $j < $rets_results_count; $j++) {
-//        $rets_item = $rets_results->data[$j];
-//        $lookup_key = $rets_item[$id];
-//      }
+      for ($j = 0; $j < $rets_results_count; $j++) {
+        $rets_item = $rets_results->data[$j];
+        $ids[] = $rets_item[$id];
+      }
+
+      $query = new EntityFieldQuery();
+      $result = $query->entityCondition('entity_type', $entity_type, '=')
+              ->propertyCondition('conid', $connection->conid)
+              ->propertyCondition($key_field, $ids)
+              ->execute();
+
+      // Pull the listing IDs for this RETS connection from the table and put them
+      // into $result
+      // Load the full entity object for each item in the result set.
+      if (!empty($result)) {
+        $existing_items_tmp = entity_load($entity_type, array_keys($result[$entity_type]));
+      }
+
+      // Put the items into a new associative array based on the appropriate key field.
+      foreach ($existing_items_tmp as $existing_item_tmp) {
+        $existing_items[$existing_item_tmp->{$key_field}] = $existing_item_tmp;
+      }
 
       // Loop through all records from the cache
       for ($j = 0; $j < $rets_results_count; $j++) {
@@ -541,7 +545,7 @@ class drealtyDaemon {
         // If true, force the loading of all results into the database, regardless
         // of whether the data has changed.  This will slow down performance.
         $force = FALSE;
-        
+
         // Only process images from the IDX if we're not in "force" mode.
         $process_images_from_rets = !$force;
         // Only attempt geocoding of properties if this feature is turned on from
@@ -720,7 +724,11 @@ class drealtyDaemon {
   }
 
   public function process_images($conid, $resource, $class, $max = 0) {
+    
+    // We have hard-coded the entity type to "drealty_listing"
     $entity_type = 'drealty_listing';
+    
+    // Do 25 photos at a time
     $chunk_size = 25;
     $total = 0;
 

@@ -317,10 +317,12 @@ class drealtyDaemon {
 
 
     $query = new EntityFieldQuery();
-    $result = $query->entityCondition('entity_type', $entity_type, '=')
-            ->propertyCondition('conid', $connection->conid)
-            ->propertyCondition($key_field, $rets_item[$id])
-            ->execute();
+    $query->entityCondition('entity_type', $entity_type, '=')
+            ->propertyCondition('conid', $connection->conid);
+    if (!empty($rets_item[$id])) {
+      $query->propertyCondition($key_field, $rets_item[$id]);
+    }
+    $result = $query->execute();
 
     $existing_items_tmp = array();
     if (!empty($result)) {
@@ -495,10 +497,12 @@ class drealtyDaemon {
       }
 
       $query = new EntityFieldQuery();
-      $result = $query->entityCondition('entity_type', $entity_type, '=')
-              ->propertyCondition('conid', $connection->conid)
-              ->propertyCondition($key_field, $ids)
-              ->execute();
+      $query->entityCondition('entity_type', $entity_type, '=')
+              ->propertyCondition('conid', $connection->conid);
+      if (!empty($ids)) {
+        $query->propertyCondition($key_field, $ids);
+      }
+      $result = $query->execute();
 
       // Pull the listing IDs for this RETS connection from the table and put them
       // into $result
@@ -746,13 +750,13 @@ class drealtyDaemon {
     // flag is set to TRUE.
     $query = new EntityFieldQuery();
     $query->entityCondition('entity_type', $entity_type)
-          ->propertyCondition('process_images', TRUE)
-          ->propertycondition('conid', $conid->conid);
-    
+            ->propertyCondition('process_images', TRUE)
+            ->propertycondition('conid', $conid->conid);
+
     // If the $listing_keys array was populated with one or more items,
     // restrict the result set to just those items.  This allows us to process
     // images for a small subset of properties if needed.
-    if (count($listing_keys) > 0) {
+    if (!empty($listing_keys)) {
       $query->propertyCondition('listing_key', $listing_keys);
     }
     $result = $query->execute();

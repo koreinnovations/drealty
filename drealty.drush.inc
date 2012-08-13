@@ -11,7 +11,7 @@ function drealty_drush_command() {
 
   $items['rets-import'] = array(
       'description' => 'Import RETS Listings.',
-      'options' => array(
+      'arguments' => array(
           'connections' => t('Restrict import to specific connections'),
       ),
   );
@@ -30,8 +30,11 @@ function drealty_drush_command() {
 
   $items['rets-process-images'] = array(
       'description' => "Download Property Images",
-      'options' => array(
+      'arguments' => array(
           'connections' => t('Restrict import to specific connections'),
+          'max' => t('Limit import batch to a specific number of listings'),
+          'listing_keys' => t('Restrict import to specific listing keys/IDs'),
+          'chunk_size' => t('The size of each RETS query batch'),
       ),
   );
 
@@ -93,25 +96,26 @@ function drush_drealty_rets_import($additional_options = array()) {
   realtsoft_listing_import_manipulation($start_time, $end_time, $max_before, $max_after);
 }
 
-function drush_drealty_rets_process_images($additional_options = array()) {
+function drush_drealty_rets_process_images($connections = NULL, $max = 0, $listing_keys = NULL, $chunk_size = 25) {
 
+  $args = func_get_args();
+  
+  drush_log(dt('Args: !dump', array('!dump' => print_r($args, TRUE))));
+  
   $connections_filter = array();
-  $max = 0;
-  $listing_keys = array();
+  $listing_keys_filter = array();
 
-  if ($additional_options['connections']) {
-    $connections_filter += explode(',', $additional_options); //['connections']);
+  if ($connections) {
+    $connections_filter += explode(',', $connections); //['connections']);
   }
-  if ($additional_options['max']) {
-    $max = $additional_options['max'];
-  }
-  if ($additional_options['listing_keys']) {
-    $listing_keys = explode(',', $additional_options['listing_keys']);
+  
+  if ($listing_keys) {
+    $listing_keys_filter = array_filter(explode(',', $listing_keys));
   }
 
   $daemon = new drealtyDaemon();
   $daemon->is_drush = TRUE;
-  $daemon->runImageProcess($connections_filter, $max, $listing_keys);
+  $daemon->runImageProcess($connections_filter, $max, $listing_keys_filter, $chunk_size);
   
 }
 

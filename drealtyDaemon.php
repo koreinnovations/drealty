@@ -11,9 +11,10 @@ class drealtyDaemon {
     $this->dr = new drealtyResources();
   }
 
-  public function runImageProcess($connections_filter = array(), $max = 0, $listing_keys = array()) {
+  public function runImageProcess($connections_filter = array(), $max = 0, $listing_keys = array(), $chunk_size = 25) {
 
     $this->log('Image process routine...');
+    $this->log('Connections: ' . implode(', ', $connections_filter));
     $this->log('Max: ' . $max);
     $this->log('Listing keys: ' . implode(", ", $listing_keys));
 
@@ -42,7 +43,7 @@ class drealtyDaemon {
             if ($class->enabled) {
 
               // Engage RETS connection to download property images
-              $this->process_images($connection, $mapping->resource, $class, $max, $listing_keys);
+              $this->process_images($connection, $mapping->resource, $class, $max, $listing_keys, $chunk_size);
 
               // Update the last updated timestamp to ensure that this class is not
               // re-imported too soon
@@ -373,10 +374,12 @@ class drealtyDaemon {
 
 
     $query = new EntityFieldQuery();
-    $result = $query->entityCondition('entity_type', $entity_type, '=')
-            ->propertyCondition('conid', $connection->conid)
-            ->propertyCondition($key_field, $rets_item[$id])
-            ->execute();
+    $query->entityCondition('entity_type', $entity_type, '=')
+            ->propertyCondition('conid', $connection->conid);
+    if (!empty($rets_item[$id])) {
+      $query->propertyCondition($key_field, $rets_item[$id]);
+    }
+    $result = $query->execute();
 
     $existing_items_tmp = array();
     if (!empty($result)) {
@@ -553,10 +556,12 @@ class drealtyDaemon {
       }
 
       $query = new EntityFieldQuery();
-      $result = $query->entityCondition('entity_type', $entity_type, '=')
-              ->propertyCondition('conid', $connection->conid)
-              ->propertyCondition($key_field, $ids)
-              ->execute();
+      $query->entityCondition('entity_type', $entity_type, '=')
+              ->propertyCondition('conid', $connection->conid);
+      if (!empty($ids)) {
+        $query->propertyCondition($key_field, $ids);
+      }
+      $result = $query->execute();
 
       // Pull the listing IDs for this RETS connection from the table and put them
       // into $result
@@ -761,7 +766,7 @@ class drealtyDaemon {
 
   /**
    * 
-   * @param type $connection
+   * @param dRealtyConnectionEntity $connection
    * @param type $resource
    * @param type $class
    * @param int $max Optional cutoff (max listings to process)
@@ -770,7 +775,7 @@ class drealtyDaemon {
    * than all listings needing images
    * @return type
    */
-  public function process_images($connection, $resource, $class, $max = 0, $listing_keys = array()) {
+  public function process_images(dRealtyConnectionEntity $connection, $resource, $class, $max = 0, $listing_keys = array(), $chunk_size = 25) {
 
     /**
      * Ideas for optimization:
@@ -797,9 +802,6 @@ class drealtyDaemon {
     // We have hard-coded the entity type to "drealty_listing"
     $entity_type = 'drealty_listing';
 
-    // Do 25 photos at a time
-    $chunk_size = 25;
-
     // Total number of listings processed.  This gets incremented in our
     // loops below
     $total = 0;
@@ -815,14 +817,21 @@ class drealtyDaemon {
     // restrict the result set to just those items.  This allows us to process
     // images for a small subset of properties if needed.
     if (count($listing_keys) > 0) {
+      $this->log('Filtering by listing key');
       $query->propertyCondition('listing_key', $listing_keys);
     }
+    if ($max > 0) {
+      $query->range(0, $max);
+    }
     $result = $query->execute();
+
 
     if (!empty($result[$entity_type])) {
 
       // Put IDs returned from the query into an array
       $result_ids = array_keys($result[$entity_type]);
+
+      $this->log(count($result_ids) . ' listings returned that need images');
 
       // Split IDs into chunks of $chunk_size
       $process_ids = array_chunk($result_ids, $chunk_size, TRUE);
@@ -870,6 +879,7 @@ class drealtyDaemon {
       foreach ($process_ids as $ids_chunk) {
         $chunk = entity_load($entity_type, $ids_chunk);
         $ids = array();
+        $listings_processed = array();
         $lookup_table = array();
 
         // Loop through all items in current chunk and extract the ID
@@ -879,14 +889,21 @@ class drealtyDaemon {
         }
 
         // Make sure we have a RETS connection
-        if ($this->dc->connect($connection)) {
+        if ($this->dc->connect($connection->conid)) {
 
           // Join the IDs extracted into a comma-separated string to send to the 
           // IDX for querying images
-          $id_string = implode(',', $ids);
+          $id_string = implode(',', array_unique($ids));
+
+          $this->log(t('Fetching object type !type', array('!type' => $class->object_type)));
+          $this->log(t('Fetching photos for !count properties', array('!count' => count($ids))));
+          $this->log(t('Property IDs are !ids', array('!ids' => implode(', ', $ids))));
+
 
           // Query the IDX for images.  Put the results into $photos
           $photos = $this->dc->get_phrets()->GetObject($resource, $class->object_type, $id_string, '*');
+
+          $this->log(t('!count photos were retrieved from the IDX', array('!count' => count($photos))));
 
           // If there was an error, log it and quit.
           if ($this->dc->get_phrets()->Error()) {
@@ -903,13 +920,16 @@ class drealtyDaemon {
           unset($id_string);
 
           // Loop through result set from query
-          foreach ($photos as $photo) {
+          foreach ($photos as $index => $photo) {
 
             // Set up destinatino file name, path, etc.
             $mlskey = $photo['Content-ID'];
             $number = $photo['Object-ID'];
             $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', "{$mlskey}-{$number}.jpg");
             $filepath = "{$img_dir}/{$filename}";
+
+            // Get the listing entity object that this photo belongs to
+            $listing = $lookup_table[$mlskey];
 
             $is_really_an_image = ($photo['Content-Type'] == 'image/jpg' || $photo['Content-Type'] == 'image/png' || $photo['Content-Type'] == 'image/gif' || $photo['Content-Type'] == 'image/jpeg');
 
@@ -933,8 +953,11 @@ class drealtyDaemon {
                 // Save the photo to the filesystem
                 $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
 
-                // Get the listing entity object that this photo belongs to
-                $listing = $lookup_table[$mlskey];
+
+                if (!array_key_exists($mlskey, $listings_processed)) {
+                  $listings_processed[$mlskey] = 0;
+                }
+                $listings_processed[$mlskey]++;
 
                 // Remove the process_images flag so that the listing doesn't
                 // get included the next time images are downloaded.
@@ -947,16 +970,29 @@ class drealtyDaemon {
                 // Map the photo to the listing.
                 file_usage_add($file, 'drealty', $entity_type, $listing->id);
               }
+              else {
+                $this->log(t('Photo !num is not an image. Content type is !type', array('!num' => $index, '!type' => $photo['Content-Type'])));
+                if ($photo['Content-Type'] == 'text/xml') {
+                  $this->log($photo['Data']);
+                  // Evidently this listing doesn't have photos, so don't try to
+                  // pull photos again
+                  $listing->process_images = 0;
+                  $listing->save();
+                }
+              }
             } catch (Exception $ex) {
               $this->log(t('EXCEPTION SAVING FILE: !ex', array('!ex' => $ex->getMessage())));
               $this->log(t('MLS Key: !m', array('!m' => $mlskey)));
               $this->log(t('Connection ID: !m', array('!m' => $connection->conid)));
             }
-
-            $total++;
           }
 
+          // Increment total by the number of unique listings that were processed
+          // in the batch
+          $total += count(array_keys($listings_processed));
+          $this->log(t('The total number of listings processed so far is !num', array('!num' => $total)));
 
+          // Remove the downloaded photos from memory
           unset($photos);
         }
 
@@ -969,8 +1005,10 @@ class drealtyDaemon {
          * individual photos in a chunk, so $max will not be respected exactly.
          * The possible variance will be $max + $chunk_size.
          */
-        if ($max > 0 && $total >= $max)
+        if ($max > 0 && $max <= $total) {
+          $this->log(t("Breaking because we hit !total of !max maximum records.", array('!total' => $total, '!max' => $max)));
           break;
+        }
       }
     }
   }

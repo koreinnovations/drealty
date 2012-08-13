@@ -877,6 +877,7 @@ class drealtyDaemon {
         }
         
         unset($chunk);
+        unset($lookup_table);
 
         /**
          * $max is a built-in cutoff that can force this function to break out of

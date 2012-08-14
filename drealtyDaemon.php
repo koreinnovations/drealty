@@ -54,7 +54,8 @@ class drealtyDaemon {
             }
           }
         }
-      } else {
+      }
+      else {
         $this->log(t("Skipping connection {$connection->name}, ID {$connection->conid}"));
       }
     }
@@ -76,18 +77,19 @@ class drealtyDaemon {
 
     // Pull all the configured RETS connections from the database and loop through them
     $connections = $this->dc->FetchConnections();
-    
+
     foreach ($connections as $connection) {
       // This if(){} statement allows the loop to be restricted to a single connection when run
       // from drush with the --connections setting
       if (empty($connections_filter) || in_array((string) $connection->conid, $connections_filter)) {
         $connections_to_run[] = $connection;
         $this->log(t("Including connection {$connection->name}, ID {$connection->conid}"));
-      } else {
+      }
+      else {
         $this->log(t("Skipping connection {$connection->name}, ID {$connection->conid}"));
       }
     }
-    
+
     $this->log("\n======================================\n");
 
     foreach ($connections_to_run as $connection) {
@@ -168,7 +170,8 @@ class drealtyDaemon {
       $this->dc->disconnect();
 
       return $items;
-    } else {
+    }
+    else {
       $error = $rets->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
     }
@@ -332,7 +335,8 @@ class drealtyDaemon {
         // If no limit was set, don't go back into the loop. 
         if ($limit == 'NONE') {
           $keep_going = FALSE;
-        } else {
+        }
+        else {
           // If our RETS query reached the maximum rows allowed, keep going
           // and run another query
           $keep_going = $this->dc->get_phrets()->IsMaxrowsReached();
@@ -360,7 +364,8 @@ class drealtyDaemon {
       if ($entity_type == 'drealty_listing' && $class->process_images && !$skip_images) {
         $this->process_images($connection, $resource, $class);
       }
-    } else {
+    }
+    else {
       $error = $this->dc->get_phrets()->Error();
       watchdog('drealty', "drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), WATCHDOG_ERROR);
       $this->log(t("drealty encountered an error: (Type: @type Code: @code Msg: @text)", array("@type" => $error['type'], "@code" => $error['code'], "@text" => $error['text']), 'error'));
@@ -405,7 +410,8 @@ class drealtyDaemon {
     if (isset($existing_items[$rets_item[$id]])) {
       // this listing exists so we'll get a reference to it and set the values to what came to us in the RETS result
       $item = &$existing_items[$rets_item[$id]];
-    } else {
+    }
+    else {
       $item->created = time();
     }
 
@@ -441,7 +447,8 @@ class drealtyDaemon {
               $this->log($string);
               $value = strtotime($string);
               break;
-            } else {
+            }
+            else {
               $val = preg_replace('/[^0-9\.]/Uis', '', $string);
               $value = is_numeric($val) ? $val : 0;
             }
@@ -479,7 +486,7 @@ class drealtyDaemon {
     } catch (Exception $e) {
       
     }
-    
+
     return $item;
   }
 
@@ -665,7 +672,8 @@ class drealtyDaemon {
                     $this->log($string);
                     $value = strtotime($string);
                     break;
-                  } else {
+                  }
+                  else {
                     $val = preg_replace('/[^0-9\.]/Uis', '', $string);
                     $value = is_numeric($val) ? $val : 0;
                   }
@@ -715,7 +723,8 @@ class drealtyDaemon {
               $item->latitude = $latlon->lat;
               $item->longitude = $latlon->lon;
               $this->log(t('Geocoded: @address to (@lat, @lon)', array('@address' => $geoaddress, '@lat' => $item->latitude, '@lon' => $item->longitude)));
-            } else {
+            }
+            else {
               $this->log(t('Failed to Geocode: @address', array('@address' => $geoaddress)));
             }
           }
@@ -730,7 +739,8 @@ class drealtyDaemon {
           $this->log(t('Saving item @name', array('@name' => $item->name)));
           // Remove the item from memory
           unset($item);
-        } else {
+        }
+        else {
           // skipping this item
           $this->log(t("Skipping item @name", array("@name" => $rets_item[$id])));
         }
@@ -757,7 +767,8 @@ class drealtyDaemon {
   private function log($message) {
     if ($this->is_drush) {
       drush_log($message);
-    } else {
+    }
+    else {
       if (module_exists('devel')) {
         dpm($message);
       }
@@ -845,7 +856,8 @@ class drealtyDaemon {
       unset($result_ids);
 
       //$items = entity_load($entity_type, $result_ids);
-    } else {
+    }
+    else {
       $this->log("No images to process.");
       return;
     }
@@ -866,7 +878,8 @@ class drealtyDaemon {
       if (!file_prepare_directory($img_dir, FILE_MODIFY_PERMISSIONS | FILE_CREATE_DIRECTORY)) {
         $this->log(t("Failed to create %directory.", array('%directory' => $img_dir)), "error");
         return;
-      } else {
+      }
+      else {
         // If for some reason the directory still doesn't exist, quit
         if (!is_dir($img_dir)) {
           $this->log(t("Failed to locate %directory.", array('%directory' => $img_dir)), "error");
@@ -900,9 +913,10 @@ class drealtyDaemon {
           $this->log(t('Fetching photos for !count properties', array('!count' => count($ids))));
           $this->log(t('Property IDs are !ids', array('!ids' => implode(', ', $ids))));
 
+          $location = ($class->download_images) ? 1 : 0;
 
           // Query the IDX for images.  Put the results into $photos
-          $photos = $this->dc->get_phrets()->GetObject($resource, $class->object_type, $id_string, '*');
+          $photos = $this->dc->get_phrets()->GetObject($resource, $class->object_type, $id_string, '*', $location);
 
           $this->log(t('!count photos were retrieved from the IDX', array('!count' => count($photos))));
 
@@ -922,68 +936,75 @@ class drealtyDaemon {
 
           // Loop through result set from query
           foreach ($photos as $index => $photo) {
-
-            // Set up destinatino file name, path, etc.
             $mlskey = $photo['Content-ID'];
             $number = $photo['Object-ID'];
-            $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', "{$mlskey}-{$number}.jpg");
-            $filepath = "{$img_dir}/{$filename}";
 
             // Get the listing entity object that this photo belongs to
             $listing = $lookup_table[$mlskey];
 
-            $is_really_an_image = ($photo['Content-Type'] == 'image/jpg' || $photo['Content-Type'] == 'image/png' || $photo['Content-Type'] == 'image/gif' || $photo['Content-Type'] == 'image/jpeg');
+            if ($class->download_images && $photo['Location']) {
+              
+            }
+            else {
 
-            try {
+              // Set up destination file name, path, etc.
+              $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', "{$mlskey}-{$number}.jpg");
+              $filepath = "{$img_dir}/{$filename}";
 
-              // Make sure the object retrieved from the IDX is indeed an image
-              if ($is_really_an_image) {
-                // See if the file we are trying to save currently exists in the managed
-                // files table
-                $fid = db_query('SELECT fid FROM {file_managed} WHERE filename = :filename', array(':filename' => $filename))->fetchField();
+              $is_really_an_image = ($photo['Content-Type'] == 'image/jpg' || $photo['Content-Type'] == 'image/png' || $photo['Content-Type'] == 'image/gif' || $photo['Content-Type'] == 'image/jpeg');
 
-                // If the file does exist, delete it so we can save the file we
-                // just pulled from the IDX
-                if (!empty($fid)) {
-                  $file_object = file_load($fid);
-                  file_delete($file_object, TRUE);
-                }
+              try {
 
-                $this->log(t("Saving @filename", array("@filename" => $filepath)));
+                // Make sure the object retrieved from the IDX is indeed an image
+                if ($is_really_an_image) {
+                  // See if the file we are trying to save currently exists in the managed
+                  // files table
+                  $fid = db_query('SELECT fid FROM {file_managed} WHERE filename = :filename', array(':filename' => $filename))->fetchField();
 
-                // Save the photo to the filesystem
-                $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
+                  // If the file does exist, delete it so we can save the file we
+                  // just pulled from the IDX
+                  if (!empty($fid)) {
+                    $file_object = file_load($fid);
+                    file_delete($file_object, TRUE);
+                  }
 
+                  $this->log(t("Saving @filename", array("@filename" => $filepath)));
 
-                if (!array_key_exists($mlskey, $listings_processed)) {
-                  $listings_processed[$mlskey] = 0;
-                }
-                $listings_processed[$mlskey]++;
-
-                // Remove the process_images flag so that the listing doesn't
-                // get included the next time images are downloaded.
-                $listing->process_images = 0;
-
-                // Save the listing to the database.
-                $listing->save();
+                  // Save the photo to the filesystem
+                  $file = file_save_data($photo['Data'], $filepath, FILE_EXISTS_REPLACE);
 
 
-                // Map the photo to the listing.
-                file_usage_add($file, 'drealty', $entity_type, $listing->id);
-              } else {
-                $this->log(t('Photo !num is not an image. Content type is !type', array('!num' => $index, '!type' => $photo['Content-Type'])));
-                if ($photo['Content-Type'] == 'text/xml') {
-                  $this->log($photo['Data']);
-                  // Evidently this listing doesn't have photos, so don't try to
-                  // pull photos again
+                  if (!array_key_exists($mlskey, $listings_processed)) {
+                    $listings_processed[$mlskey] = 0;
+                  }
+                  $listings_processed[$mlskey]++;
+
+                  // Remove the process_images flag so that the listing doesn't
+                  // get included the next time images are downloaded.
                   $listing->process_images = 0;
+
+                  // Save the listing to the database.
                   $listing->save();
+
+
+                  // Map the photo to the listing.
+                  file_usage_add($file, 'drealty', $entity_type, $listing->id);
                 }
+                else {
+                  $this->log(t('Photo !num is not an image. Content type is !type', array('!num' => $index, '!type' => $photo['Content-Type'])));
+                  if ($photo['Content-Type'] == 'text/xml') {
+                    $this->log($photo['Data']);
+                    // Evidently this listing doesn't have photos, so don't try to
+                    // pull photos again
+                    $listing->process_images = 0;
+                    $listing->save();
+                  }
+                }
+              } catch (Exception $ex) {
+                $this->log(t('EXCEPTION SAVING FILE: !ex', array('!ex' => $ex->getMessage())));
+                $this->log(t('MLS Key: !m', array('!m' => $mlskey)));
+                $this->log(t('Connection ID: !m', array('!m' => $connection->conid)));
               }
-            } catch (Exception $ex) {
-              $this->log(t('EXCEPTION SAVING FILE: !ex', array('!ex' => $ex->getMessage())));
-              $this->log(t('MLS Key: !m', array('!m' => $mlskey)));
-              $this->log(t('Connection ID: !m', array('!m' => $connection->conid)));
             }
           }
 

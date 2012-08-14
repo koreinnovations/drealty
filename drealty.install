@@ -48,7 +48,9 @@ function drealty_schema() {
           'id' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The internal Id', 'group' => 'hidden'),
           'conid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
           'listing_id' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The listing Id', 'group' => 'hidden'),
-          'photo_url' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
+          'photo_url' => array('type' => 'varchar', 'length' => 500, 'not null' => TRUE, 'default' => ''),
+          'description' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
+          'hash' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => '', 'description' => 'MD5 Hash used to determine if a listing has changed.', 'group' => 'hidden'),
       ),
   );
 
@@ -679,3 +681,37 @@ function drealty_update_7010() {
 
   return $items;
 }
+
+/**
+ * Increase size of photo_url field on drealty_external_photos table
+ */
+function drealty_update_7011() {
+  $items = array();
+
+  $items[] = db_query("ALTER TABLE {drealty_external_photos} MODIFY photo_url VARCHAR(500)");
+
+  return $items;
+}
+
+/**
+ * Add description field on drealty_external_photos table
+ */
+function drealty_update_7012() {
+  $items = array();
+
+  $items[] = db_query("ALTER TABLE {drealty_external_photos} ADD description VARCHAR(255) NULL");
+
+  return $items;
+}
+
+/**
+ * Add hash field on drealty_external_photos table
+ */
+function drealty_update_7013() {
+  $items = array();
+
+  $items[] = db_query("ALTER TABLE {drealty_external_photos} ADD hash VARCHAR(255) NOT NULL default ''");
+
+  return $items;
+}
+

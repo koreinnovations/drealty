@@ -9,8 +9,9 @@ function drealty_entity_info() {
   $entities['drealty_external_photo'] = array(
       'label' => t('dRealty External Photo'),
       'entity class' => 'DrealtyExternalPhoto',
+      'controller class' => 'DrealtyExternalPhotoController',
       'token type' => 'drealty_external_photo',
-      'base table' => 'drealty_external_photo',
+      'base table' => 'drealty_external_photos',
       'uri callback' => 'entity_class_uri',
       'fieldable' => TRUE,
       'view modes' => array(
@@ -943,6 +944,15 @@ class DrealtyExternalPhoto extends Entity {
     // TODO: is this right?
     return array('path' => $this->photo_url);
   }
+}
+
+
+class DrealtyExternalPhotoController extends EntityAPIController {
+
+  public function __construct($entityType) {
+    parent::__construct($entityType);
+  }
+
 }
 
 class DrealtyListing extends Entity {

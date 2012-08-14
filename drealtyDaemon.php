@@ -926,7 +926,7 @@ class drealtyDaemon {
           $this->log(t('Fetching photos for !count properties', array('!count' => count($ids))));
           $this->log(t('Property IDs are !ids', array('!ids' => implode(', ', $ids))));
 
-          $location = ($class->download_images) ? 1 : 0;
+          $location = (!$class->download_images) ? 1 : 0;
 
           // Query the IDX for images.  Put the results into $photos
           $photos = $this->dc->get_phrets()->GetObject($resource, $class->object_type, $id_string, '*', $location);
@@ -955,9 +955,11 @@ class drealtyDaemon {
             // Get the listing entity object that this photo belongs to
             $listing = $lookup_table[$mlskey];
 
-            if ($class->download_images && $photo['Location']) {
+            if (!$class->download_images && $photo['Location']) {
               $this->log(t('Processing external photo !url', array('!url' => $photo['Location'])));
-              if ($external_photos_lookup_table[$mlskey][$number]) {
+              if (array_key_exists($mlskey, $external_photos_lookup_table)
+                      && array_key_exists($number, $external_photos_lookup_table[$mlskey])
+                      && $external_photos_lookup_table[$mlskey][$number]) {
                 $external_photo = $external_photos_lookup_table[$mlskey][$number];
               }
               else {
@@ -965,8 +967,14 @@ class drealtyDaemon {
               }
 
               $external_photo->photo_url = $photo['Location'];
-              $external_photo->description = $photo['Content-Description'];
+              if (array_key_exists('Content-Description', $photo))
+                $external_photo->description = $photo['Content-Description'];
               $external_photo->save();
+
+              if (!array_key_exists($mlskey, $listings_processed)) {
+                $listings_processed[$mlskey] = 0;
+              }
+              $listings_processed[$mlskey]++;
 
               // Remove the process_images flag so that the listing doesn't
               // get included the next time images are downloaded.

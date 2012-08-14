@@ -787,10 +787,18 @@ function drealty_configure_resource_limits_form($form, &$form_state, dRealtyConn
     $form['images']['object_type'] = array(
         '#type' => 'select',
         '#multiple' => FALSE,
-        '#title' => t('Object types to download'),
+        '#title' => t('Object type to download'),
         '#description' => t('Each MLS provides zero or more object types (photos) to download for each listing. Select the object type you would like to download.'),
         '#options' => $opts_object_types,
         '#default_value' => $class->object_type,
+    );
+
+    $form['images']['thumbnail_object_type'] = array(
+        '#type' => 'select',
+        '#multiple' => FALSE,
+        '#title' => t('Object type for thumbnail images'),
+        '#options' => $opts_object_types,
+        '#default_value' => $class->thumbnail_object_type,
     );
   }
   $form['submit'] = array(
@@ -828,11 +836,13 @@ function drealty_configure_resource_limits_form_submit($form, &$form_state) {
     $class->process_images = $form_state['values']['process_images'];
     $class->download_images = $form_state['values']['download_images'];
     $class->object_type = $form_state['values']['object_type'];
+    $class->thumbnail_object_type = $form_state['values']['thumbnail_object_type'];
   }
   else {
     $class->process_images = FALSE;
     $class->download_images = FALSE;
     $class->object_type = NULL;
+    $class->thumbnail_object_type = NULL;
   }
   $class->configured = TRUE;
   drupal_write_record('drealty_classes', $class, 'cid');

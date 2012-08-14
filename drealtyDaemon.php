@@ -905,7 +905,7 @@ class drealtyDaemon {
         $external_photos_lookup_table = array();
 
         foreach ($external_photos_raw as $p) {
-          $external_photos_lookup_table[$p->listing_key][$p->photo_number] = $p;
+          $external_photos_lookup_table[$p->object_type][$p->listing_key][$p->photo_number] = $p;
         }
 
 
@@ -929,7 +929,11 @@ class drealtyDaemon {
           $location = (!$class->download_images) ? 1 : 0;
 
           // Query the IDX for images.  Put the results into $photos
-          $photos = $this->dc->get_phrets()->GetObject($resource, $class->object_type, $id_string, '*', $location);
+          $photo_groups['normal'] = $this->dc->get_phrets()->GetObject($resource, $class->object_type, $id_string, '*', $location);
+
+          if ($class->thumbnail_object_type && $class->thumbnail_object_type != $class->object_type) {
+            $photo_groups['thumbnail'] = $this->dc->get_phrets()->GetObject($resource, $class->thumbnail_object_type, $id_string, '*', $location);
+          }
 
           $this->log(t('!count photos were retrieved from the IDX', array('!count' => count($photos))));
 
@@ -947,54 +951,68 @@ class drealtyDaemon {
           unset($ids);
           unset($id_string);
 
-          // Loop through result set from query
-          foreach ($photos as $index => $photo) {
-            $mlskey = $photo['Content-ID'];
-            $number = $photo['Object-ID'];
-
-            // Get the listing entity object that this photo belongs to
-            $listing = $lookup_table[$mlskey];
-
-            if (!$class->download_images && $photo['Location']) {
-              $this->log(t('Processing external photo !url', array('!url' => $photo['Location'])));
-              if (array_key_exists($mlskey, $external_photos_lookup_table)
-                      && array_key_exists($number, $external_photos_lookup_table[$mlskey])
-                      && $external_photos_lookup_table[$mlskey][$number]) {
-                $external_photo = $external_photos_lookup_table[$mlskey][$number];
-              }
-              else {
-                $external_photo = new Entity(array('conid' => $connection->conid, 'listing_id' => $listing->id, 'listing_key' => $mlskey, 'photo_number' => $number), 'drealty_external_photo');
-              }
-
-              $external_photo->photo_url = $photo['Location'];
-              if (array_key_exists('Content-Description', $photo))
-                $external_photo->description = $photo['Content-Description'];
-              $external_photo->save();
-
-              if (!array_key_exists($mlskey, $listings_processed)) {
-                $listings_processed[$mlskey] = 0;
-              }
-              $listings_processed[$mlskey]++;
-
-              // Remove the process_images flag so that the listing doesn't
-              // get included the next time images are downloaded.
-              $listing->process_images = 0;
-
-              // Save the listing to the database.
-              $listing->save();
-            }
-            else {
-
-              // Set up destination file name, path, etc.
-              $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', "{$mlskey}-{$number}.jpg");
-              $filepath = "{$img_dir}/{$filename}";
-
+          foreach ($photo_groups as $object_type => $photos) {
+            // Loop through result set from query
+            foreach ($photos as $index => $photo) {
+              $mlskey = $photo['Content-ID'];
+              $number = $photo['Object-ID'];
               $is_really_an_image = ($photo['Content-Type'] == 'image/jpg' || $photo['Content-Type'] == 'image/png' || $photo['Content-Type'] == 'image/gif' || $photo['Content-Type'] == 'image/jpeg');
 
-              try {
+              // Get the listing entity object that this photo belongs to
+              $listing = $lookup_table[$mlskey];
 
-                // Make sure the object retrieved from the IDX is indeed an image
-                if ($is_really_an_image) {
+              // Make sure the object retrieved from the IDX is indeed an image
+              if (!$is_really_an_image) {
+                $this->log(t('Photo !num is not an image. Content type is !type', array('!num' => $index, '!type' => $photo['Content-Type'])));
+                if ($photo['Content-Type'] == 'text/xml') {
+                  $this->log($photo['Data']);
+                  // Evidently this listing doesn't have photos, so don't try to
+                  // pull photos again
+                  $listing->process_images = 0;
+                  $listing->save();
+                }
+              }
+              elseif (!$class->download_images && $photo['Location']) {
+                $this->log(t('Processing external photo of type "!type" for listing id !id: !url', array('!url' => $photo['Location'], '!type' => $object_type, '!id' => $listing->id)));
+                if (array_key_exists($object_type, $external_photos_lookup_table)
+                        && array_key_exists($mlskey, $external_photos_lookup_table[$object_type])
+                        && array_key_exists($number, $external_photos_lookup_table[$object_type][$mlskey])
+                        && $external_photos_lookup_table[$object_type][$mlskey][$number]) {
+                  $external_photo = $external_photos_lookup_table[$object_type][$mlskey][$number];
+                }
+                else {
+                  $external_photo = new Entity(array(
+                              'conid' => $connection->conid,
+                              'listing_id' => $listing->id,
+                              'listing_key' => $mlskey,
+                              'photo_number' => $number,
+                              'object_type' => $object_type), 'drealty_external_photo');
+                }
+
+                $external_photo->photo_url = $photo['Location'];
+                if (array_key_exists('Content-Description', $photo))
+                  $external_photo->description = $photo['Content-Description'];
+                $external_photo->save();
+
+                if (!array_key_exists($mlskey, $listings_processed)) {
+                  $listings_processed[$mlskey] = 0;
+                }
+                $listings_processed[$mlskey]++;
+
+                // Remove the process_images flag so that the listing doesn't
+                // get included the next time images are downloaded.
+                $listing->process_images = 0;
+
+                // Save the listing to the database.
+                $listing->save();
+              }
+              else {
+
+                // Set up destination file name, path, etc.
+                $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', "{$mlskey}-{$number}.jpg");
+                $filepath = "{$img_dir}/{$filename}";
+
+                try {
                   // See if the file we are trying to save currently exists in the managed
                   // files table
                   $fid = db_query('SELECT fid FROM {file_managed} WHERE filename = :filename', array(':filename' => $filename))->fetchField();
@@ -1027,32 +1045,22 @@ class drealtyDaemon {
 
                   // Map the photo to the listing.
                   file_usage_add($file, 'drealty', $entity_type, $listing->id);
+                } catch (Exception $ex) {
+                  $this->log(t('EXCEPTION SAVING FILE: !ex', array('!ex' => $ex->getMessage())));
+                  $this->log(t('MLS Key: !m', array('!m' => $mlskey)));
+                  $this->log(t('Connection ID: !m', array('!m' => $connection->conid)));
                 }
-                else {
-                  $this->log(t('Photo !num is not an image. Content type is !type', array('!num' => $index, '!type' => $photo['Content-Type'])));
-                  if ($photo['Content-Type'] == 'text/xml') {
-                    $this->log($photo['Data']);
-                    // Evidently this listing doesn't have photos, so don't try to
-                    // pull photos again
-                    $listing->process_images = 0;
-                    $listing->save();
-                  }
-                }
-              } catch (Exception $ex) {
-                $this->log(t('EXCEPTION SAVING FILE: !ex', array('!ex' => $ex->getMessage())));
-                $this->log(t('MLS Key: !m', array('!m' => $mlskey)));
-                $this->log(t('Connection ID: !m', array('!m' => $connection->conid)));
               }
             }
+
+            // Increment total by the number of unique listings that were processed
+            // in the batch
+            $total += count(array_keys($listings_processed));
+            $this->log(t('The total number of listings processed so far is !num', array('!num' => $total)));
+
+            // Remove the downloaded photos from memory
+            unset($photos);
           }
-
-          // Increment total by the number of unique listings that were processed
-          // in the batch
-          $total += count(array_keys($listings_processed));
-          $this->log(t('The total number of listings processed so far is !num', array('!num' => $total)));
-
-          // Remove the downloaded photos from memory
-          unset($photos);
         }
 
         unset($chunk);

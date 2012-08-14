@@ -20,7 +20,8 @@ class drealtyResources {
       }
       cache_set($cache_name, $fields);
       return $fields;
-    } else {
+    }
+    else {
       return $cached->data;
     }
   }
@@ -42,7 +43,8 @@ class drealtyResources {
         $mappings[$mapping->entity_type] = $mapping;
       }
       cache_set($cache_name, $mappings);
-    } else {
+    }
+    else {
       $mappings = $cached->data;
     }
     return $mappings;
@@ -59,7 +61,8 @@ class drealtyResources {
       }
       cache_set($cache_name, $fields, $this->defaultCache);
       return $fields;
-    } else {
+    }
+    else {
       return $cached->data;
     }
   }
@@ -67,25 +70,25 @@ class drealtyResources {
   function FetchFieldMappings($conid, $resource = NULL, $class = NULL) {
     $cache_name = "drealty_field_mapping_{$resource}_{$conid}";
     $cached = cache_get($cache_name, $this->defaultCache);
-    
-    if (!$cached) {
-    
-      $query = db_select('drealty_field_mappings', 'dfm')
-        ->fields('dfm')
-        ->condition('conid', $conid);
 
-      if(isset($resource)) {
+    if (!$cached) {
+
+      $query = db_select('drealty_field_mappings', 'dfm')
+              ->fields('dfm')
+              ->condition('conid', $conid);
+
+      if (isset($resource)) {
         $ra = db_and();
         $ra->condition('resource', $resource);
         $query->condition($ra);
       }
-      if(isset($class)) {
+      if (isset($class)) {
         $ca = db_and();
         $ca->where('cid = :cid', array(':cid' => $class));
         $query->condition($ca);
       }
 
-     $results = $query->execute()->fetchAll();
+      $results = $query->execute()->fetchAll();
 
       $mappings = array();
       foreach ($results as $result) {
@@ -95,7 +98,8 @@ class drealtyResources {
         cache_set($cache_name, $mappings, $this->defaultCache);
       }
       return $mappings;
-    } else {
+    }
+    else {
       return $cached->data;
     }
   }
@@ -113,7 +117,8 @@ class drealtyResources {
       if (count($fields) && !$flush) {
         cache_set($cache_name, $fields, $this->defaultCache);
       }
-    } else {
+    }
+    else {
       $fields = $cached->data;
     }
 
@@ -154,7 +159,8 @@ class drealtyResources {
             if (!empty($field->LookupName)) {
               $rets_fields[$field->SystemName]->lookupname = array($class->systemname => $field->LookupName);
             }
-          } else {
+          }
+          else {
             $rets_fields[$field->SystemName]->classes[] = $class->systemname;
             // check to see if the lookup table is different
             if (!empty($field->LookupName) && !isset($rets_fields[$field->SystemName]->lookupname[$class->systemname])) {
@@ -167,9 +173,9 @@ class drealtyResources {
       $rets->disconnect();
       if ($flush) {
         db_delete('drealty_fields')
-          ->condition('conid', $conid)
-          ->condition('resource', $resource)
-          ->execute();
+                ->condition('conid', $conid)
+                ->condition('resource', $resource)
+                ->execute();
       }
 
       foreach ($rets_fields as &$field) {
@@ -181,7 +187,8 @@ class drealtyResources {
         if (!$flush && isset($fields[$field->systemname]->fid)) {
           $field->fid = $fields[$field->systemname]->fid;
           drupal_write_record('drealty_fields', $field, fid);
-        } else {
+        }
+        else {
           drupal_write_record('drealty_fields', $field);
         }
       }
@@ -193,7 +200,13 @@ class drealtyResources {
 
   function FetchClass($cid) {
     $result = db_query('SELECT * FROM {drealty_classes} WHERE cid = :id', array(':id' => $cid));
-    return $result->fetchObject();
+    $class = $result->fetchObject();
+
+    if (!$class->thumbnail_object_type) {
+      $class->thumbnail_object_type = $class->object_type;
+    }
+
+    return $class;
   }
 
   /**
@@ -218,7 +231,8 @@ class drealtyResources {
       if (count($classes) && !$update) {
         cache_set($cache_name, $classes, $this->defaultCache);
       }
-    } else {
+    }
+    else {
       $classes = $cached->data;
     }
 
@@ -256,7 +270,8 @@ class drealtyResources {
       foreach ($rets_classes as &$class) {
         if (!empty($class->cid)) {
           drupal_write_record('drealty_classes', $class, 'cid');
-        } else {
+        }
+        else {
           unset($class->cid);
           drupal_write_record('drealty_classes', $class);
         }
@@ -295,7 +310,8 @@ class drealtyResources {
       if (count($resources) && !$update) {
         cache_set($cache_name, $resources, $this->defaultCache);
       }
-    } else {
+    }
+    else {
       $resources = $cached->data;
     }
 
@@ -327,7 +343,8 @@ class drealtyResources {
       foreach ($rets_resources as &$resource) {
         if (!empty($resource->rid)) {
           drupal_write_record('drealty_resources', $resource, 'rid');
-        } else {
+        }
+        else {
           unset($resource->rid);
           drupal_write_record('drealty_resources', $resource);
         }
@@ -342,7 +359,8 @@ class drealtyResources {
     $result = db_result(db_query("SELECT systemName FROM {drealty_fields} WHERE correlation = '%s' AND resource = '%s' AND conid = %d", $correlation_name, $resource, $conid));
     if (!empty($result)) {
       return $result;
-    } else {
+    }
+    else {
       return FALSE;
     }
   }
@@ -351,44 +369,45 @@ class drealtyResources {
     $result = db_result(db_query("SELECT cck_field_name FROM {drealty_fields} WHERE correlation = '%s' AND resource = '%s' AND conid = %d", $correlation_name, $resource, $conid));
     if (!empty($result)) {
       return $result;
-    } else {
+    }
+    else {
       return FALSE;
     }
   }
-    
+
   function RemoveFields($conid) {
 
     db_delete("drealty_fields")
-      ->condition("conid", $conid)
-      ->execute();
+            ->condition("conid", $conid)
+            ->execute();
     cache_clear_all("drealty_fields_", $this->defaultCache, TRUE);
   }
 
   function RemoveClasses($conid) {
     db_delete("drealty_classes")
-      ->condition("conid", $conid)
-      ->execute();
+            ->condition("conid", $conid)
+            ->execute();
     cache_clear_all("drealty_classes_", $this->defaultCache, TRUE);
   }
 
   function RemoveResources($conid) {
     db_delete("drealty_resources")
-      ->condition("conid", $conid)
-      ->execute();
+            ->condition("conid", $conid)
+            ->execute();
     cache_clear_all("drealty_resources_", $this->defaultCache, TRUE);
   }
 
   function RemoveFieldMappings($conid) {
     db_delete("drealty_field_mappings")
-      ->condition("conid", $conid)
-      ->execute();
+            ->condition("conid", $conid)
+            ->execute();
     cache_clear_all("drealty_field_mapping_", $this->defaultCache, TRUE);
   }
 
   function RemoveResourceMappings($conid) {
     db_delete("drealty_resource_mappings")
-      ->condition("conid", $conid)
-      ->execute();
+            ->condition("conid", $conid)
+            ->execute();
     cache_clear_all("drealty_mappings_", $this->defaultCache, TRUE);
   }
 

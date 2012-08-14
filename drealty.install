@@ -52,6 +52,7 @@ function drealty_schema() {
           'photo_number' => array('type' => 'int', 'not null' => TRUE, 'description' => 'Photo number', 'group' => 'hidden'),
           'photo_url' => array('type' => 'varchar', 'length' => 500, 'not null' => TRUE, 'default' => ''),
           'description' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
+          'object_type' => array('type' => 'varchar', 'length' => 30, 'not null' => TRUE),
           'hash' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => '', 'description' => 'MD5 Hash used to determine if a listing has changed.', 'group' => 'hidden'),
       ),
   );
@@ -113,6 +114,7 @@ function drealty_schema() {
           'process_images' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE, 'default' => 0),
           'download_images' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE, 'default' => 0),
           'object_type' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
+          'thumbnail_object_type' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
           'format' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => 'COMPACT-DECODED'),
           'chunk_size' => array('type' => 'int', 'unsigned' => TRUE, 'size' => 'normal', 'not null' => TRUE, 'default' => 500),
           'override_status_query' => array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
@@ -717,7 +719,6 @@ function drealty_update_7013() {
   return $items;
 }
 
-
 /**
  * Add listing key and photo number to drealty_external_photos table
  */
@@ -730,4 +731,25 @@ function drealty_update_7014() {
   return $items;
 }
 
+/**
+ * Add object_type to drealty_external_photos table
+ */
+function drealty_update_7015() {
+  $items = array();
+
+  $items[] = db_query("ALTER TABLE {drealty_external_photos} ADD object_type VARCHAR(30) NOT NULL");
+
+  return $items;
+}
+
+/**
+ * Add thumbnail_object_type to drealty_classes table
+ */
+function drealty_update_7016() {
+  $items = array();
+
+  $items[] = db_query("ALTER TABLE {drealty_classes} ADD thumbnail_object_type VARCHAR(255) NULL");
+
+  return $items;
+}
 

@@ -5,7 +5,7 @@ define('RADIUS', 85445659.4471); /* $offset / pi() */
 
 function drealty_entity_info() {
   $entities = array();
-  
+
   $entities['drealty_external_photo'] = array(
       'label' => t('dRealty External Photo'),
       'entity class' => 'DrealtyExternalPhoto',
@@ -35,8 +35,8 @@ function drealty_entity_info() {
       'module' => 'drealty',
       'access callback' => 'drealty_connection_entity_access',
   );
-  
-  
+
+
   $entities['drealty_listing'] = array(
       'label' => t('dRealty Listing'),
       'entity class' => 'DrealtyListing',
@@ -940,12 +940,12 @@ class DrealtyExternalPhoto extends Entity {
   }
 
   protected function defaultUri() {
-    
+
     // TODO: is this right?
     return array('path' => $this->photo_url);
   }
-}
 
+}
 
 class DrealtyExternalPhotoController extends EntityAPIController {
 
@@ -968,6 +968,7 @@ class DrealtyListing extends Entity {
   protected function defaultUri() {
     return array('path' => 'listings/' . $this->listing_id);
   }
+
 }
 
 class DrealtyListingController extends EntityAPIController {
@@ -1037,6 +1038,19 @@ class DrealtyListingController extends EntityAPIController {
     parent::attachLoad($queried_entities, $revision_id);
 
     foreach ($queried_entities as $entity) {
+
+      $entity->mls_images = array();
+      $entity->external_images = array();
+
+      $external_photos = db_select('drealty_external_photos', 'p')
+              ->fields('p')
+              ->condition('listing_id', $entity->id)
+              ->execute();
+      foreach ($external_photos as $photo) {
+        $entity->external_images[$photo->photo_number][$photo->object_type] = $photo;
+      }
+
+      //if (empty($entity->external_photos)) {
       $fids = db_select('file_usage', 'f')
               ->fields('f', array('fid'))
               ->condition('id', $entity->id)
@@ -1048,6 +1062,7 @@ class DrealtyListingController extends EntityAPIController {
         $files = file_load_multiple($fids);
         $entity->mls_images = $files;
       }
+      //}
     }
   }
 
@@ -1063,10 +1078,10 @@ class DrealtyListingController extends EntityAPIController {
       // Do nothing, in case invalid or no ids have been passed.
       return;
     }
-    
+
     // TODO: loop through and delete any external photos connected with 
     // this listing.
-    
+
     foreach ($entities as $entity) {
       if (is_array($entity->mls_images)) {
         foreach ($entity->mls_images as $file) {

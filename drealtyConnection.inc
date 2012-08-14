@@ -184,6 +184,7 @@ class dRealtyConnection {
 
 }
 
+
 class dRealtyListingEntity extends Entity {
 
   public $id;

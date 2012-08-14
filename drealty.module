@@ -5,6 +5,37 @@ define('RADIUS', 85445659.4471); /* $offset / pi() */
 
 function drealty_entity_info() {
   $entities = array();
+  
+  $entities['drealty_external_photo'] = array(
+      'label' => t('dRealty External Photo'),
+      'entity class' => 'DrealtyExternalPhoto',
+      'token type' => 'drealty_external_photo',
+      'base table' => 'drealty_external_photo',
+      'uri callback' => 'entity_class_uri',
+      'fieldable' => TRUE,
+      'view modes' => array(
+          'full' => array(
+              'label' => 'Full View',
+              'custom settings' => FALSE,
+          ),
+          'list' => array(
+              'label' => 'List View',
+              'custom settings' => TRUE,
+          ),
+      ),
+      'bundles' => array(
+          'drealty_external_photo' => array(
+              'label' => t('dRealty External Photo'),
+          ),
+      ),
+      'entity keys' => array(
+          'id' => 'id',
+      ),
+      'module' => 'drealty',
+      'access callback' => 'drealty_connection_entity_access',
+  );
+  
+  
   $entities['drealty_listing'] = array(
       'label' => t('dRealty Listing'),
       'entity class' => 'DrealtyListing',
@@ -897,6 +928,23 @@ function drealty_office_create($values = array()) {
   return entity_get_controller('drealty_office')->create($values);
 }
 
+class DrealtyExternalPhoto extends Entity {
+
+  public function __construct($values = array()) {
+    parent::__construct($values, 'drealty_external_photo');
+  }
+
+  protected function defaultLabel() {
+    return $this->listing_key . '_' . $this->photo_number;
+  }
+
+  protected function defaultUri() {
+    
+    // TODO: is this right?
+    return array('path' => $this->photo_url);
+  }
+}
+
 class DrealtyListing extends Entity {
 
   public function __construct(array $values = array()) {
@@ -910,7 +958,6 @@ class DrealtyListing extends Entity {
   protected function defaultUri() {
     return array('path' => 'listings/' . $this->listing_id);
   }
-
 }
 
 class DrealtyListingController extends EntityAPIController {
@@ -1006,6 +1053,10 @@ class DrealtyListingController extends EntityAPIController {
       // Do nothing, in case invalid or no ids have been passed.
       return;
     }
+    
+    // TODO: loop through and delete any external photos connected with 
+    // this listing.
+    
     foreach ($entities as $entity) {
       if (is_array($entity->mls_images)) {
         foreach ($entity->mls_images as $file) {

@@ -896,6 +896,19 @@ class drealtyDaemon {
         $listings_processed = array();
         $lookup_table = array();
 
+
+        $external_photos_query = new EntityFieldQuery;
+        $external_photos_query->entityCondition('entity_type', 'drealty_external_photo', '=')
+                ->propertyCondition('listing_id', $ids_chunk);
+        $external_photos_result = $external_photos_query->execute();
+        $external_photos_raw = entity_load('drealty_external_photo', array_keys($external_photos_result['drealty_external_photo']));
+        $external_photos_lookup_table = array();
+
+        foreach ($external_photos_raw as $p) {
+          $external_photos_lookup_table[$p->listing_key][$p->photo_number] = $p;
+        }
+
+
         // Loop through all items in current chunk and extract the ID
         foreach ($chunk as $item) {
           $ids[] = $item->listing_key;
@@ -943,7 +956,24 @@ class drealtyDaemon {
             $listing = $lookup_table[$mlskey];
 
             if ($class->download_images && $photo['Location']) {
-              
+              $this->log(t('Processing external photo !url', array('!url' => $photo['Location'])));
+              if ($external_photos_lookup_table[$mlskey][$number]) {
+                $external_photo = $external_photos_lookup_table[$mlskey][$number];
+              }
+              else {
+                $external_photo = new Entity(array('conid' => $connection->conid, 'listing_id' => $listing->id, 'listing_key' => $mlskey, 'photo_number' => $number), 'drealty_external_photo');
+              }
+
+              $external_photo->photo_url = $photo['Location'];
+              $external_photo->description = $photo['Content-Description'];
+              $external_photo->save();
+
+              // Remove the process_images flag so that the listing doesn't
+              // get included the next time images are downloaded.
+              $listing->process_images = 0;
+
+              // Save the listing to the database.
+              $listing->save();
             }
             else {
 

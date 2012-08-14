@@ -48,6 +48,8 @@ function drealty_schema() {
           'id' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The internal Id', 'group' => 'hidden'),
           'conid' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
           'listing_id' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'description' => 'The listing Id', 'group' => 'hidden'),
+          'listing_key' => array('type' => 'varchar', 'length' => 60, 'not null' => TRUE, 'description' => 'The listing key', 'group' => 'hidden'),
+          'photo_number' => array('type' => 'int', 'not null' => TRUE, 'description' => 'Photo number', 'group' => 'hidden'),
           'photo_url' => array('type' => 'varchar', 'length' => 500, 'not null' => TRUE, 'default' => ''),
           'description' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
           'hash' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => '', 'description' => 'MD5 Hash used to determine if a listing has changed.', 'group' => 'hidden'),
@@ -714,4 +716,18 @@ function drealty_update_7013() {
 
   return $items;
 }
+
+
+/**
+ * Add listing key and photo number to drealty_external_photos table
+ */
+function drealty_update_7014() {
+  $items = array();
+
+  $items[] = db_query("ALTER TABLE {drealty_external_photos} ADD listing_key VARCHAR(60) NOT NULL");
+  $items[] = db_query("ALTER TABLE {drealty_external_photos} ADD photo_number int NOT NULL");
+
+  return $items;
+}
+
 

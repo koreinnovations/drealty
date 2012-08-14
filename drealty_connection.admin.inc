@@ -885,40 +885,44 @@ function drealty_developer_tools_form_ajax_class($form, $form_state) {
   return $form['fields_table_container'];
 }
 
+function drealty_developer_tools_form_ajax_refresh_object_types($form, $form_state) {
+  return $form['object_wrapper']['object_type'];
+}
+
 function drealty_data_stats_form($form, &$form_state, drealtyConnectionEntity $connection = NULL) {
   $form_state['connection'] = $connection;
-  
+
   $listings_needing_image_processing = db_query("SELECT COUNT(*) FROM {drealty_listing} WHERE conid = :conid AND process_images = 1", array(':conid' => $connection->conid))->fetchField();
   $total_listings = db_query("SELECT COUNT(*) FROM {drealty_listing} WHERE conid = :conid", array(':conid' => $connection->conid))->fetchField();
   $most_recent = db_query("SELECT MAX(created) FROM {drealty_listing} WHERE conid = :conid", array(':conid' => $connection->conid))->fetchField();
   $last_updated = db_query("SELECT MAX(changed) FROM {drealty_listing} WHERE conid = :conid", array(':conid' => $connection->conid))->fetchField();
-  
+
   $date_format = 'l, F j Y, g:i a';
-  
+
   $form['total_listings'] = array(
       '#type' => 'item',
       '#title' => t('Total # of listings'),
       '#markup' => $total_listings,
   );
-  
+
   $form['listings_needing_image_processing'] = array(
       '#type' => 'item',
       '#title' => t('Listings needing image processing'),
       '#markup' => $listings_needing_image_processing,
   );
-  
+
   $form['most_recent'] = array(
       '#type' => 'item',
       '#title' => t('Most recently-added'),
       '#markup' => date($date_format, $most_recent),
   );
-  
+
   $form['last_updated'] = array(
       '#type' => 'item',
       '#title' => t('Most recently updated'),
       '#markup' => date($date_format, $last_updated),
   );
-  
+
   return $form;
 }
 
@@ -942,16 +946,27 @@ function drealty_developer_tools_form($form, &$form_state, drealtyConnectionEnti
   $dr = new drealtyResources();
   //$mappings = $connection->ResourceMappings();
   $resources = $connection->Resources();
+  $rets = new dRealtyConnection();
 
 
   $resource_options = array(
       '' => t('Select a resource'),
   );
   $class_options = array();
+  $object_type_options = array();
 
   if ($form_state['values']['resource']) {
     $classes = $connection->FetchClasses($form_state['values']['resource']);
     $class_options[''] = t('Select a class');
+
+    if ($rets->connect($connection->conid)) {
+      $object_types = $rets->get_phrets()->GetMetadataObjects($form_state['values']['resource']);
+      if ($object_types) {
+        foreach ($object_types as $type) {
+          $object_type_options[$type['ObjectType']] = $type['ObjectType'] . ' - ' . $type['Description'];
+        }
+      }
+    }
 
     if ($form_state['values']['cid']) {
       $class = $dr->FetchClass($form_state['values']['cid']);
@@ -979,10 +994,16 @@ function drealty_developer_tools_form($form, &$form_state, drealtyConnectionEnti
       ),
   );
 
-  $form['cid'] = array(
+  $form['query_wrapper'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Run a RETS Query'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+  );
+
+  $form['query_wrapper']['cid'] = array(
       '#type' => 'select',
       '#title' => t('Class'),
-      '#required' => TRUE,
       '#options' => $class_options,
       '#prefix' => '<div id="edit-class-wrapper">',
       '#suffix' => '</div>',
@@ -993,16 +1014,66 @@ function drealty_developer_tools_form($form, &$form_state, drealtyConnectionEnti
       '#disabled' => empty($form_state['values']['resource']),
   );
 
-  $form['query'] = array(
+  $form['query_wrapper']['query'] = array(
       '#type' => 'textarea',
       '#title' => t('RETS Query'),
-      '#required' => TRUE,
   );
 
-  $form['submit'] = array(
+  $form['query_wrapper']['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Run Query'),
   );
+
+  $form['object_wrapper'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Run a GetObject Query'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+  );
+
+  $form['object_wrapper']['refresh_types'] = array(
+      '#type' => 'button',
+      '#value' => t('Refresh object types'),
+      '#ajax' => array(
+          'callback' => 'drealty_developer_tools_form_ajax_refresh_object_types',
+          'wrapper' => 'edit-object-type-outer-wrapper',
+      ),
+  );
+
+  $form['object_wrapper']['object_type'] = array(
+      '#type' => 'select',
+      '#title' => t('Object Type'),
+      '#options' => $object_type_options,
+      '#prefix' => '<div id="edit-object-type-outer-wrapper">',
+      '#suffix' => '</div>',
+  );
+
+  $form['object_wrapper']['ids'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Object IDs'),
+      '#description' => t('Put each ID on its own line'),
+  );
+
+  $form['object_wrapper']['photo_number'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Photo Number'),
+      '#default_value' => '*',
+  );
+
+  $form['object_wrapper']['location'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Location'),
+      '#default_value' => '0',
+  );
+
+
+  $form['object_wrapper']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Run GetObject Query'),
+  );
+
+
+
 
   $form['fields_table_container'] = array(
       '#type' => 'fieldset',
@@ -1024,13 +1095,31 @@ function drealty_developer_tools_form($form, &$form_state, drealtyConnectionEnti
 }
 
 function drealty_developer_tools_form_submit($form, &$form_state) {
+  $v = $form_state['values'];
+
+  $conn = new dRealtyConnection();
   $daemon = new drealtyDaemon();
   $dr = new drealtyResources();
 
-  $class = $dr->FetchClass($form_state['values']['cid']);
+  $connection = $form_state['connection'];
+  $resource = $v['resource'];
+  $class = $dr->FetchClass($v['cid']);
 
-  $results = $daemon->perform_query($form_state['connection'], $form_state['values']['resource'], $class, $form_state['values']['query']);
+  if ($conn->connect($connection->conid)) {
 
-  $form_state['rebuild'] = TRUE;
-  $form_state['storage']['results'] = $results;
+    if ($v['op'] == t('Run Query')) {
+      $results = $daemon->perform_query($connection, $resource, $class, $v['query']);
+      $form_state['rebuild'] = TRUE;
+      $form_state['storage']['results'] = $results;
+    }
+    elseif ($v['op'] == t('Run GetObject Query')) {
+      $form_state['rebuild'] = TRUE;
+      
+      $ids = implode(',', explode("\n", $v['ids']));
+      $results = $conn->get_phrets()->GetObject($resource, $v['object_type'], $ids, $v['photo_number'], $v['location']);
+
+      dpm($results);
+    }
+    $conn->disconnect();
+  }
 }

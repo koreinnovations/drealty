@@ -962,7 +962,7 @@ class drealtyDaemon {
               $listing = $lookup_table[$mlskey];
 
               // Make sure the object retrieved from the IDX is indeed an image
-              if (!$is_really_an_image) {
+              if (!$is_really_an_image && !$photo['Location']) {
                 $this->log(t('Photo !num is not an image. Content type is !type', array('!num' => $index, '!type' => $photo['Content-Type'])));
                 if ($photo['Content-Type'] == 'text/xml') {
                   $this->log($photo['Data']);
